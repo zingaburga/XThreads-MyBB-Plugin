@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.22);
+define('XTHREADS_VERSION', 1.23);
 
 
 // XThreads defines

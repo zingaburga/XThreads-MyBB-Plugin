@@ -684,6 +684,7 @@ function xthreads_admin_rebuildthumbs() {
 			
 			@set_time_limit(1800);
 			require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
+			require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 			$xtadir = $mybb->settings['uploadspath'].'/xthreads_ul/';
 			if($xtadir{0} != '/') $xtadir = '../'.$xtadir; // TODO: perhaps check for absolute Windows paths as well?  but then, who uses Windows on a production server? :>
 			$query = $db->simple_select('xtattachments', '*', $where, array('order_by' => 'aid', 'limit' => $perpage, 'limit_start' => ($page-1)*$perpage));
