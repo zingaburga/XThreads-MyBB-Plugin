@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 0.52);
+define('XTHREADS_VERSION', 0.53);
 
 
 // XThreads defines
@@ -339,7 +339,7 @@ function xthreads_xmlhttp_blankpost_hack() {
 // TODO: test displayed fields in search (posts view)
 
 // TODO: admin logs - use proper text
-// TODO: silent upgrader
+// TODO: admincp - separate required field from editable
 // TODO: child threads?
 // TODO: check internal db state / data consistency function in admincp
 /* - unreferenced attachments in xtattachments (ignore orphaned attachments)
@@ -360,7 +360,8 @@ function xthreads_xmlhttp_blankpost_hack() {
 // TODO: implement data types?
 // TODO: forumdisplay threadfield sorting
 // TODO: default forumdisplay sorting/filtering
-// TODO: easy mycodes for text filter (+ fix easy mycode plugin exploit)
+// TODO: easy mycodes for text filter
+// TODO: silent upgrader
 
 // TODO: make the forumbits template prefix feature loader a bit smarter
 // TODO: forum admin -> separate XThreads options into a separate table

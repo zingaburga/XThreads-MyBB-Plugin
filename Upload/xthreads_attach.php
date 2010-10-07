@@ -62,6 +62,8 @@ if(!@is_dir($basedir)) {
 // parse input filename
 if(isset($_REQUEST['file']) && $_REQUEST['file']) { // using query string
 	$_SERVER['PATH_INFO'] = '/'.$_REQUEST['file'];
+	if(get_magic_quotes_gpc())
+		$_SERVER['PATH_INFO'] = stripslashes($_SERVER['PATH_INFO']);
 } else {
 	if(!isset($_SERVER['PATH_INFO'])) {
 		if(isset($_SERVER['SCRIPT_NAME']) && isset($_SERVER['PHP_SELF'])) {
@@ -91,8 +93,6 @@ if($thumb)
 else
 	$fext = 'upload';
 
-if(get_magic_quotes_gpc())
-	$match[5] = stripslashes($match[5]);
 $match[5] = str_replace("\x0", '', $match[5]);
 $month_dir = 'ts_'.floor($match[2] / 1000000).'/';
 $fn = 'file_'.$match[1].'_'.$match[3].'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $match[5])).'.'.$fext;

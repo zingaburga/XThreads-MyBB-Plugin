@@ -665,9 +665,10 @@ function xthreads_admin_rebuildthumbs() {
 			while($xta = $db->fetch_array($query)) {
 				// remove thumbs, then rebuild
 				$name = $xtadir.$xta['indir'].'file_'.$xta['aid'].'_'.$xta['attachname'];
-				foreach(glob(substr($name, 0, -6).'*x*.thumb') as $thumb) {
-					@unlink($xtadir.$xta['indir'].basename($thumb));
-				}
+				if($thumbs = @glob(substr($name, 0, -6).'*x*.thumb'))
+					foreach($thumbs as &$thumb) {
+						@unlink($xtadir.$xta['indir'].basename($thumb));
+					}
 				
 				$thumb = xthreads_build_thumbnail($thumbfields[$xta['field']], $xta['aid'], $name, $xtadir, $xta['indir']);
 				// TODO: perhaps check for errors? but then, what to do?

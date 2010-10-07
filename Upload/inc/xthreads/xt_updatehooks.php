@@ -897,14 +897,31 @@ function xthreads_rm_attach_fs(&$xta) {
 	$name = $path.$xta['indir'].'file_'.$xta['aid'].'_'.$xta['attachname'];
 	$success = true;
 	// remove thumbnails
-	foreach(glob(substr($name, 0, -6).'*x*.thumb') as $thumb) {
-		$success = $success && @unlink($path.$xta['indir'].basename($thumb));
-	}
+	if($thumbs = @glob(substr($name, 0, -6).'*x*.thumb')) {
+		foreach($thumbs as &$thumb) {
+			$success = $success && @unlink($path.$xta['indir'].basename($thumb));
+		}
+	}// else // glob _should_ succeed...
+	//	$success = false;
 	if(!$success) return false;
 	$success = $success && @unlink($name);
 	// remove month dir if possible
 	if($xta['indir']) {
-		@rmdir($path.$xta['indir']);
+		$rmdir = true;
+		// check for other files
+		if($od = @opendir($path.$xta['indir'])) {
+			while(($file = readdir($od)) !== false) {
+				if($file != '.' && $file != '..' && $file != 'index.html') {
+					$rmdir = false;
+					break;
+				}
+			}
+			closedir($od);
+		}
+		if($rmdir) {
+			@unlink($path.$xta['indir'].'index.html');
+			@rmdir($path.$xta['indir']);
+		}
 	}
 	return $success;
 }

@@ -4,13 +4,15 @@
  */
 
 // note, $uid is used purely for flood checking; not verification, identification or anything else
-function upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $tid=0)
+function &upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $tid=0)
 {
 	$attacharray = do_upload_xtattachment($attachment, $tf, $update_attachment, $tid);
+	if($attacharray['error'])
+		return $attacharray;
 	
 	// perform user flood checking
 	static $done_flood_check = false;
-	if($uid && !$done_flood_check) {
+	if($uid && !$done_flood_check && $attacharray['aid']) {
 		$done_flood_check = true;
 		xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
 		//xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' ORDER BY uploadtime DESC LIMIT 18446744073709551615 OFFSET '.XTHREADS_UPLOAD_FLOOD_NUMBER);
@@ -161,7 +163,16 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	if(!@is_dir($path.$month_dir)) {
 		@mkdir($path.$month_dir);
 		// Still doesn't exist - oh well, throw it in the main directory
-		if(!@is_dir($path.$month_dir))
+		if(@is_dir($path.$month_dir)) {
+			// write index directory
+			if($index = fopen($path.$month_dir.'index.html', 'w')) {
+				fwrite($index, '<html><body></body></html>');
+				fclose($index);
+				@my_chmod($path.$month_dir.'index.html', 0644);
+			}
+			@my_chmod($path.$month_dir, 0755);
+		}
+		else
 			$month_dir = '';
 	}
 	
