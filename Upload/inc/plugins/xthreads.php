@@ -506,8 +506,8 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$fmtmap, $mename) {
 }
 
 function eval_str(&$s) {
-	if(strpos($s, '{$') === false) // we need to reverse our eval optimisation
-		return strtr($s, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
+	if(strpos($s, '{$') === false) // note that this isn't just an optimisation, the pre-sanitiser is designed for this behaviour (so that we don't need to reverse the optimisation for eval)
+		return $s;
 	
 	// sanitisation done in cache build - don't need to do it here
 	return eval('return "'.$s.'";');

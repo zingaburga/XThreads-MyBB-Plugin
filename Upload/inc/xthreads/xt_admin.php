@@ -453,10 +453,10 @@ function xthreads_sanitize_eval(&$s, &$fields) {
 	$s = preg_replace(
 		array(
 			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((-\\>[a-zA-Z_][a-zA-Z_0-9]*|\\[(\'|\\\\"|)[a-zA-Z_ 0-9]+\\4\\])*)\\}~e',
-			'~\{\\\$forumurl\\\$\}~i',
-			'~\{\\\$forumurl\?\}~i',
-			'~\{\\\$threadurl\\\$\}~i',
-			'~\{\\\$threadurl\?\}~i'
+			'~\{\\\\\$forumurl\\\$\}~i',
+			'~\{\\\\\$forumurl\?\}~i',
+			'~\{\\\\\$threadurl\\\$\}~i',
+			'~\{\\\\\$threadurl\?\}~i'
 		), array(
 			'\'{$GLOBALS[\\\'$1\\\']\'.strtr(\'$2\', array(\'\\\\\\\\\\\'\' => \'\\\'\', \'\\\\\\\\\\\\\\\\"\' => \'\\\'\')).\'}\'', // rewrite double-quote to single quotes, cos it's faster
 			'{$GLOBALS[\'forumurl\']}',
@@ -466,6 +466,8 @@ function xthreads_sanitize_eval(&$s, &$fields) {
 		), strtr($s, $tr)
 		// we convert (RAW)VALUE to tag format lessen likelihood that admin includes a variable where users can put in {VALUE}, (eg thread title)
 	);
+	if(strpos($s, '{$') === false) // reverse our eval optimisation
+		$s = strtr($s, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
 }
 
 
