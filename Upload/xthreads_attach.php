@@ -36,7 +36,7 @@ unset($_GET, $_POST, $_FILES, $_ENV);
 foreach(array('GLOBALS', '_COOKIE', '_REQUEST', '_SERVER') as $p)
 	if(isset($_REQUEST[$p]) || isset($_FILES[$p]) || isset($_COOKIE[$p])) {
 		header('HTTP/1.1 400 Bad Request');
-		exit;
+		die('Bad request');
 	}
 // script will work if magic quotes is on, unless filenames happen to have quotes or something
 @set_magic_quotes_runtime(0);
@@ -56,7 +56,7 @@ else // use default
 
 if(!@is_dir($basedir)) {
 	header('HTTP/1.1 500 Internal Server Error');
-	exit;
+	die('Can\'t find XThreads base directory.');
 }
 
 // parse input filename
@@ -75,14 +75,14 @@ if(isset($_REQUEST['file']) && $_REQUEST['file']) { // using query string
 
 	if(!isset($_SERVER['PATH_INFO']) || !$_SERVER['PATH_INFO']) {
 		header('HTTP/1.1 400 Bad Request');
-		exit;
+		die('No parameters specified.');
 	}
 }
 
 // maybe disallow \:*?"<>| in filenames, but then, they're valid *nix names...
 if(!preg_match('~^/([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})/([0-9a-fA-F]{32}/)?([^/]*)(/thumb([0-9]+x[0-9]+))?$~', $_SERVER['PATH_INFO'], $match)) {
 	header('HTTP/1.1 400 Bad Request');
-	exit;
+	die('Received malformed request string.');
 }
 
 $thumb = null;
@@ -93,7 +93,7 @@ if($thumb)
 else
 	$fext = 'upload';
 
-$match[5] = str_replace("\x0", '', $match[5]);
+$match[5] = str_replace("\0", '', $match[5]);
 $month_dir = 'ts_'.floor($match[2] / 1000000).'/';
 $fn = 'file_'.$match[1].'_'.$match[3].'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $match[5])).'.'.$fext;
 if(file_exists($basedir.$month_dir.$fn))
@@ -102,7 +102,7 @@ elseif(file_exists($basedir.$fn))
 	$fn = $basedir.$fn;
 else {
 	header('HTTP/1.1 404 Not Found');
-	exit;
+	die('Specified attachment not found.');
 }
 
 // check to see if unmodified/cached
@@ -128,7 +128,7 @@ if($cached) {
 $fp = fopen($fn, 'rb');
 if(!$fp) {
 	header('HTTP/1.1 500 Internal Server Error');
-	exit;
+	die('Failed to open file.');
 }
 
 header('Accept-Ranges: bytes');
@@ -148,23 +148,48 @@ if($p) {
 	$exts = array(
 		'txt' => 'text/plain',
 		'jpg' => 'image/jpeg',
+		'jpe' => 'image/jpeg',
 		'jpeg' => 'image/jpeg',
 		'gif' => 'image/gif',
 		'png' => 'image/png',
 		'bmp' => 'image/bmp',
+		'svg' => 'image/svg+xml',
+		'tif' => 'image/tiff',
+		'tiff' => 'image/tiff',
+		'ico' => 'image/x-icon',
+		'wmf' => 'application/x-msmetafile',
 		'zip' => 'application/zip',
+		'rar' => 'application/x-rar-compressed',
+		'7z' => 'application/x-7z-compressed',
 		'doc' => 'application/msword',
 		'docx' => 'application/msword',
 		'xls' => 'application/msexcel',
 		'xlsx' => 'application/msexcel',
 		'ppt' => 'application/mspowerpoint',
 		'pptx' => 'application/mspowerpoint',
+		'mdb' => 'application/x-msaccess',
+		'pub' => 'application/x-mspublisher',
 		'pdf' => 'application/pdf',
 		'gz' => 'application/x-gzip',
 		'tar' => 'application/x-tar',
 		'htm' => 'text/html',
 		'html' => 'text/html',
 		'css' => 'text/css',
+		'mid' => 'audio/mid',
+		'mp3' => 'audio/mpeg',
+		'flac' => 'audio/flac',
+		'ogg' => 'audio/ogg',
+		'wav' => 'audio/x-wav',
+		'mpeg' => 'video/mpeg',
+		'mpg' => 'video/mpeg',
+		'mov' => 'video/quicktime',
+		'avi' => 'video/x-msvideo',
+		'mp4' => 'video/mp4',
+		'm4a' => 'audio/mp4',
+		'mkv' => 'video/x-matroska',
+		'mka' => 'audio/x-matroska',
+		'ogv' => 'video/ogg',
+		'wmv' => 'audio/x-ms-wmv',
 	);
 	if(isset($exts[$ext]))
 		$content_type = $exts[$ext];
@@ -188,9 +213,10 @@ if(!$content_type) {
 	elseif(function_exists('finfo_open') && ($fi = @finfo_open(FILEINFO_MIME))) {
 		$content_type = @finfo_file($fi, $match[5]);
 		finfo_close($fi);
-	} else // fallback
-		$content_type = 'application/octet-stream';
+	}
 }
+if(!$content_type) // fallback
+	$content_type = 'application/octet-stream';
 header('Content-Type: '.$content_type);
 
 if(!$thumb) { // don't send disposition for thumbnails
@@ -202,7 +228,7 @@ if(!$thumb) { // don't send disposition for thumbnails
 		$disposition = 'inline';
 	else
 		$disposition = 'attachment';
-	header('Content-Disposition: '.$disposition.'; filename="'.urlencode($match[5]).'"');
+	header('Content-Disposition: '.$disposition.'; filename="'.strtr($match[5], array('"'=>'\\"', "\r"=>'', "\n"=>'')).'"');
 }
 
 $range_start = 0;
@@ -232,8 +258,8 @@ if(isset($_SERVER['HTTP_RANGE']) && ($p = strpos($_SERVER['HTTP_RANGE'], '='))) 
 
 header('Content-Length: '.($range_end - $range_start + 1));
 header('Content-Range: bytes '.$range_start.'-'.$range_end.'/'.$fsize);
-if(!$range_start && $range_end == $fsize-1 && $match[4])
-	header('Content-MD5: '.$match[4]);
+if(!$range_start && $range_end == $fsize-1 && strlen($match[4]) == 33)
+	header('Content-MD5: '.substr($match[4], 0, 32));
 
 if(isset($_SERVER['REQUEST_METHOD']))
 	$reqmeth = strtoupper($_SERVER['REQUEST_METHOD']);
@@ -245,7 +271,8 @@ if($reqmeth != 'HEAD') {
 		fseek($fp, $range_start);
 	
 	if($range_end == $fsize-1) {
-		fpassthru($fp);
+		//fpassthru($fp);
+		while(!feof($fp)) echo fread($fp, 16384);
 		if(COUNT_DOWNLOADS == 2 && !$thumb) increment_downloads($match[1]);
 	} else {
 		$bytes = $range_end - $range_start + 1;

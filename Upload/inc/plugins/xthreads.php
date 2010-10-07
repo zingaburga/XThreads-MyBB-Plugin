@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 0.53);
+define('XTHREADS_VERSION', 0.54);
 
 
 // XThreads defines
@@ -12,7 +12,7 @@ define('XTHREADS_VERSION', 0.53);
 define('XTHREADS_ALLOW_URL_FETCH', true);
 // hosts which URLs cannot be fetched from, note that this is based on the supplied URL - hosts or IPs are not resolved; separate with commas
 define('XTHREADS_URL_FETCH_DISALLOW_HOSTS', 'localhost,127.0.0.1');
-// disallow users to specify custom ports in URL, eg http://example.com:1234/
+// disallow users to specify custom ports in URL, eg http://example.com:1234/ [default=enabled (false)]
 define('XTHREADS_URL_FETCH_DISALLOW_PORT', false);
 
 // try to stop xtattachment flooding through orphaning (despite MyBB itself being vulnerable to it); we'll silently remove orphaned xtattachments that are added within a certain timeframe; note, this does not apply to guests, if you allow them to upload xtattachments...
@@ -337,6 +337,7 @@ function xthreads_xmlhttp_blankpost_hack() {
 }
 
 // TODO: test displayed fields in search (posts view)
+// TODO: xtattach saved outside monthdir
 
 // TODO: admin logs - use proper text
 // TODO: admincp - separate required field from editable
@@ -572,7 +573,7 @@ function xthreads_get_xta_url(&$xta) {
 		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') == false) || stripos(SAPI_NAME, 'cgi') !== false || defined('ARCHIVE_QUERY_STRINGS'));
 	// yes, this is copied from the archive, even though you won't be defining ARCHIVE_QUERY_STRINGS...
 	
-	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).'/'.$md5hash.urlencode($xta['filename']);
+	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).'/'.$md5hash.rawurlencode($xta['filename']);
 }
 
 

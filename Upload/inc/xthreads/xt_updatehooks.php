@@ -870,19 +870,19 @@ function xthreads_upload_attachments() {
 		$mybb->input['action'] = ($GLOBALS['current_page'] == 'newthread.php' ? 'newthread' : 'editpost');
 		
 		// block the preview, since a failed upload can stuff it up
-		function xthreads_newthread_ulattach_blockpreview() {
-			if(!$GLOBALS['thread_errors'])
-				$GLOBALS['thread_errors'] = ' ';
-			unset($GLOBALS['mybb']->input['previewpost']);
-		}
 		$GLOBALS['plugins']->add_hook('newthread_start', 'xthreads_newthread_ulattach_blockpreview');
-		function xthreads_editthread_ulattach_blockpreview() {
-			if(!$GLOBALS['post_errors'])
-				$GLOBALS['post_errors'] = ' ';
-			unset($GLOBALS['mybb']->input['previewpost']);
-		}
 		$GLOBALS['plugins']->add_hook('editpost_start', 'xthreads_editthread_ulattach_blockpreview');
 	}
+}
+function xthreads_newthread_ulattach_blockpreview() {
+	if(!$GLOBALS['thread_errors'])
+		$GLOBALS['thread_errors'] = ' ';
+	unset($GLOBALS['mybb']->input['previewpost']);
+}
+function xthreads_editthread_ulattach_blockpreview() {
+	if(!$GLOBALS['post_errors'])
+		$GLOBALS['post_errors'] = ' ';
+	unset($GLOBALS['mybb']->input['previewpost']);
 }
 
 

@@ -159,26 +159,26 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	$path = $mybb->settings['uploadspath'].'/xthreads_ul/';
 	// We won't use MyBB's nice monthly directories, instead, we'll use a more confusing system based on the timestamps
 	// note, one month = 2592000 seconds, so if we split up by 1mil, it'll be approx 11.5 days
-	$month_dir = 'ts_'.floor(TIME_NOW / 1000000).'/';
-	if(!@is_dir($path.$month_dir)) {
-		@mkdir($path.$month_dir);
-		// Still doesn't exist - oh well, throw it in the main directory
-		if(@is_dir($path.$month_dir)) {
-			// write index directory
-			if($index = fopen($path.$month_dir.'index.html', 'w')) {
-				fwrite($index, '<html><body></body></html>');
-				fclose($index);
-				@my_chmod($path.$month_dir.'index.html', 0644);
-			}
-			@my_chmod($path.$month_dir, 0755);
-		}
-		else
-			$month_dir = '';
-	}
-	
 	// If safe_mode is enabled, don't attempt to use the monthly directories as it won't work
 	if(ini_get('safe_mode') == 1 || strtolower(ini_get('safe_mode')) == 'on') {
 		$month_dir = '';
+	} else {
+		$month_dir = 'ts_'.floor(TIME_NOW / 1000000).'/';
+		if(!@is_dir($path.$month_dir)) {
+			@mkdir($path.$month_dir);
+			// Still doesn't exist - oh well, throw it in the main directory
+			if(@is_dir($path.$month_dir)) {
+				// write index directory
+				if($index = fopen($path.$month_dir.'index.html', 'w')) {
+					fwrite($index, '<html><body></body></html>');
+					fclose($index);
+					@my_chmod($path.$month_dir.'index.html', 0644);
+				}
+				@my_chmod($path.$month_dir, 0755);
+			}
+			else
+				$month_dir = '';
+		}
 	}
 	
 	// All seems to be good, lets move the attachment!
@@ -343,106 +343,6 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 	xthreads_fetch_url_register_tmp($ret['tmp_name']);
 	
 	$referrer = $purl['scheme'].'://'.$purl['hostname'].'/';
-	function xthreads_fetch_url_validext(&$name, &$exts) {
-		if($exts) {
-			$ext = strtolower(get_extension($name));
-			if(strpos('|'.strtolower($exts).'|', '|'.$ext.'|') === false) {
-				return false;
-			}
-		}
-		return true;
-	}
-	function xthreads_fetch_url_validmagic(&$data, &$magic) {
-		if(empty($magic)) return true;
-		foreach($magic as &$m) {
-			if($m && substr($data, 0, strlen($m)) == $m) {
-				return true;
-			}
-		}
-		return false;
-	}
-	function xthreads_fetch_url_header($header) {
-		$header = trim($header);
-		$p = strpos($header, ':');
-		if(!$p) return null;
-		$hdata = trim(substr($header, $p+1));
-		switch(strtolower(substr($header, 0, $p))) {
-			case 'content-length':
-				$size = intval($hdata);
-				if($size) {
-					return array('size' => $size);
-				}
-			break;
-			case 'content-disposition':
-				foreach(explode(';', $hdata) as $disp) {
-					$disp = trim($disp);
-					if(strtolower(substr($disp, 0, 9)) == 'filename=') {
-						$tmp = substr($disp, 9);
-						if($tmp) {
-							if($tmp{0} == '"' && $tmp{strlen($tmp)-1} == '"')
-								$tmp = substr($tmp, 1, -1);
-							return array('name' => trim(str_replace("\x0", '', $tmp)));
-						}
-					}
-				}
-			break;
-			case 'content-type':
-				return array('type' => $hdata);
-			break;
-		}
-		return null;
-	}
-	function xthreads_fetch_url_header_curl($ch=null, $header) {
-		$res = xthreads_fetch_url_header($header);
-		if($res['size'] && $GLOBALS['xtfurl_max_size'] && $res['size'] > $GLOBALS['xtfurl_max_size']) {
-			//$GLOBALS['xtfurl_ret']['error'] = ;
-			$GLOBALS['xtfurl_ret']['size'] = $res['size'];
-			curl_close($ch);
-			return 0;
-		}
-		if($res['name']) {
-			$GLOBALS['xtfurl_ret']['name'] = $res['name'];
-		}
-		if($res['type'])
-			$GLOBALS['xtfurl_ret']['type'] = $res['type'];
-		return strlen($header);
-	}
-	function xthreads_fetch_url_curl_write($ch, $data) {
-		$len = strlen($data);
-		global $xtfurl_datalen, $xtfurl_magicchecked;
-		
-		// check extension
-		if(!$xtfurl_datalen) {
-			if(!xthreads_fetch_url_validext($GLOBALS['xtfurl_ret']['name'], $GLOBALS['xtfurl_exts'])) {
-				$xtfurl_magicchecked = 'invalid'; // dirty, but works...
-				curl_close($ch);
-				return 0;
-			}
-		}
-		
-		$xtfurl_datalen += $len;
-		if($GLOBALS['xtfurl_max_size'] && $xtfurl_datalen > $GLOBALS['xtfurl_max_size']) {
-			$GLOBALS['xtfurl_ret']['size'] = $xtfurl_datalen;
-			curl_close($ch);
-			return 0;
-		}
-		if(!$xtfurl_magicchecked && !empty($GLOBALS['xtfurl_validmagic'])) {
-			global $xtfurl_databuf;
-			if($xtfurl_datalen >= 255) {
-				// check magic
-				$xtfurl_databuf .= substr($data, 0, min(255, $xtfurl_datalen)-$xtfurl_datalen+$len);
-				if(!xthreads_fetch_url_validmagic($xtfurl_databuf, $GLOBALS['xtfurl_validmagic'])) {
-					$xtfurl_magicchecked = 'invalid';
-					curl_close($ch);
-					return 0;
-				}
-				$xtfurl_magicchecked = true;
-			} else {
-				$xtfurl_databuf .= $data;
-			}
-		}
-		return $len;
-	}
 	
 	@set_time_limit(0);
 	if(function_exists('curl_init')) {
@@ -632,6 +532,107 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 	@set_time_limit(0);
 	return $ret;
 }
+function xthreads_fetch_url_validext(&$name, &$exts) {
+	if($exts) {
+		$ext = strtolower(get_extension($name));
+		if(strpos('|'.strtolower($exts).'|', '|'.$ext.'|') === false) {
+			return false;
+		}
+	}
+	return true;
+}
+function xthreads_fetch_url_validmagic(&$data, &$magic) {
+	if(empty($magic)) return true;
+	foreach($magic as &$m) {
+		if($m && substr($data, 0, strlen($m)) == $m) {
+			return true;
+		}
+	}
+	return false;
+}
+function xthreads_fetch_url_header($header) {
+	$header = trim($header);
+	$p = strpos($header, ':');
+	if(!$p) return null;
+	$hdata = trim(substr($header, $p+1));
+	switch(strtolower(substr($header, 0, $p))) {
+		case 'content-length':
+			$size = intval($hdata);
+			if($size) {
+				return array('size' => $size);
+			}
+		break;
+		case 'content-disposition':
+			foreach(explode(';', $hdata) as $disp) {
+				$disp = trim($disp);
+				if(strtolower(substr($disp, 0, 9)) == 'filename=') {
+					$tmp = substr($disp, 9);
+					if($tmp) {
+						if($tmp{0} == '"' && $tmp{strlen($tmp)-1} == '"')
+							$tmp = substr($tmp, 1, -1);
+						return array('name' => trim(str_replace("\x0", '', $tmp)));
+					}
+				}
+			}
+		break;
+		case 'content-type':
+			return array('type' => $hdata);
+		break;
+	}
+	return null;
+}
+function xthreads_fetch_url_header_curl($ch=null, $header) {
+	$res = xthreads_fetch_url_header($header);
+	if($res['size'] && $GLOBALS['xtfurl_max_size'] && $res['size'] > $GLOBALS['xtfurl_max_size']) {
+		//$GLOBALS['xtfurl_ret']['error'] = ;
+		$GLOBALS['xtfurl_ret']['size'] = $res['size'];
+		curl_close($ch);
+		return 0;
+	}
+	if($res['name']) {
+		$GLOBALS['xtfurl_ret']['name'] = $res['name'];
+	}
+	if($res['type'])
+		$GLOBALS['xtfurl_ret']['type'] = $res['type'];
+	return strlen($header);
+}
+function xthreads_fetch_url_curl_write($ch, $data) {
+	$len = strlen($data);
+	global $xtfurl_datalen, $xtfurl_magicchecked;
+	
+	// check extension
+	if(!$xtfurl_datalen) {
+		if(!xthreads_fetch_url_validext($GLOBALS['xtfurl_ret']['name'], $GLOBALS['xtfurl_exts'])) {
+			$xtfurl_magicchecked = 'invalid'; // dirty, but works...
+			curl_close($ch);
+			return 0;
+		}
+	}
+	
+	$xtfurl_datalen += $len;
+	if($GLOBALS['xtfurl_max_size'] && $xtfurl_datalen > $GLOBALS['xtfurl_max_size']) {
+		$GLOBALS['xtfurl_ret']['size'] = $xtfurl_datalen;
+		curl_close($ch);
+		return 0;
+	}
+	if(!$xtfurl_magicchecked && !empty($GLOBALS['xtfurl_validmagic'])) {
+		global $xtfurl_databuf;
+		if($xtfurl_datalen >= 255) {
+			// check magic
+			$xtfurl_databuf .= substr($data, 0, min(255, $xtfurl_datalen)-$xtfurl_datalen+$len);
+			if(!xthreads_fetch_url_validmagic($xtfurl_databuf, $GLOBALS['xtfurl_validmagic'])) {
+				$xtfurl_magicchecked = 'invalid';
+				curl_close($ch);
+				return 0;
+			}
+			$xtfurl_magicchecked = true;
+		} else {
+			$xtfurl_databuf .= $data;
+		}
+	}
+	return $len;
+}
+
 
 // since fread'ing won't necessarily fill the requested buffer size...
 function &fill_fread(&$fp, $len) {
