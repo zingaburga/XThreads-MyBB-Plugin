@@ -31,7 +31,6 @@ if($info['version'] < 1.2) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN (
 		`xthreads_hideforum` tinyint(3) not null default 0
 	)');
-	xthreads_buildtfcache();
 	$cache->update_forums();
 	
 	/*
@@ -48,6 +47,10 @@ if($info['version'] < 1.2) {
 	
 	// also find xtattachment references which are invalid
 	*/
+}
+
+if($info['version'] < 1.21) {
+	xthreads_buildtfcache();
 }
 
 return true;

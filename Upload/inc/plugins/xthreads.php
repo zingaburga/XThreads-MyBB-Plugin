@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.2);
+define('XTHREADS_VERSION', 1.21);
 
 
 // XThreads defines
@@ -435,7 +435,8 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		if($dispfmt) {
 			$tr = array();
 			foreach($s as $k => &$v)
-				$tr['{'.strtoupper($k).'}'] =& $v;
+				if(!is_array($v))
+					$tr['<'.strtoupper($k).'>'] =& $v;
 			$s['value'] = strtr(eval_str($dispfmt), $tr);
 		}
 	}
@@ -505,7 +506,8 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$fmtmap, $mename) {
 }
 
 function eval_str(&$s) {
-	if(strpos($s, '{$') === false) return $s;
+	if(strpos($s, '{$') === false) // we need to reverse our eval optimisation
+		return strtr($s, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
 	
 	// sanitisation done in cache build - don't need to do it here
 	return eval('return "'.$s.'";');

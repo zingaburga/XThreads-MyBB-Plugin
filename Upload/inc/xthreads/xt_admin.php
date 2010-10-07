@@ -335,6 +335,9 @@ return array(
 }
 function xthreads_buildtfcache() {
 	global $db, $cache;
+	
+	$sanitise_fields_normal = array('VALUE', 'RAWVALUE');
+	$sanitise_fields_file = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
 	$cd = array();
 	$query = $db->simple_select('threadfields', '*', '', array('order_by' => '`disporder`', 'order_dir' => 'asc'));
 	while($tf = $db->fetch_array($query)) {
@@ -425,13 +428,15 @@ function xthreads_buildtfcache() {
 		
 		
 		// sanitise eval'd stuff
-		if($tf['unviewableval']) xthreads_sanitize_eval($tf['unviewableval']);
-		if($tf['dispformat']) xthreads_sanitize_eval($tf['dispformat']);
-		if($tf['dispitemformat']) xthreads_sanitize_eval($tf['dispitemformat']);
-		if($tf['blankval']) xthreads_sanitize_eval($tf['blankval']);
+		if($tf['inputtype']) $sanitise_fields =& $sanitise_fields_file;
+		else $sanitise_fields =& $sanitise_fields_normal;
+		if($tf['unviewableval']) xthreads_sanitize_eval($tf['unviewableval'], $sanitise_fields);
+		if($tf['dispformat']) xthreads_sanitize_eval($tf['dispformat'], $sanitise_fields);
+		if($tf['dispitemformat']) xthreads_sanitize_eval($tf['dispitemformat'], $sanitise_fields);
+		if($tf['blankval']) xthreads_sanitize_eval($tf['blankval'], $sanitise_fields);
 		if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
 			foreach($tf['formatmap'] as &$fm)
-				xthreads_sanitize_eval($fm);
+				xthreads_sanitize_eval($fm, $sanitise_fields);
 		
 		$cd[$tf['field']] = $tf;
 	}
@@ -439,7 +444,10 @@ function xthreads_buildtfcache() {
 	$cache->update('threadfields', $cd);
 }
 // sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
-function xthreads_sanitize_eval(&$s) {
+function xthreads_sanitize_eval(&$s, &$fields) {
+	$tr = array('\\' => '\\\\', '$' => '\\$', '"' => '\\"');
+	foreach($fields as &$f)
+		$tr['{'.$f.'}'] = '<'.$f.'>';
 	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
 	$s = preg_replace(
@@ -455,7 +463,7 @@ function xthreads_sanitize_eval(&$s) {
 			'{$GLOBALS[\'forumurl_q\']}',
 			'{$GLOBALS[\'threadurl\']}',
 			'{$GLOBALS[\'threadurl_q\']}',
-		), strtr($s, array('\\' => '\\\\', '$' => '\\$', '"' => '\\"', '{VALUE}' => '<VALUE>', '{RAWVALUE}' => '<RAWVALUE>'))
+		), strtr($s, $tr)
 		// we convert (RAW)VALUE to tag format lessen likelihood that admin includes a variable where users can put in {VALUE}, (eg thread title)
 	);
 }
