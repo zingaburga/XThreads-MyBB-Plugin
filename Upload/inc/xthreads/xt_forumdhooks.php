@@ -95,7 +95,7 @@ function xthreads_forumdisplay_quickthread() {
 	$edit_fields = $GLOBALS['threadfield_cache']; // will be set
 	// filter out non required fields (don't need to filter out un-editable fields as editable by all implies this)
 	foreach($edit_fields as $k => &$v) {
-		if($v['editable_gids'] || $v['editable'] != XTHREADS_EDITABLE_REQ)
+		if(!empty($v['editable_gids']) || $v['editable'] != XTHREADS_EDITABLE_REQ)
 			unset($edit_fields[$k]);
 	}
 	if(empty($edit_fields)) return;

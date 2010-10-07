@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.25);
+define('XTHREADS_VERSION', 1.26);
 
 
 // XThreads defines
@@ -378,8 +378,15 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 	$dispfmt = $tfinfo['dispformat'];
 	
 	global $mybb;
-	if($tfinfo['viewable_gids']) {
-		if(strpos(','.$tfinfo['viewable_gids'].',', ','.$mybb->usergroup['gid'].',') === false) {
+	if(!empty($tfinfo['viewable_gids'])) {
+		$ingroups = xthreads_get_user_usergroups($mybb->user);
+		$viewable = false;
+		foreach($tfinfo['viewable_gids'] as $gid)
+			if(isset($ingroups[$gid])) {
+				$viewable = true;
+				break;
+			}
+		if(!$viewable) {
 			/*
 			if($tfinfo['unviewableval'])
 				$s = eval_str(str_replace('{BLANKVAL}', $tfinfo['blankval'], $tfinfo['unviewableval']));
@@ -419,8 +426,9 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		if(!$s['updatetime']) $s['updatetime'] = $s['uploadtime'];
 		$s['filesize_friendly'] = get_friendly_size($s['filesize']);
 		if(isset($s['md5hash'])) {
-			$s['md5hash'] = unpack('H*', $s['md5hash']);
-			$s['md5hash'] = reset($s['md5hash']); // dunno why list($s['md5hash']) = unpack(...) doesn't work... - maybe need list($dummy, $s['md5hash']) = unpack() ?
+			//$s['md5hash'] = unpack('H*', $s['md5hash']);
+			//$s['md5hash'] = reset($s['md5hash']); // dunno why list($s['md5hash']) = unpack(...) doesn't work... - maybe need list($dummy, $s['md5hash']) = unpack() ?
+			$s['md5hash'] = bin2hex($s['md5hash']);
 		}
 		$s['url'] = xthreads_get_xta_url($s);
 		$s['icon'] = get_attachment_icon(get_extension($s['filename']));
@@ -562,6 +570,15 @@ function xthreads_wildcard_match($str, $wc) {
 }
 
 
+function &xthreads_get_user_usergroups(&$user) {
+	if($user['additionalgroups'])
+		$ug = array_flip(explode(',', $user['additionalgroups']));
+	else
+		$ug = array();
+	$ug[$user['usergroup']] = 1;
+	return $ug;
+}
+
 // note, $tf isn't used for loading xtattachment cache - it's only there to simplify loop-logic
 function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 	if(!$tids) return;
@@ -587,8 +604,9 @@ function xthreads_get_xta_url(&$xta) {
 	if(isset($xta['md5hash'])) {
 		$md5hash = $xta['md5hash'];
 		if(isset($md5hash{15}) && !isset($md5hash{16})) {
-			$md5hash = unpack('H*', $md5hash);
-			$md5hash = reset($md5hash);
+			//$md5hash = unpack('H*', $md5hash);
+			//$md5hash = reset($md5hash);
+			$md5hash = bin2hex($md5hash);
 		} elseif(!isset($md5hash{31}) || isset($md5hash{32}))
 			$md5hash = '';
 		if($md5hash) $md5hash .= '/';

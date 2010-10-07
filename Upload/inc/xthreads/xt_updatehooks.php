@@ -8,14 +8,21 @@ if(!defined('IN_MYBB'))
 
 // filters an input tfcache, removing items which cannot be modified by current user
 function xthreads_filter_tfeditable(&$tf, $fid=0) {
-	$ug =& $GLOBALS['mybb']->usergroup;
 	foreach($tf as $k => &$v) {
-		if($v['editable_gids']) {
-			if(strpos(','.$v['editable_gids'].',', ','.$ug['gid'].',') === false)
+		if(!empty($v['editable_gids'])) {
+			$editable = false;
+			if(!isset($ingroups))
+				$ingroups = xthreads_get_user_usergroups($GLOBALS['mybb']->user);
+			foreach($v['editable_gids'] as $gid)
+				if(isset($ingroups[$gid])) {
+					$editable = true;
+					break;
+				}
+			if(!$editable)
 				unset($tf[$k]);
 		}
 		elseif(($v['editable'] == XTHREADS_EDITABLE_MOD && !is_moderator($fid)) ||
-		   ($v['editable'] == XTHREADS_EDITABLE_ADMIN && $ug['cancp'] != 1) ||
+		   ($v['editable'] == XTHREADS_EDITABLE_ADMIN && $GLOBALS['mybb']->usergroup['cancp'] != 1) ||
 		   ($v['editable'] == XTHREADS_EDITABLE_NONE))
 			unset($tf[$k]);
 	}
@@ -524,8 +531,9 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 						$md5title = '';
 						$url = xthreads_get_xta_url($this_xta);
 						if(isset($this_xta['md5hash'])) {
-							$md5hash = unpack('H*', $this_xta['md5hash']);
-							$md5hash = reset($md5hash);
+							//$md5hash = unpack('H*', $this_xta['md5hash']);
+							//$md5hash = reset($md5hash);
+							$md5hash = bin2hex($this_xta['md5hash']);
 							$md5title = 'title="'.$lang->sprintf($lang->xthreads_md5hash, $md5hash).'" ';
 						}
 						// <input type="hidden"'.$tfname.' value="'.$defval.'" />

@@ -417,7 +417,13 @@ function xthreads_buildtfcache() {
 		if($tf['vallist']) {
 			$tf['vallist'] = array_unique(array_map('trim', explode("\n", str_replace("\r", '', $tf['vallist']))));
 		}
-		// TODO: explode editable_gids?, forums, fileexts?
+		// TODO: explode forums, fileexts?
+		if($tf['editable_gids']) {
+			$tf['editable_gids'] = array_unique(explode(',', $tf['editable_gids']));
+		}
+		if($tf['viewable_gids']) {
+			$tf['viewable_gids'] = array_unique(explode(',', $tf['viewable_gids']));
+		}
 		if($tf['fileimgthumbs']) {
 			$tf['fileimgthumbs'] = array_unique(explode('|', $tf['fileimgthumbs']));
 		}

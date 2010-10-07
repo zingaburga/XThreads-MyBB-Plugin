@@ -183,7 +183,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	}
 	
 	// All seems to be good, lets move the attachment!
-	$basename = substr(md5(uniqid(rand())), 12, 8).'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $attachment['name'])).'.upload';
+	$basename = substr(md5(uniqid(mt_rand(), true).substr($mybb->post_code, 16)), 12, 8).'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $attachment['name'])).'.upload';
 	$filename = 'file_'.($prevattach['aid'] ? $prevattach['aid'] : 't'.TIME_NOW).'_'.$basename;
 	
 	@ignore_user_abort(true); // don't let the user break this integrity between file system and DB
