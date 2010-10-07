@@ -201,7 +201,7 @@ function xthreads_portal_announcement() {
 
 function xthreads_portalsearch_cache_hack($tplpref, $tplname) {
 	$tplcache =& $GLOBALS['templates']->cache;
-	if($tplpref && $tplcache[$tplpref.$tplname]) {
+	if($tplpref && isset($tplcache[$tplpref.$tplname])) {
 		if(!isset($tplcache['backup_'.$tplname.'_backup__']))
 			$tplcache['backup_'.$tplname.'_backup__'] = $tplcache[$tplname];
 		$tplcache[$tplname] =& $tplcache[$tplpref.$tplname];

@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.26);
+define('XTHREADS_VERSION', 1.27);
 
 
 // XThreads defines
@@ -194,6 +194,7 @@ function xthreads_tplhandler() {
 					return parent::get($title, $eslashes, $htmlcomments);
 				}
 			');
+			$templates->non_existant_templates = array();
 		}
 		if($forum['xthreads_firstpostattop']) {
 			switch($current_page) {
@@ -271,13 +272,16 @@ function xthreads_tpl_cache(&$t, $prefix, &$obj) {
 		$obj->cache[$template['title']] = $template['template'];
 	$db->free_result($query);
 	
-	// now override default templates
+	// now override default templates - this code actually ensures that all requested templates will have an entry in the cache array
 	foreach($ta as &$tpl) {
 		if(isset($obj->cache[$prefix.$tpl]))
 			$obj->cache[$tpl] =& $obj->cache[$prefix.$tpl];
-		elseif(!isset($obj->cache[$tpl])) // we'll add a possible optimisation thing here that MyBB doesn't do :P
+		elseif(!isset($obj->cache[$tpl])) { // we'll add a possible optimisation thing here that MyBB doesn't do :P
 			$obj->cache[$tpl] = '';
+			$obj->non_existant_templates[$tpl] = true; // workaround for forumbits and postbit_first template prefixing
+		}
 	}
+	// note: above won't affect portal/search templates, so isset() check does check whether template actually exists
 }
 function xthreads_tpl_get(&$obj, &$t, $prefix) {
 	if(!isset($obj->cache[$t])) {

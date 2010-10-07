@@ -58,7 +58,7 @@ function xthreads_showthread_firstpost() {
 			foreach($xthreads_postbit_templates as &$t) {
 				$pbname = substr($t, 7);
 				if(!$pbname) $pbname = '';
-				if($templates->cache['postbit_first'.$pbname]) {
+				if(isset($templates->cache['postbit_first'.$pbname]) && !isset($templates->non_existant_templates['postbit_first'.$pbname])) {
 					$templates->cache[$t] = $templates->cache['backup_postbit'.$pbname.'_backup__'];
 				}
 			}
@@ -128,12 +128,12 @@ function xthreads_firstpost_tpl_preload() {
 }
 function xthreads_tpl_postbithack() {
 	global $templates, $xthreads_postbit_templates;
-	if(!$templates->cache['postbit'])
+	if(!isset($templates->cache['postbit']))
 		$templates->cache(implode(',', $xthreads_postbit_templates));
 	foreach($xthreads_postbit_templates as &$t) {
 		$pbname = substr($t, 7);
 		if(!$pbname) $pbname = '';
-		if($templates->cache['postbit_first'.$pbname]) {
+		if(isset($templates->cache['postbit_first'.$pbname]) && !isset($templates->non_existant_templates['postbit_first'.$pbname])) {
 			$templates->cache['backup_postbit'.$pbname.'_backup__'] = $templates->cache[$t];
 			$templates->cache[$t] =& $templates->cache['postbit_first'.$pbname];
 		}

@@ -302,15 +302,21 @@ function xthreads_tpl_forumbits(&$forum) {
 		$templates->cache['__null__forumbit_depth1_cat'] = $templates->cache['__null__forumbit_depth2_cat'] = $templates->cache['__null__forumbit_depth2_forum'] = $templates->cache['__null__forumbit_depth3'] = ' ';
 		control_object($templates, '
 			function get($title, $eslashes=1, $htmlcomments=1) {
-				$p =& $this->xthreads_forumbits_curforum[\'xthreads_tplprefix\'];
-				if($p && $this->cache[$p.$title] && substr($title, 0, 9) == \'forumbit_\') {
+				static $endtpl = array(\'forumbit_depth1_cat\'=>1,\'forumbit_depth2_cat\'=>1,\'forumbit_depth2_forum\'=>1,\'forumbit_depth3\'=>1);
+				if(isset($endtpl[$title]))
+					$forum = array_pop($this->xthreads_forumbits_curforum);
+				else
+					$forum = end($this->xthreads_forumbits_curforum);
+				$p =& $forum[\'xthreads_tplprefix\'];
+				if($p && isset($this->cache[$p.$title]) && !isset($this->non_existant_templates[$p.$title]) && substr($title, 0, 9) == \'forumbit_\') {
 					return parent::get($p.$title, $eslashes, $htmlcomments);
 				}
 				return parent::get($title, $eslashes, $htmlcomments);
 			}
 		');
+		$templates->xthreads_forumbits_curforum = array();
 	}
-	$templates->xthreads_forumbits_curforum =& $forum;
+	$templates->xthreads_forumbits_curforum[] =& $forum;
 	if($forum['xthreads_hideforum']) $forum['xthreads_tplprefix'] = '__null__';
 	
 	xthreads_set_threadforum_urlvars('forum', $forum['fid']);
