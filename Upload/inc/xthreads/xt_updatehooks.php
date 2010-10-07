@@ -232,16 +232,16 @@ function xthreads_inputdisp() {
 		foreach($mybb->input as $k => &$v)
 			if(substr($k, 0, 9) == 'xthreads_')
 				$recvfields[substr($k, 9)] =& $v;
-		xthreads_input_generate($recvfields, $fid);
+		_xthreads_input_generate($recvfields, $fid);
 	}
 	elseif($editpost || ($mybb->input['action'] == 'editdraft' && $thread['tid'])) {
 		global $db;
 		$fields = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$thread['tid']));
-		xthreads_input_generate($fields, $fid);
+		_xthreads_input_generate($fields, $fid);
 	}
 	else { // newthread.php
 		$blank = array();
-		xthreads_input_generate($blank, $fid);
+		_xthreads_input_generate($blank, $fid);
 		
 		// is this really a good idea? it may be possible to delete the current attachments connected to this post!
 		// Update: hmm, perhaps unlikely, since this will only run if a POST request isn't made
@@ -401,34 +401,22 @@ function xthreads_editpost_first_tplhack() {
 	');
 }
 
-function xthreads_input_generate(&$data, $fid) {
-	global $threadfield_cache, $tfinput, $tfinputrow, $extra_threadfields, $lang;
+// TODO: merge this function into ...
+function _xthreads_input_generate(&$data, $fid) {
+	global $threadfield_cache;
 	if(!isset($threadfield_cache))
 		$threadfield_cache = xthreads_gettfcache($fid);
 	xthreads_filter_tfeditable($threadfield_cache, $fid); // NOTE: modifies the global tfcache!
-	
-	// grab attachments if necessary -- shouldn't be necessary since the validation handler will convert aid input to serialized input
-	/*
-	$aids = array();
-	foreach($threadfield_cache as $k => &$v) {
-		if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && $data['xthreads_'.$k] && empty($_FILES['xthreads_'.$k]) && is_numeric($data['xthreads_'.$k])) {
-			$aids[$k] = intval($data['xthreads_'.$k]);
-		}
-	}
-	$attachments = array();
-	if(!empty($aids)) {
-		global $db;
-		$query = $db->simple_select('attachments', '*', 'aid IN ('.implode(',', $aids).') AND '); // TODO: ensure attachments are valid for this thread/post
-		while($attachment = $db->fetch_array($query))
-			$attachments[$attachment['aid']] = $attachment;
-	}
-	*/
-	
+	xthreads_input_generate($data, $threadfield_cache, $fid);
+}
+
+function xthreads_input_generate(&$data, &$threadfields, $fid) {
+	global $tfinput, $tfinputrow, $extra_threadfields, $lang;
 	if(!$lang->xthreads_attachfile) $lang->load('xthreads');
 	
 	$tfinput = $tfinputrow = array();
 	$extra_threadfields = '';
-	foreach($threadfield_cache as $k => $tf) {
+	foreach($threadfields as $k => $tf) {
 		$tf['title'] = htmlspecialchars_uni($tf['title']);
 		$tf['field'] = htmlspecialchars_uni($tf['field']);
 		$tf['desc'] = htmlspecialchars_uni($tf['desc']);
@@ -609,7 +597,6 @@ function xthreads_input_generate(&$data, $fid) {
 		$extra_threadfields .= $tfinputrow[$k];
 	}
 }
-
 
 function xthreads_upload_attachments() {
 	global $xta_cache, $threadfield_cache, $mybb, $db, $lang, $fid;

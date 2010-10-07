@@ -30,6 +30,8 @@ if($mybb->input['action'] == 'add')
 		'forums' => '',
 		'editable' => XTHREADS_EDITABLE_ALL,
 		'editable_gids' => '',
+		'viewable_gids' => '',
+		'unviewableval' => '',
 		'blankval' => '',
 		'defaultval' => '',
 		'dispformat' => '{VALUE}',
@@ -271,6 +273,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$mybb->input['title'] = trim($mybb->input['title']);
 		$mybb->input['desc'] = trim($mybb->input['desc']);
 		$mybb->input['newfield'] = trim($mybb->input['newfield']);
+		$mybb->input['unviewableval'] = trim($mybb->input['unviewableval']);
 		$mybb->input['blankval'] = trim($mybb->input['blankval']);
 		$mybb->input['defaultval'] = trim($mybb->input['defaultval']);
 		$mybb->input['dispformat'] = trim($mybb->input['dispformat']);
@@ -337,6 +340,18 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			$mybb->input['editable'] = min_max(intval($mybb->input['editable']), XTHREADS_EDITABLE_ALL, XTHREADS_EDITABLE_NONE);
 			$mybb->input['editable_gids'] = '';
 		}
+		
+		if(is_array($mybb->input['viewable_gids'])) {
+			$mybb->input['viewable_gids'] = implode(',', array_unique(array_map('intval', array_map('trim', $mybb->input['viewable_gids']))));
+			if(empty($mybb->input['viewable_gids']))
+				$mybb->input['viewable_gids'] = '';
+		} else {
+			$mybb->input['viewable_gids'] = trim($mybb->input['viewable_gids']);
+			if($mybb->input['viewable_gids'])
+				$mybb->input['viewable_gids'] = implode(',', array_unique(array_map('intval', array_map('trim', explode(',',$mybb->input['viewable_gids'])))));
+			if(!$mybb->input['viewable_gids']) $mybb->input['viewable_gids'] = '';
+		}
+		
 		$mybb->input['sanitize'] = min_max(intval($mybb->input['sanitize']), XTHREADS_SANITIZE_HTML, XTHREADS_SANITIZE_NONE);
 		//if($mybb->input['sanitize'] == XTHREADS_SANITIZE_PARSER) {
 			$parser_opts = array(
@@ -470,7 +485,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				'disporder' => $db->escape_string($mybb->input['disporder']),
 				'editable' => $db->escape_string($mybb->input['editable']),
 				'editable_gids' => $db->escape_string($mybb->input['editable_gids']),
+				'viewable_gids' => $db->escape_string($mybb->input['viewable_gids']),
 				'inputtype' => $db->escape_string($mybb->input['inputtype']),
+				'unviewableval' => $db->escape_string($mybb->input['unviewableval']),
 				'blankval' => $db->escape_string($mybb->input['blankval']),
 				'defaultval' => $db->escape_string($mybb->input['defaultval']),
 				'dispformat' => $db->escape_string($mybb->input['dispformat']),
@@ -625,6 +642,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	make_form_row('vallist', 'text_area');
 	make_form_row('formhtml', 'text_area');
 	make_form_row('fileexts', 'text_box');
+	if(!is_int(2147483648)) // detect 32-bit PHP
+		$lang->threadfields_filemaxsize_desc .= $lang->threadfields_filemaxsize_desc_2gbwarn;
 	make_form_row('filemaxsize', 'text_box');
 	if($data['editable_gids'] && !is_array($data['editable_gids']))
 		$data['editable_gids'] = array_map('intval',array_map('trim',explode(',', $data['editable_gids'])));
@@ -709,6 +728,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$data['formatmap'] =& $fmtxt;
 	}
 	make_form_row('formatmap', 'text_area');
+	if($data['viewable_gids'] && !is_array($data['viewable_gids']))
+		$data['viewable_gids'] = array_map('intval',array_map('trim',explode(',', $data['viewable_gids'])));
+	$form_container->output_row($lang->threadfields_viewable_gids, $lang->threadfields_viewable_gids_desc, xt_generate_group_select('viewable_gids[]', $data['viewable_gids'], array('multiple' => true, 'size' => 5, 'id' => 'viewable_gids')), 'viewable_gids', array(), array('id' => 'row_viewable_gids'));
+	make_form_row('unviewableval', 'text_area');
 	$form_container->end();
 	if($update)
 		$buttons[] = $form->generate_submit_button($lang->update_threadfield);
@@ -787,6 +810,16 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	($('editable').onchange = function() {
 		xt_visi('row_editable_gids', this.options[this.selectedIndex].value == "99");
 	}).apply($('editable'));
+	
+	($('viewable_gids').onchange = function() {
+		var e=false;
+		var o=$('viewable_gids').options;
+		for(i=0; i<o.length; i++)
+			if(e = o[i].selected) // no, I do mean =, not ==
+				break;
+		xt_visi('row_unviewableval', e);
+	}).apply($('viewable_gids'));
+	
 //-->
 </script><?php
 	

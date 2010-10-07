@@ -25,39 +25,72 @@ define('COUNT_DOWNLOADS', 2);
  */
 define('CACHE_TIME', 604800);
 
-// TODO: user perms + load session? + wol patch too probably
+
+/**
+ * if disabled, MyBB core will not be loaded
+ ***** DO NOT CHANGE THIS! *****
+ * the original idea was to perform permission checking, but I have not decided to implement this; file downloads probably still work with it turned on, however, there isn't any reason to do this
+ */
+define('LOAD_SESSION', false);
+// need session class, mybb class, db class
+// OR, just check cookie for session & load DB to verify session + check perms
+// if using error_no_permission, must load entire global core
 
 
-// do some basic initialisation
-error_reporting(E_ALL ^ E_NOTICE); // this script works fine with E_ALL, however, we'll be compatible with MyBB
-// remove unnecessary stuff
-unset($HTTP_SERVER_VARS, $HTTP_GET_VARS, $HTTP_POST_VARS, $HTTP_COOKIE_VARS, $HTTP_POST_FILES, $HTTP_ENV_VARS, $HTTP_SESSION_VARS);
-unset($_GET, $_POST, $_FILES, $_ENV);
-foreach(array('GLOBALS', '_COOKIE', '_REQUEST', '_SERVER') as $p)
-	if(isset($_REQUEST[$p]) || isset($_FILES[$p]) || isset($_COOKIE[$p])) {
-		header('HTTP/1.1 400 Bad Request');
-		die('Bad request');
-	}
-// script will work if magic quotes is on, unless filenames happen to have quotes or something
-@set_magic_quotes_runtime(0);
-@ini_set('magic_quotes_runtime', 0); 
-// will also work with register globals, so we won't bother with these
 
-
-define('MYBB_ROOT', dirname(__FILE__).'/');
+if(LOAD_SESSION) {
+	// we'll be lazy and just load the full MyBB core
+	define('IN_MYBB', 1);
+	define('THIS_SCRIPT', 'xthreads_attach.php');
+	define('NO_ONLINE', 1); // TODO: check
+	
+	require './global.php';
+	
+	// TODO: disable calling send_page_headers()
+	
+	// TODO: user perms
+	// TODO: maybe do online for WOL
+}
+else {
+	
+	// do some basic initialisation
+	error_reporting(E_ALL ^ E_NOTICE); // this script works fine with E_ALL, however, we'll be compatible with MyBB
+	// remove unnecessary stuff
+	unset($HTTP_SERVER_VARS, $HTTP_GET_VARS, $HTTP_POST_VARS, $HTTP_COOKIE_VARS, $HTTP_POST_FILES, $HTTP_ENV_VARS, $HTTP_SESSION_VARS);
+	unset($_GET, $_POST, $_FILES, $_ENV);
+	foreach(array('GLOBALS', '_COOKIE', '_REQUEST', '_SERVER') as $p)
+		if(isset($_REQUEST[$p]) || isset($_FILES[$p]) || isset($_COOKIE[$p])) {
+			header('HTTP/1.1 400 Bad Request');
+			die('Bad request');
+		}
+	// script will work if magic quotes is on, unless filenames happen to have quotes or something
+	@set_magic_quotes_runtime(0);
+	@ini_set('magic_quotes_runtime', 0); 
+	// will also work with register globals, so we won't bother with these
+	
+	
+	define('MYBB_ROOT', dirname(__FILE__).'/');
+}
 
 // put everything in function to limit scope (and memory usage by relying on PHP to garbage collect all the unreferenced variables)
 function do_processing() {
 	
-	if(file_exists(MYBB_ROOT.'inc/settings.php')) {
-		require MYBB_ROOT.'inc/settings.php';
-		// TODO: perhaps have a dedicated setting for this one
-		$basedir = $settings['uploadspath'].'/xthreads_ul/';
-		unset($settings);
+	if(is_object(@$GLOBALS['mybb'])) {
+		$basedir = $GLOBALS['mybb']->settings['uploadspath'].'/xthreads_ul/';
+		$bburl = $GLOBALS['mybb']->settings['bburl'];
+	} else {
+		if(file_exists(MYBB_ROOT.'inc/settings.php')) {
+			require MYBB_ROOT.'inc/settings.php';
+			// TODO: perhaps have a dedicated setting for this one
+			$basedir = $settings['uploadspath'].'/xthreads_ul/';
+			$bburl = $settings['bburl'];
+			unset($settings);
+		}
+		else // use default
+			$basedir = './uploads/xthreads_ul/';
+			$bburl = 'htp://example.com/'; // dummy
 	}
-	else // use default
-		$basedir = './uploads/xthreads_ul/';
-
+	
 	if(!@is_dir($basedir)) {
 		header('HTTP/1.1 500 Internal Server Error');
 		die('Can\'t find XThreads base directory.');
@@ -66,8 +99,8 @@ function do_processing() {
 	// parse input filename
 	if(isset($_REQUEST['file']) && $_REQUEST['file']) { // using query string
 		$_SERVER['PATH_INFO'] = '/'.$_REQUEST['file'];
-		if(get_magic_quotes_gpc())
-			$_SERVER['PATH_INFO'] = stripslashes($_SERVER['PATH_INFO']);
+		//if(get_magic_quotes_gpc())
+		//	$_SERVER['PATH_INFO'] = stripslashes($_SERVER['PATH_INFO']);
 	} else {
 		if(!isset($_SERVER['PATH_INFO'])) {
 			if(isset($_SERVER['SCRIPT_NAME']) && isset($_SERVER['PHP_SELF'])) {
@@ -115,7 +148,7 @@ function do_processing() {
 	if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && ($cachetime = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE'])) && $cachetime > 0) {
 		$cached = ($cachetime >= $modtime);
 	}
-	$etag = '"xthreads_attach_'.$match[1].'_'.$match[2].'_'.$match[3].'"';
+	$etag = '"xthreads_attach_'.substr(md5($bburl), 0, 8).'_'.$match[1].'_'.$match[2].'_'.$match[3].'"';
 	if(isset($_SERVER['HTTP_IF_NONE_MATCH']) && ($etag_match = trim($_SERVER['HTTP_IF_NONE_MATCH']))) {
 		if($etag_match == $etag) $cached = true;
 		elseif(strpos($etag_match, ',') && in_array($etag, array_map('trim', explode(',', $etag_match))))
@@ -138,6 +171,7 @@ function do_processing() {
 	}
 
 	header('Accept-Ranges: bytes');
+	header('Allow: GET, HEAD');
 	header('Last-Modified: '.gmdate('D, d M Y H:i:s', $modtime).'GMT');
 	header('Expires: '.gmdate('D, d M Y H:i:s', time() + CACHE_TIME).'GMT');
 	header('Cache-Control: max-age='.CACHE_TIME);
@@ -265,7 +299,7 @@ function do_processing() {
 	header('Content-Length: '.($range_end - $range_start + 1));
 	header('Content-Range: bytes '.$range_start.'-'.$range_end.'/'.$fsize);
 	if(!$range_start && $range_end == $fsize-1 && strlen($match[4]) == 33)
-		header('Content-MD5: '.substr($match[4], 0, 32));
+		header('Content-MD5: '.base64_encode(pack('H*', substr($match[4], 0, 32))));
 
 	if(isset($_SERVER['REQUEST_METHOD']))
 		$reqmeth = strtoupper($_SERVER['REQUEST_METHOD']);
@@ -295,6 +329,8 @@ foreach($GLOBALS as $k => &$v) {
 }
 unset($keepvars, $k, $v); */
 
+if(LOAD_SESSION) unset($mybb, $db); // TODO: maybe also unload other vars
+
 if($range_end == $fsize-1) {
 	unset($range_start, $range_end, $fsize);
 	while(!feof($fp)) echo fread($fp, 16384);
@@ -314,7 +350,13 @@ fclose($fp);
 
 
 function increment_downloads($aid) {
-	// load config + MyBB's DB engine
+	// if DB is loaded, use it
+	if(is_object(@$GLOBALS['db'])) {
+		$GLOBALS['db']->write_query('UPDATE '.$db->table_prefix.'xtattachments SET downloads=downloads+1 WHERE aid='.intval($aid), 1);
+		return;
+	}
+	
+	// otherwise, load config + MyBB's DB engine
 	if(!file_exists(MYBB_ROOT.'inc/config.php')) return;
 	require_once MYBB_ROOT.'inc/config.php';
 	if(!isset($config['database']) || !is_array($config['database'])) return;

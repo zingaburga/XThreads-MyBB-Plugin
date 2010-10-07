@@ -34,8 +34,8 @@ function xthreads_info() {
 		'website'		=> 'http://mybbhacks.zingaburga.com/',
 		'author'		=> 'ZiNgA BuRgA',
 		'authorsite'	=> 'http://zingaburga.com/',
-		'version'		=> XTHREADS_VERSION,
-		'compatibility'	=> '14*,16*',
+		'version'		=> number_format(XTHREADS_VERSION, 2),
+		'compatibility'	=> '14*,15*,16*',
 		'guid'			=> ''
 	);
 }
@@ -97,6 +97,8 @@ function xthreads_install() {
 			`forums` varchar(255) not null default "",
 			`editable` tinyint(3) not null default 0,
 			`editable_gids` varchar(255) not null default "",
+			`viewable_gids` varchar(255) not null default "",
+			`unviewableval` text not null,
 			`blankval` text not null,
 			`dispformat` text not null,
 			`dispitemformat` text not null,
@@ -246,10 +248,10 @@ function xthreads_uninstall() {
 		exit;
 	}
 	if(!$mybb->input['confirm_uninstall']) {
-		$link = 'index.php?confirm_uninstall=1';
-		foreach($mybb->input as $k => &$v) {
+		$link = 'index.php?confirm_uninstall=1&amp;'.htmlspecialchars($_SERVER['QUERY_STRING']);
+		/* foreach($mybb->input as $k => &$v) {
 			$link .= '&amp;'.htmlspecialchars($k).'='.htmlspecialchars($v);
-		}
+		} */
 		
 		$GLOBALS['page']->output_confirm_action($link, $GLOBALS['lang']->xthreads_confirm_uninstall);
 		exit;
@@ -694,13 +696,14 @@ function xthreads_vercheck() {
 		} else {
 			$link = 'index.php?xthreads_upgrade=1&amp;my_post_key='.$mybb->post_code;
 			if($mybb->request_mode != 'post') {
-				foreach($mybb->input as $k => &$v) {
-					if($k != 'my_post_key')
-						$link .= '&amp;'.htmlspecialchars($k).'='.htmlspecialchars($v);
+				if($qs = $_SERVER['QUERY_STRING']) {
+					$qs = preg_replace('~(^|&)my_post_key=.*?(&|$)~i', '$2', $qs);
+					if($qs{0} != '&') $qs = '&'.$qs;
+					$link .= htmlspecialchars($qs);
 				}
 			}
 			
-			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, $info['version'], XTHREADS_VERSION, $link), 'type' => '');
+			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, number_format(XTHREADS_VERSION, 2), number_format($info['version'], 2), $link), 'type' => 'alert');
 		}
 		if($admin_session['data']['flash_message'])
 			$admin_session['data']['flash_message']['message'] .= '</div><br /><div class="'.$msg['type'].'">'.$msg['message'];

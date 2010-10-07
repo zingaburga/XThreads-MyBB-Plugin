@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.0);
+define('XTHREADS_VERSION', 1.1);
 
 
 // XThreads defines
@@ -290,21 +290,62 @@ function xthreads_xmlhttp_blankpost_hack() {
 	}
 }
 
+// function to set thumbnails into array to prevent PHP giving "cannot use string as array index" errors if a thumbnail doesn't exist (eg thread moved into gallery)
+function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
+	if(!empty($tfinfo['fileimgthumbs'])) {
+		if(!isset($s['thumbs']))
+			$s['thumbs'] = array();
+		foreach($tfinfo['fileimgthumbs'] as &$$th)
+			if(!isset($s['thumbs'][$th]))
+				$s['thumbs'][$th] = array('w' => 0, 'h' => 0);
+		if(!isset($s['thumbs']['orig']))
+			$s['thumbs']['orig'] = array();
+		$s['dims'] =& $s['thumbs']['orig'];
+	}
+}
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
-	if($s === '' || $s === null) {
+	if($s === '' || $s === null) { // won't catch file inputs, as they are integer type
 		if($tfinfo['blankval']) $s = eval_str($tfinfo['blankval']);
 		return;
 	}
 	
+	$dispfmt = $tfinfo['dispformat'];
+	
+	global $mybb;
+	if($tfinfo['viewable_gids']) {
+		if(strpos(','.$tfinfo['viewable_gids'].',', ','.$mybb->usergroup['gid'].',') === false) {
+			/*
+			if($tfinfo['unviewableval'])
+				$s = eval_str(str_replace('{BLANKVAL}', $tfinfo['blankval'], $tfinfo['unviewableval']));
+			else
+				$s = '';
+			
+			if($tfinfo['inputtype'] == XTHREADS_INPUT_FILE) {
+				$s = array('value' => $s);
+				xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
+			}
+			
+			return;
+			*/
+			$dispfmt = $tfinfo['unviewableval'];
+		}
+	}
+	
 	if($tfinfo['inputtype'] == XTHREADS_INPUT_FILE || ($tfinfo['inputtype'] == XTHREADS_INPUT_FILE_URL && !preg_match('~^[a-z]+\://~i', $s))) {
-		global $mybb, $xta_cache;
+		global $xta_cache;
 		// attached file
 		if(!$s) {
-			if($tfinfo['blankval']) $s = array('value' => eval_str($tfinfo['blankval']));
+			$s = array();
+			if($tfinfo['blankval']) $s['value'] = eval_str($tfinfo['blankval']);
+			xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 			return;
 		}
-		if(!is_numeric($s) || !isset($xta_cache[$s]))
+		if(!is_numeric($s) || !isset($xta_cache[$s])) {
+			// fallback - prevent templating errors if this file happens to not exist
+			$s = array();
+			xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 			return;
+		}
 		$s = $xta_cache[$s];
 		$s['downloads_friendly'] = my_number_format($s['downloads']);
 		$s['filename'] = htmlspecialchars_uni($s['filename']);
@@ -325,13 +366,14 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 			$s['thumbs'] = unserialize($s['thumbs']);
 		if(isset($s['thumbs']['orig']))
 			$s['dims'] =& $s['thumbs']['orig'];
+		xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 		
 		$s['value'] = '';
-		if($tfinfo['dispformat']) {
+		if($dispfmt) {
 			$tr = array();
 			foreach($s as $k => &$v)
 				$tr['{'.strtoupper($k).'}'] =& $v;
-			$s['value'] = strtr(eval_str($tfinfo['dispformat']), $tr);
+			$s['value'] = strtr(eval_str($dispfmt), $tr);
 		}
 	}
 	else {
@@ -348,15 +390,15 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 				}
 			}
 			$s = implode($tfinfo['multival'], $vals);
-			if($tfinfo['dispformat']) {
-				$s = str_replace('{VALUE}', $s, eval_str($tfinfo['dispformat']));
+			if($dispfmt) {
+				$s = str_replace('{VALUE}', $s, eval_str($dispfmt));
 			}
 		}
 		else {
 			$raw_s = $s;
 			xthreads_sanitize_disp_field($s, $tfinfo, $tfinfo['formatmap'], $mename);
-			if($tfinfo['dispformat']) {
-				$s = strtr(eval_str($tfinfo['dispformat']), array(
+			if($dispfmt) {
+				$s = strtr(eval_str($dispfmt), array(
 					'{VALUE}' => $s, 
 					'{RAWVALUE}' => $raw_s, 
 				));
@@ -401,9 +443,41 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$fmtmap, $mename) {
 
 function eval_str(&$s) {
 	if(strpos($s, '{$') === false) return $s;
-	//return eval('return "'.strtr(preg_replace('~\\{\\$([a-zA-Z_0-9]+)~', '{$GLOBALS[\'$1\']', $s), array('\\' => '\\\\', '"' => '\\"')).'";');
 	// cause of PHP's f***ing magic quotes, we need a second eval
-	return preg_replace('~\\{\\$([a-zA-Z_0-9]+)((-\\>[a-zA-Z_0-9]+|\\[[\'"]?[a-zA-Z_ 0-9]+[\'"]?\\])*)\\}~e', 'eval("return \\\\$GLOBALS[\'$1\']".str_replace("\\\\\'", "\'", "$2").";")', $s);
+	$find = array('~\\{\\$([a-zA-Z_0-9]+)((-\\>[a-zA-Z_0-9]+|\\[[\'"]?[a-zA-Z_ 0-9]+[\'"]?\\])*)\\}~e');
+	$repl = array('eval("return \\\\$GLOBALS[\'$1\']".str_replace("\\\\\'", "\'", "$2").";")');
+	
+	if(strpos($s, '{$threadurl') !== false || strpos($s, '{$forumurl')) {
+		$fid =& $GLOBALS['fid'];
+		if(!$fid) $fid = $GLOBALS['foruminfo']['fid'];
+		if(!$fid) $fid = $GLOBALS['forum']['fid'];
+		if($fid) {
+			$flink = get_forum_link($fid);
+			$find[] = '~\{\$forumurl\$\}~i';
+			$repl[] = $flink;
+			if(strpos($flink, '?')) $flink .= '&amp;';
+			else $flink .= '?';
+			$find[] = '~\{\$forumurl\?\}~i';
+			$repl[] = $flink;
+			/* $find[] = '~\{\$forumurl#(\d*)\}~ie';
+			$repl[] = 'get_forum_link('.$fid.', $1 ? $1 : 1)'; */
+		}
+		$tid =& $GLOBALS['tid'];
+		if(!$tid) $tid = $GLOBALS['thread']['tid'];
+		if($tid) {
+			$tlink = get_thread_link($tid);
+			$find[] = '~\{\$threadurl\$\}~i';
+			$repl[] = $tlink;
+			if(strpos($tlink, '?')) $tlink .= '&amp;';
+			else $tlink .= '?';
+			$find[] = '~\{\$threadurl\?\}~i';
+			$repl[] = $tlink;
+			/* $find[] = '~\{\$threadurl\$\}~i';
+			$repl[] = get_thread_link($tid); */
+		}
+	}
+	//return eval('return "'.strtr(preg_replace('~\\{\\$([a-zA-Z_0-9]+)~', '{$GLOBALS[\'$1\']', $s), array('\\' => '\\\\', '"' => '\\"')).'";');
+	return preg_replace($find, $repl, $s);
 }
 
 // wildcard match like the *nix filesystem

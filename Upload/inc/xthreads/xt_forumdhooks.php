@@ -46,6 +46,10 @@ function xthreads_forumdisplay() {
 			//if($mybb->input['sortby'] == 'tf_'.$n)
 			//	$tf_sort = $n;
 		}
+		
+		// Quick Thread integration
+		if(function_exists('quickthread_run'))
+			xthreads_forumdisplay_quickthread();
 	}
 	if($forum['xthreads_inlinesearch'] || !empty($tf_filters)) {
 		// only nice way to do all of this is to gain control of $templates, so let's do it
@@ -70,6 +74,28 @@ function xthreads_forumdisplay() {
 	if($forum['xthreads_threadsperpage']) {
 		$mybb->settings['threadsperpage'] = $forum['xthreads_threadsperpage'];
 	}
+}
+
+// Quick Thread integration function
+function xthreads_forumdisplay_quickthread() {
+	$tpl =& $GLOBALS['templates']->cache['forumdisplay_quick_thread'];
+	if(!$tpl) return;
+	
+	// grab fields
+	$edit_fields = $GLOBALS['threadfield_cache']; // will be set
+	// filter out non required fields (don't need to filter out un-editable fields as editable by all implies this)
+	foreach($edit_fields as $k => &$v) {
+		if($v['editable_gids'] || $v['editable'] != XTHREADS_EDITABLE_REQ)
+			unset($edit_fields[$k]);
+	}
+	if(empty($edit_fields)) return;
+	
+	require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+	$blank = array();
+	xthreads_input_generate($blank, $edit_fields, $GLOBALS['fid']);
+	if(!strpos($tpl, 'enctype="multipart/form-data"'))
+		$tpl = str_replace('<form method="post" ', '<form method="post" enctype="multipart/form-data" ', $tpl);
+	$tpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1'.strtr($GLOBALS['extra_threadfields'], array('$' => '\\$')).'$2', $tpl, 1);
 }
 
 function xthreads_forumdisplay_filter() {

@@ -389,7 +389,8 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		curl_setopt($ch, CURLOPT_REFERER, $referrer);
 		//curl_setopt($ch, CURLOPT_USERAGENT, '');
 		curl_setopt($ch, CURLOPT_ENCODING, '');
-		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		// PHP safe mode may restrict the following
+		@curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
 		
@@ -401,10 +402,10 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		$GLOBALS['xtfurl_validmagic'] =& $valid_magic;
 		$GLOBALS['xtfurl_databuf'] = '';
 		$GLOBALS['xtfurl_exts'] =& $valid_ext;
+		$GLOBALS['xtfurl_fp'] =& $fp;
 		curl_setopt($ch, CURLOPT_WRITEFUNCTION, 'xthreads_fetch_url_curl_write');
 		
-		
-		curl_setopt($ch, CURLOPT_FILE, $fp);
+		//curl_setopt($ch, CURLOPT_FILE, $fp);
 		$success = @curl_exec($ch);
 		
 		
@@ -665,6 +666,7 @@ function xthreads_fetch_url_curl_write($ch, $data) {
 			$xtfurl_databuf .= $data;
 		}
 	}
+	fwrite($GLOBALS['xtfurl_fp'], $data);
 	return $len;
 }
 
