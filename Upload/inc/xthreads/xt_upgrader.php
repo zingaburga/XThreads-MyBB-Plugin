@@ -49,7 +49,7 @@ if($info['version'] < 1.2) {
 	*/
 }
 
-if($info['version'] < 1.21) {
+if($info['version'] < 1.22) {
 	xthreads_buildtfcache();
 }
 

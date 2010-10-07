@@ -428,7 +428,7 @@ function xthreads_buildtfcache() {
 		
 		
 		// sanitise eval'd stuff
-		if($tf['inputtype']) $sanitise_fields =& $sanitise_fields_file;
+		if($tf['inputtype'] == XTHREADS_INPUT_FILE) $sanitise_fields =& $sanitise_fields_file;
 		else $sanitise_fields =& $sanitise_fields_normal;
 		if($tf['unviewableval']) xthreads_sanitize_eval($tf['unviewableval'], $sanitise_fields);
 		if($tf['dispformat']) xthreads_sanitize_eval($tf['dispformat'], $sanitise_fields);
@@ -447,6 +447,7 @@ function xthreads_buildtfcache() {
 function xthreads_sanitize_eval(&$s, &$fields) {
 	$tr = array('\\' => '\\\\', '$' => '\\$', '"' => '\\"');
 	foreach($fields as &$f)
+		// we convert (RAW)VALUE to tag format lessen likelihood that admin includes a variable where users can put in {VALUE}, (eg thread title)
 		$tr['{'.$f.'}'] = '<'.$f.'>';
 	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
@@ -464,7 +465,6 @@ function xthreads_sanitize_eval(&$s, &$fields) {
 			'{$GLOBALS[\'threadurl\']}',
 			'{$GLOBALS[\'threadurl_q\']}',
 		), strtr($s, $tr)
-		// we convert (RAW)VALUE to tag format lessen likelihood that admin includes a variable where users can put in {VALUE}, (eg thread title)
 	);
 	if(strpos($s, '{$') === false) // reverse our eval optimisation
 		$s = strtr($s, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
