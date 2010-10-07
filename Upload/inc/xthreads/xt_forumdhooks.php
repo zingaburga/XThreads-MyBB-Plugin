@@ -3,13 +3,17 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 function xthreads_forumdisplay() {
-	global $db, $threadfield_cache, $fid, $mybb, $tf_filters, $xthreads_forum_filter_form, $xthreads_forum_filter_args;
+	global $db, $threadfield_cache, $fid, $mybb, $tf_filters, $filters_set, $xthreads_forum_filter_form, $xthreads_forum_filter_args;
 	// the position of the "forumdisplay_start" hook is kinda REALLY annoying...
 	$fid = intval($mybb->input['fid']);
 	if($fid < 1 || !($forum = get_forum($fid))) return;
 	
 	$threadfield_cache = xthreads_gettfcache($fid);
 	$tf_filters = array();
+	$filters_set = array(
+		'__search' => array('hiddencss' => '', 'visiblecss' => 'display: none;'),
+		'__all' => array('hiddencss' => '', 'visiblecss' => 'display: none;'),
+	);
 	$xthreads_forum_filter_form = $xthreads_forum_filter_args = '';
 	if(!empty($threadfield_cache)) {
 		function xthreads_forumdisplay_dbhook(&$s, &$db) {
@@ -42,10 +46,60 @@ function xthreads_forumdisplay() {
 		// also check for forumdisplay filters/sort
 		// and generate form HTML
 		foreach($threadfield_cache as $n => &$tf) {
+			$filters_set[$n] = array('hiddencss' => '', 'visiblecss' => 'display: none;');
 			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n])) {
 				$tf_filters[$n] = $mybb->input['filtertf_'.$n];
-				$xthreads_forum_filter_form .= '<input type="hidden" name="filtertf_'.htmlspecialchars($n).'" value="'.htmlspecialchars_uni($tf_filters[$n]).'" />';
-				$xthreads_forum_filter_args .= '&filtertf_'.rawurlencode($n).'='.rawurlencode($tf_filters[$n]);
+				if(is_array($tf_filters[$n])) {
+					$filters_set[$n] = array(
+						'value' => '',
+						'urlarg' => '',
+						'urlarga' => '&',
+						'urlargq' => '?',
+						'forminput' => '',
+						'selected' => array(),
+						'checked' => array(),
+						'hiddencss' => 'display: none;',
+						'visiblecss' => '',
+					);
+					$filterurl = '';
+					foreach($tf_filters[$n] as &$val) {
+						$filters_set[$n]['forminput'] .= '<input type="hidden" name="filtertf_'.htmlspecialchars($n).'[]" value="'.htmlspecialchars_uni($val).'" />';
+						$filterurl .= ($filterurl ? '&':'').'filtertf_'.rawurlencode($n).'[]='.rawurlencode($val);
+						
+						$filters_set[$n]['value'] .= ($filters_set[$n]['value'] ? ', ':'').htmlspecialchars_uni($val);
+						$filters_set[$n]['selected'] = array($val => ' selected="selected"');
+						$filters_set[$n]['checked'] = array($val => ' checked="checked"');
+					}
+					$filters_set[$n]['urlarg'] = htmlspecialchars_uni($filterurl);
+					$filters_set[$n]['urlarga'] = '&amp;'.$filters_set[$n]['urlarg'];
+					$filters_set[$n]['urlargq'] = '?'.$filters_set[$n]['urlarg'];
+					$xthreads_forum_filter_form .= $filters_set[$n]['forminput'];
+					$xthreads_forum_filter_args .= '&'.$filterurl;
+				} else {
+					$formarg = '<input type="hidden" name="filtertf_'.htmlspecialchars($n).'" value="'.htmlspecialchars_uni($tf_filters[$n]).'" />';
+					$xthreads_forum_filter_form .= $formarg;
+					$urlarg = 'filtertf_'.rawurlencode($n).'='.rawurlencode($tf_filters[$n]);
+					$xthreads_forum_filter_args .= '&'.$urlarg;
+					$filters_set[$n] = array(
+						'value' => htmlspecialchars_uni($tf_filters[$n]),
+						'urlarg' => htmlspecialchars_uni($urlarg),
+						'urlarga' => '&amp;'.htmlspecialchars_uni($urlarg),
+						'urlargq' => '?'.htmlspecialchars_uni($urlarg),
+						'forminput' => $formarg,
+						'selected' => array($tf_filters[$n] => ' selected="selected"'),
+						'checked' => array($tf_filters[$n] => ' checked="checked"'),
+						'hiddencss' => 'display: none;',
+						'visiblecss' => '',
+					);
+				}
+			}
+			if($xthreads_forum_filter_args) {
+				$filters_set['__all']['urlarg'] = htmlspecialchars_uni(substr($xthreads_forum_filter_args, 1));
+				$filters_set['__all']['urlarga'] = '&amp;'.$filters_set['__all']['urlarg'];
+				$filters_set['__all']['urlargq'] = '?'.$filters_set['__all']['urlarg'];
+				$filters_set['__all']['forminput'] = $xthreads_forum_filter_form;
+				$filters_set['__all']['hiddencss'] = 'display: none;';
+				$filters_set['__all']['visiblecss'] = '';
 			}
 			//if($mybb->input['sortby'] == 'tf_'.$n)
 			//	$tf_sort = $n;
@@ -56,8 +110,18 @@ function xthreads_forumdisplay() {
 			xthreads_forumdisplay_quickthread();
 	}
 	if($forum['xthreads_inlinesearch'] && $mybb->input['search']) {
-		$xthreads_forum_filter_args .= '&search='.rawurlencode($mybb->input['search']);
+		$urlarg = 'search='.rawurlencode($mybb->input['search']);
+		$xthreads_forum_filter_args .= '&'.$urlarg;
 		$GLOBALS['xthreads_forum_search_form'] = '<input type="hidden" name="search" value="'.htmlspecialchars_uni($mybb->input['search']).'" />';
+		$filters_set['__search']['forminput'] =& $GLOBALS['xthreads_forum_search_form'];
+		$filters_set['__search']['value'] = htmlspecialchars_uni($mybb->input['search']);
+		$filters_set['__search']['urlarg'] = htmlspecialchars_uni($urlarg);
+		$filters_set['__search']['urlarga'] = '&amp;'.$filters_set['__search']['urlarg'];
+		$filters_set['__search']['urlargq'] = '?'.$filters_set['__search']['urlarg'];
+		$filters_set['__search']['selected'] = array($mybb->input['search'] => ' selected="selected"');
+		$filters_set['__search']['checked'] = array($mybb->input['search'] => ' checked="checked"');
+		$filters_set['__search']['hiddencss'] = 'display: none;';
+		$filters_set['__search']['visiblecss'] = '';
 	}
 	
 	if($forum['xthreads_inlinesearch'] || !empty($tf_filters)) {

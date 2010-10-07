@@ -193,13 +193,6 @@ Put your stuff here
 		$db->update_query('adminoptions', array('permissions' => $db->escape_string(serialize($perms))), 'uid='.$adminopt['uid']);
 	}
 	$db->free_result($query);
-	
-	// have these in install, rather than activate, because if inactive, they don't get evaluated anyway
-	require MYBB_ROOT.'inc/adminfunctions_templates.php';
-	find_replace_templatesets('editpost', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
-	find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
-	find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
-	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
 }
 
 function xthreads_insert_templates($new_templates, $set=-1) {
@@ -220,6 +213,14 @@ function xthreads_insert_templates($new_templates, $set=-1) {
 	}
 }
 
+function xthreads_undo_template_edits() {
+	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+	find_replace_templatesets('editpost', '#\\{\\$extra_threadfields\\}#', '', 0);
+	find_replace_templatesets('newthread', '#\\{\\$extra_threadfields\\}#', '', 0);
+	find_replace_templatesets('showthread', '#\\{\\$first_post\\}#', '', 0);
+	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$nullthreads\\}#', '', 0);
+}
+
 function xthreads_activate() {
 	global $db, $cache, $lang;
 	$db->insert_query('tasks', array(
@@ -238,11 +239,23 @@ function xthreads_activate() {
 		'locked' => 0,
 	));
 	$cache->update_tasks();
+	
+	// prevent doubling of template edits
+	xthreads_undo_template_edits();
+	// following original in the _install() function, as these variables aren't evaluated when deactivated
+	// but putting them here has the advantage of allowing users to redo template edits with new themes
+	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+	find_replace_templatesets('editpost', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
+	find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
+	find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
+	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
 }
 function xthreads_deactivate() {
 	global $db, $cache;
 	$db->delete_query('tasks', 'file="xtaorphan_cleanup"');
 	$cache->update_tasks();
+	
+	xthreads_undo_template_edits();
 }
 
 function xthreads_uninstall() {
@@ -262,12 +275,6 @@ function xthreads_uninstall() {
 		exit;
 	} else
 		unset($mybb->input['confirm_uninstall']);
-	
-	require MYBB_ROOT.'inc/adminfunctions_templates.php';
-	find_replace_templatesets('editpost', '#\\{\\$extra_threadfields\\}#', '', 0);
-	find_replace_templatesets('newthread', '#\\{\\$extra_threadfields\\}#', '', 0);
-	find_replace_templatesets('showthread', '#\\{\\$first_post\\}#', '', 0);
-	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$nullthreads\\}#', '', 0);
 	
 	$query = $db->simple_select('adminoptions', 'uid,permissions');
 	while($adminopt = $db->fetch_array($query)) {
@@ -338,6 +345,7 @@ function xthreads_buildtfcache() {
 	
 	$sanitise_fields_normal = array('VALUE', 'RAWVALUE');
 	$sanitise_fields_file = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
+	$sanitise_fields_none = array();
 	$cd = array();
 	$query = $db->simple_select('threadfields', '*', '', array('order_by' => '`disporder`', 'order_dir' => 'asc'));
 	while($tf = $db->fetch_array($query)) {
@@ -434,15 +442,28 @@ function xthreads_buildtfcache() {
 		
 		
 		// sanitise eval'd stuff
-		if($tf['inputtype'] == XTHREADS_INPUT_FILE) $sanitise_fields =& $sanitise_fields_file;
-		else $sanitise_fields =& $sanitise_fields_normal;
+		if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
+			$sanitise_fields =& $sanitise_fields_file;
+		}
+		else {
+			$sanitise_fields =& $sanitise_fields_normal;
+			$tf['regex_tokens'] = false;
+		}
 		if($tf['unviewableval']) xthreads_sanitize_eval($tf['unviewableval'], $sanitise_fields);
 		if($tf['dispformat']) xthreads_sanitize_eval($tf['dispformat'], $sanitise_fields);
 		if($tf['dispitemformat']) xthreads_sanitize_eval($tf['dispitemformat'], $sanitise_fields);
-		if($tf['blankval']) xthreads_sanitize_eval($tf['blankval'], $sanitise_fields);
+		if($tf['blankval']) xthreads_sanitize_eval($tf['blankval'], $sanitise_fields_none);
 		if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
 			foreach($tf['formatmap'] as &$fm)
-				xthreads_sanitize_eval($fm, $sanitise_fields);
+				xthreads_sanitize_eval($fm, $sanitise_fields_none);
+		
+		if($tf['inputtype'] != XTHREADS_INPUT_FILE && (
+			($tf['unviewableval']  && preg_match('~\<VALUE\$\d+\>~', $tf['unviewableval'])) ||
+			($tf['dispformat']     && preg_match('~\<VALUE\$\d+\>~', $tf['dispformat'])) ||
+			($tf['dispitemformat'] && preg_match('~\<VALUE\$\d+\>~', $tf['dispitemformat']))
+		)) {
+			$tf['regex_tokens'] = true;
+		}
 		
 		$cd[$tf['field']] = $tf;
 	}
@@ -452,9 +473,14 @@ function xthreads_buildtfcache() {
 // sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
 function xthreads_sanitize_eval(&$s, &$fields) {
 	$tr = array('\\' => '\\\\', '$' => '\\$', '"' => '\\"');
-	foreach($fields as &$f)
+	$do_value_repl = false;
+	foreach($fields as &$f) {
 		// we convert (RAW)VALUE to tag format lessen likelihood that admin includes a variable where users can put in {VALUE}, (eg thread title)
 		$tr['{'.$f.'}'] = '<'.$f.'>';
+		
+		if($f == 'VALUE') $do_value_repl = true;
+	}
+	if($do_value_repl) $s = preg_replace('~\{(VALUE\$\d+)\}~', '<$1>', $s);
 	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
 	$s = preg_replace(

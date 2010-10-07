@@ -99,7 +99,11 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				else
 					$inval = trim($mybb->input['xthreads_'.$k]);
 			}
-			elseif($v['multival'] && is_array($mybb->input['xthreads_'.$k])) {
+			elseif($v['multival'] && (
+					($input_is_array = is_array($mybb->input['xthreads_'.$k])) || ($v['inputtype'] == XTHREADS_INPUT_TEXT || $v['inputtype'] == XTHREADS_INPUT_TEXTAREA)
+			)) {
+				if(!$input_is_array)
+					$mybb->input['xthreads_'.$k] = explode(($v['inputtype'] == XTHREADS_INPUT_TEXTAREA ? "\n":','), str_replace("\r", '', $mybb->input['xthreads_'.$k]));
 				$inval = array_unique(array_map('trim', $mybb->input['xthreads_'.$k]));
 				foreach($inval as $valkey => &$val)
 					if(!$val) unset($inval[$valkey]);
@@ -220,6 +224,13 @@ function xthreads_delete_thread($tid) {
 
 function xthreads_inputdisp() {
 	global $thread, $post, $fid, $mybb, $plugins;
+	
+	// work around for editpost bug in MyBB prior to 1.4.12 (http://dev.mybboard.net/issues/374)
+	// this function should only ever be run once
+	static $called = false;
+	if($called) return;
+	$called = true;
+	
 	$editpost = ($GLOBALS['current_page'] == 'editpost.php');
 	if($editpost) {
 		// because the placement of the editpost_start hook really sucks...
@@ -560,15 +571,16 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				
 				$fileinput = '<input type="file" class="fileupload"'.$tfname.$tf_fw_size.' id="xthreads_'.$tf['field'].'" />';
 				if(XTHREADS_ALLOW_URL_FETCH) {
-					$input_url =& $GLOBALS['mybb']->input['xtaurl_'.$tf['field']];
-					if($input_url || $GLOBALS['mybb']->input['xtasel_'.$tf['field']] == 'url') {
+					// no =& because we change $input_url potentially
+					$input_url = $GLOBALS['mybb']->input['xtaurl_'.$tf['field']];
+					if(!$input_url) $input_url = 'http://';
+					if($input_url != 'http://' || $GLOBALS['mybb']->input['xtasel_'.$tf['field']] == 'url') {
 						$check_file = '';
 						$check_url = ' checked="checked"';
 					} else {
 						$check_file = ' checked="checked"';
 						$check_url = '';
 					}
-					if(!$input_url) $input_url = 'http://';
 					
 					$fileinput = '<div style="display: none; font-size: x-small;" id="xtasel_'.$tf['field'].'"><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_'.$tf['field'].'" value="file"'.$check_file.' id="xtaselopt_file_'.$tf['field'].'" />'.$lang->xthreads_attachfile.'</label><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_'.$tf['field'].'" value="url"'.$check_url.' id="xtaselopt_url_'.$tf['field'].'" />'.$lang->xthreads_attachurl.'</label></div>
 					<div><span id="xtaseltext_file_'.$tf['field'].'">'.$lang->xthreads_attachfile.': </span>'.$fileinput.'</div>
@@ -603,6 +615,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				break;
 				
 			default: // text
+				if($tf['multival'])
+					$defval = str_replace("\n", ', ', $defval);
 				$tfinput[$k] = '<input type="text" class="textbox"'.$tfname.$maxlen.$tf_fw_size.' value="'.$defval.'" />';
 				break;
 		}

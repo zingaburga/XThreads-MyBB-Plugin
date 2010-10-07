@@ -49,7 +49,8 @@ if($info['version'] < 1.2) {
 	*/
 }
 
-if($info['version'] < 1.26) {
+if($info['version'] < 1.3) {
+	// we won't bother to fix potential issues with multiple values with textboxes
 	xthreads_buildtfcache();
 }
 
