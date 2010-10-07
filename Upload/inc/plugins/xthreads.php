@@ -3,6 +3,8 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
+define('XTHREADS_VERSION', 0.51);
+
 
 // XThreads defines
 // controls some things for remote file fetching
@@ -12,6 +14,13 @@ define('XTHREADS_ALLOW_URL_FETCH', true);
 define('XTHREADS_URL_FETCH_DISALLOW_HOSTS', 'localhost,127.0.0.1');
 // disallow users to specify custom ports in URL, eg http://example.com:1234/
 define('XTHREADS_URL_FETCH_DISALLOW_PORT', false);
+
+// try to stop xtattachment flooding through orphaning (despite MyBB itself being vulnerable to it); we'll silently remove orphaned xtattachments that are added within a certain timeframe; note, this does not apply to guests, if you allow them to upload xtattachments...
+// by default, we'll start removing old xtattachments made by a user within the last half hour if there's more than 50 orphaned xtattachments
+define('XTHREADS_UPLOAD_FLOOD_TIME', 1800); // in seconds
+define('XTHREADS_UPLOAD_FLOOD_NUMBER', 50);
+// also, automatically remove xtattachments older than 3 hours when they try to upload something new
+define('XTHREADS_UPLOAD_EXPIRE_TIME', 3*3600); // in seconds
 
 // some more defines can be found in xthreads_attach.php
 
@@ -330,6 +339,7 @@ function xthreads_xmlhttp_blankpost_hack() {
 // TODO: test displayed fields in search (posts view)
 
 // TODO: admin logs - use proper text
+// TODO: silent upgrader
 // TODO: child threads?
 // TODO: check internal db state / data consistency function in admincp
 /* - unreferenced attachments in xtattachments (ignore orphaned attachments)
@@ -397,7 +407,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		global $mybb, $xta_cache;
 		// attached file
 		if(!$s) {
-			if($tfinfo['blankval']) $s['value'] = eval_str($tfinfo['blankval']);
+			if($tfinfo['blankval']) $s = array('value' => eval_str($tfinfo['blankval']));
 			return;
 		}
 		if(!is_numeric($s) || !isset($xta_cache[$s]))
@@ -421,6 +431,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		$s['upload_date'] = my_date($mybb->settings['dateformat'], $s['uploadtime']);
 		$s['update_time'] = my_date($mybb->settings['timeformat'], $s['updatetime']);
 		$s['update_date'] = my_date($mybb->settings['dateformat'], $s['updatetime']);
+		$s['modified'] = ($s['updatetime'] != $s['uploadtime'] ? 'modified' :'');
 		if($s['thumbs'])
 			$s['thumbs'] = unserialize($s['thumbs']);
 		if(isset($s['thumbs']['orig']))
@@ -559,22 +570,8 @@ if(!function_exists('control_object')) {
 		$obj = new $newname($obj);
 	}
 }
-/* if(!function_exists('control_object_v2')) {
-	function control_object_v2(&$obj, $code) {
-		static $cnt = 0;
-		$newname = '_objcont2_'.(++$cnt);
-		$objserial = serialize($obj);
-		$classname = get_class($obj);
-		$checkstr = 'O:'.strlen($classname).':"'.$classname.'":';
-		$checkstr_len = strlen($checkstr);
-		if(substr($objserial, 0, $checkstr_len) != $checkstr) // not a valid object or PHP serialize has changed
-			return;
-		
-		eval('class '.$newname.' extends '.$classname.' {'.$code.'}');
-		$obj = unserialize('O:'.strlen($newname).':"'.$newname.'":'.substr($objserial, $checkstr_len));
-	}
-} */
 // improved version of control_object which morphs an object into the supplied class name, copying all variables (including private!) across
+// only problem with this method is that private/protected _resources_ won't get copied
 if(!function_exists('morph_object')) {
 	function morph_object(&$obj, $code) {
 		static $cnt = 0;
@@ -584,8 +581,12 @@ if(!function_exists('morph_object')) {
 		$checkstr = 'O:'.strlen($classname).':"'.$classname.'":';
 		$checkstr_len = strlen($checkstr);
 		eval('class '.$newname.' extends '.$classname.' {'.$code.'}');
-		if(substr($objserial, 0, $checkstr_len) == $checkstr)
+		if(substr($objserial, 0, $checkstr_len) == $checkstr) {
+			$vars = get_object_vars($obj);
 			$obj = unserialize('O:'.strlen($newname).':"'.$newname.'":'.substr($objserial, $checkstr_len));
+			foreach($vars as $k => &$v) // need to copy to ensure resources get across (but won't get private/protected vars unfortunately)
+				$obj->$k = $v;
+		}
 		// else not a valid object or PHP serialize has changed
 	}
 }

@@ -271,6 +271,8 @@ function xthreads_delete_thread($tid) {
 	// awesome thing about this is that it will delete threadfields even if the thread was moved to a different forum
 	$db->delete_query('threadfields_data', 'tid='.$tid);
 	
+	xthreads_rm_attach_query('tid='.$tid);
+	/*
 	// check for xtattachments
 	$has_xtattach = false;
 	$query = $db->simple_select('xtattachments', 'aid,attachname,indir', 'tid='.$tid);
@@ -282,6 +284,7 @@ function xthreads_delete_thread($tid) {
 	$db->free_result($query);
 	if($has_xtattach)
 		$db->delete_query('xtattachments', 'tid='.$tid);
+	*/
 }
 
 function xthreads_inputdisp() {
@@ -461,6 +464,8 @@ function xthreads_inputdisp() {
 // also can potentially be problematic too, but deleting an attachment not abandoned is perhaps even rarer
 function xthreads_attach_clear_posthash() {
 	if($GLOBALS['rand'] > 1) return; // dirty hack to speed things up a little
+	xthreads_rm_attach_query('posthash="'.$GLOBALS['db']->escape_string($GLOBALS['posthash']).'"');
+	/*
 	global $db, $posthash;
 	$query = $db->simple_select('xtattachments', '*', 'posthash="'.$db->escape_string($posthash).'"');
 	if($db->num_rows($query)) {
@@ -469,6 +474,7 @@ function xthreads_attach_clear_posthash() {
 		$db->free_result($query);
 		$db->delete_query('xtattachments', 'posthash="'.$db->escape_string($posthash).'"');
 	}
+	*/
 }
 function xthreads_editpost_first_tplhack() {
 	control_object($GLOBALS['templates'], '
@@ -618,9 +624,9 @@ function xthreads_input_generate(&$data, $fid) {
 								$db->free_result($query);
 							}
 						}
-						$md5hash = unpack('H*', $xta_cache[$defval]['md5hash']);
-						$md5hash = reset($md5hash);
 						$this_xta =& $xta_cache[$defval];
+						$md5hash = unpack('H*', $this_xta['md5hash']);
+						$md5hash = reset($md5hash);
 						$updatetime = $this_xta['updatetime'];
 						if(!$updatetime) $updatetime = $this_xta['uploadtime'];
 						$url = 'xthreads_attach.php/'.$this_xta['aid'].'_'.$updatetime.'_'.substr($this_xta['attachname'], 0, 8).'/'.$md5hash.'/'.urlencode($this_xta['filename']);
@@ -821,7 +827,7 @@ function xthreads_upload_attachments() {
 			
 			if(isset($ul)) {
 				require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
-				$attachedfile = upload_xtattachment($ul, $v, $aid, $GLOBALS['thread']['tid']);
+				$attachedfile = upload_xtattachment($ul, $v, $mybb->user['uid'], $aid, $GLOBALS['thread']['tid']);
 				if($attachedfile['error']) {
 					if(!$lang->xthreads_threadfield_attacherror) $lang->load('xthreads');
 					$errors .= '<li>'.$lang->sprintf($lang->xthreads_threadfield_attacherror, htmlspecialchars_uni($v['title']), $attachedfile['error']).'</li>';
@@ -899,6 +905,19 @@ function xthreads_rm_attach_fs(&$xta) {
 	if($xta['indir']) {
 		@rmdir($path.$xta['indir']);
 	}
+}
+function xthreads_rm_attach_query($where) {
+	global $db;
+	$has_attach = 0;
+	$query = $db->simple_select('xtattachments', 'aid,indir,attachname', $where);
+	while($xta = $db->fetch_array($query)) {
+		xthreads_rm_attach_fs($xta);
+		++$has_attach;
+	}
+	$db->free_result($query);
+	if($has_attach)
+		$db->delete_query('xtattachments', $where);
+	return $has_attach;
 }
 
 

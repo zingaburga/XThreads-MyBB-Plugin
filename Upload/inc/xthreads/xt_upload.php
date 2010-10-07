@@ -3,8 +3,8 @@
  * A lot of this code is copied from MyBB's inc/functions_upload.php
  */
 
-
-function upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0)
+// note, $uid is used purely for flood checking; not verification, identification or anything else
+function upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $tid=0)
 {
 	global $db, $mybb, $lang;
 	
@@ -180,15 +180,17 @@ function upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0)
 	$attacharray = array(
 		'posthash' => $posthash,
 		'tid' => $tid,
-		'field' => $db->escape_string($tf['field']),
-		'filename' => $db->escape_string($attachment['name']),
-		'uploadmime' => $db->escape_string($attachment['type']),
+		'uid' => $uid,
+		'field' => $tf['field'],
+		'filename' => $attachment['name'],
+		'uploadmime' => $attachment['type'],
 		'filesize' => $file_size,
-		'attachname' => $db->escape_string($basename),
-		'indir' => $db->escape_string($month_dir),
-		'md5hash' => $db->escape_string($file_md5),
+		'attachname' => $basename,
+		'indir' => $month_dir,
+		'md5hash' => $file_md5,
 		'downloads' => 0,
-		'uploadtime' => TIME_NOW
+		'uploadtime' => TIME_NOW,
+		'updatetime' => TIME_NOW,
 	);
 	if(!empty($img_dimensions)) {
 		$origdimarray = array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2]);
@@ -197,8 +199,8 @@ function upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0)
 	
 	if($update_attachment) {
 		unset($attacharray['downloads'], $attacharray['uploadtime']);
-		$attacharray['updatetime'] = TIME_NOW;
-		$db->update_query('xtattachments', $attacharray, 'aid='.$prevattach['aid']);
+		//$attacharray['updatetime'] = TIME_NOW;
+		$db->update_query('xtattachments', array_map(array($db, 'escape_string'), $attacharray), 'aid='.$prevattach['aid']);
 		$attacharray['aid'] = $prevattach['aid'];
 		
 		// and finally, delete old attachment
@@ -206,7 +208,7 @@ function upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0)
 		$new_file = $path.$month_dir.$filename;
 	}
 	else {
-		$attacharray['aid'] = $db->insert_query('xtattachments', $attacharray);
+		$attacharray['aid'] = $db->insert_query('xtattachments', array_map(array($db, 'escape_string'), $attacharray));
 		// now that we have the aid, move the file
 		$new_file = $path.$month_dir.'file_'.$attacharray['aid'].'_'.$basename;
 		@rename($path.$month_dir.$filename, $new_file);
@@ -228,6 +230,19 @@ function upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0)
 		$attacharray['thumbs'] = serialize($attacharray['thumbs']);
 	}
 	
+	
+	// perform user flood checking
+	static $done_flood_check = false;
+	if($uid && !$done_flood_check) {
+		$done_flood_check = true;
+		xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
+		//xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' ORDER BY uploadtime DESC LIMIT 18446744073709551615 OFFSET '.XTHREADS_UPLOAD_FLOOD_NUMBER);
+		// 18446744073709551615 is recommended from http://dev.mysql.com/doc/refman/4.1/en/select.html
+		// we'll do an extra query to get around the issue of delete queries not supporting offsets
+		$cutoff = $db->fetch_field($db->simple_select('xtattachments', 'uploadtime', 'tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME), array('order_by' => 'uploadtime', 'order_dir' => 'desc', 'limit' => 1, 'limit_start' => XTHREADS_UPLOAD_FLOOD_NUMBER)), 'uploadtime');
+		if($cutoff)
+			xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' AND uploadtime <= '.$cutoff);
+	}
 	
 	return $attacharray;
 }

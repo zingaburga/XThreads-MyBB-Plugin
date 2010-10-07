@@ -103,13 +103,16 @@ if($mybb->input['action'] == 'inline')
 			@ignore_user_abort(true);
 			@set_time_limit(0);
 			require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+			xthreads_rm_attach_query('field IN ("'.implode('","', $delattach).'")');
+			/*
 			$qwhere = 'field IN ("'.implode('","', $delattach).'")';
 			$query = $db->simple_select('xtattachments', '*', $qwhere);
 			while($xta = $db->fetch_array($query)) {
 				xthreads_rm_attach_fs($xta);
 			}
 			$db->free_result($query);
-			$query = $db->delete_query('xtattachments', $qwhere);
+			$db->delete_query('xtattachments', $qwhere);
+			*/
 		}
 	}
 	// Log admin action

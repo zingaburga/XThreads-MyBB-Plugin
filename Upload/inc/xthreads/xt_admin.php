@@ -30,7 +30,7 @@ function xthreads_info() {
 		'website'		=> 'http://mybbhacks.zingaburga.com/',
 		'author'		=> 'ZiNgA BuRgA',
 		'authorsite'	=> 'http://zingaburga.com/',
-		'version'		=> '0.5',
+		'version'		=> XTHREADS_VERSION,
 		'compatibility'	=> '14*,16*',
 		'guid'			=> ''
 	);
@@ -64,6 +64,7 @@ function xthreads_install() {
 			`downloads` bigint(30) unsigned not null default 0,
 			
 			`tid` int(10) unsigned not null,
+			`uid` int(10) unsigned not null default 0,
 			`field` varchar(50) not null default "",
 			`posthash` varchar(50) not null default "",
 			`filename` varchar(120) not null default "",
@@ -79,6 +80,7 @@ function xthreads_install() {
 			
 			PRIMARY KEY (`aid`),
 			KEY (`tid`),
+			KEY (`tid`,`uid`),
 			KEY (`posthash`),
 			KEY (`field`)
 		)');
@@ -301,7 +303,7 @@ function xthreads_uninstall() {
 		$cache->handler->delete('threadfields');
 	$db->delete_query('datacache', 'title="threadfields"');
 	
-	$db->delete_query('templates', 'title IN ("forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
+	$db->delete_query('templates', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
 }
 
 function xthreads_buildtfcache() {
