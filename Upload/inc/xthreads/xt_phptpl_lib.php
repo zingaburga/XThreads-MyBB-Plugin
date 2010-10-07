@@ -44,6 +44,8 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	// globalise all variables; conveniently will filter out stuff like {VALUE$1}
 	$str = preg_replace('~\$([a-zA-Z_][a-zA-Z_0-9]*)~', '$GLOBALS[\'$1\']', $str);
 	// won't pick up double variable syntax, eg $$var, or complex variable syntax, eg ${$var}
+	// may also stuff up double-quote strings, eg "$var"
+	// may also be problematic if PHP enabled?
 	
 	// we need to parse {VALUE} tokens here, as they need to be parsed a bit differently, and so that they're checked for safe expressions
 	$do_value_repl = false;

@@ -315,14 +315,20 @@ function do_processing() {
 	header('Content-Type: '.$content_type);
 
 	if(!$thumb) { // don't send disposition for thumbnails
-		if(isset($_REQUEST['download']) && $_REQUEST['download'])
-			$disposition = 'attachment';
-		elseif((!isset($_SERVER['HTTP_USER_AGENT']) || strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'msie') === false) && (
-			strtolower(substr($content_type, 0, 6)) == 'image/' || strtolower(substr($content_type, 0, 5)) == 'text/'
-		))
-			$disposition = 'inline';
-		else
-			$disposition = 'attachment';
+		$disposition = 'attachment';
+		if(!isset($_REQUEST['download']) || !$_REQUEST['download'])
+			if(!isset($_SERVER['HTTP_USER_AGENT']) || strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'msie') === false) {
+				switch(strtolower($content_type)) {
+					case 'text/plain': case 'text/css': case 'text/javascript':
+					case 'application/pdf':
+						$disposition = 'inline';
+						break;
+					default:
+						if(in_array(substr($content_type, 0, 6), array('image/', 'audio/', 'video/')))
+							$disposition = 'inline';
+							// Does this work well with IE's type sniffing?
+				}
+			}
 		header('Content-Disposition: '.$disposition.'; filename="'.strtr($match[5], array('"'=>'\\"', "\r"=>'', "\n"=>'')).'"');
 	}
 
