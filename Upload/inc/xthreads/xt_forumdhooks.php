@@ -3,13 +3,14 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 function xthreads_forumdisplay() {
-	global $db, $threadfield_cache, $fid, $mybb, $tf_filters;
+	global $db, $threadfield_cache, $fid, $mybb, $tf_filters, $xthreads_forum_filter_form, $xthreads_forum_filter_args;
 	// the position of the "forumdisplay_start" hook is kinda REALLY annoying...
 	$fid = intval($mybb->input['fid']);
 	if($fid < 1 || !($forum = get_forum($fid))) return;
 	
 	$threadfield_cache = xthreads_gettfcache($fid);
 	$tf_filters = array();
+	$xthreads_forum_filter_form = $xthreads_forum_filter_args = '';
 	if(!empty($threadfield_cache)) {
 		function xthreads_forumdisplay_dbhook(&$s, &$db) {
 			global $threadfield_cache, $fid, $plugins, $threadfields;
@@ -39,9 +40,12 @@ function xthreads_forumdisplay() {
 		');
 		
 		// also check for forumdisplay filters/sort
+		// and generate form HTML
 		foreach($threadfield_cache as $n => &$tf) {
 			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n])) {
 				$tf_filters[$n] = $mybb->input['filtertf_'.$n];
+				$xthreads_forum_filter_form .= '<input type="hidden" name="filtertf_'.htmlspecialchars($n).'" value="'.htmlspecialchars_uni($tf_filters[$n]).'" />';
+				$xthreads_forum_filter_args .= '&filtertf_'.rawurlencode($n).'='.rawurlencode($tf_filters[$n]);
 			}
 			//if($mybb->input['sortby'] == 'tf_'.$n)
 			//	$tf_sort = $n;
@@ -51,6 +55,11 @@ function xthreads_forumdisplay() {
 		if(function_exists('quickthread_run'))
 			xthreads_forumdisplay_quickthread();
 	}
+	if($forum['xthreads_inlinesearch'] && $mybb->input['search']) {
+		$xthreads_forum_filter_args .= '&search='.rawurlencode($mybb->input['search']);
+		$GLOBALS['xthreads_forum_search_form'] = '<input type="hidden" name="search" value="'.htmlspecialchars_uni($mybb->input['search']).'" />';
+	}
+	
 	if($forum['xthreads_inlinesearch'] || !empty($tf_filters)) {
 		// only nice way to do all of this is to gain control of $templates, so let's do it
 		control_object($GLOBALS['templates'], '
@@ -70,10 +79,14 @@ function xthreads_forumdisplay() {
 			$templates->cache['forumdisplay_searchforum'] = '';
 		}
 		*/
+		
+		// generate stuff for pagination/sort-links and fields for forms (sort listboxes, inline search)
+		
 	}
 	if($forum['xthreads_threadsperpage']) {
 		$mybb->settings['threadsperpage'] = $forum['xthreads_threadsperpage'];
 	}
+	
 }
 
 // Quick Thread integration function
@@ -106,7 +119,7 @@ function xthreads_forumdisplay_filter() {
 	$tvisibleonly_tmp = $tvisibleonly;
 	
 	if($foruminfo['xthreads_inlinesearch']) {
-		global $templates, $lang, $gobutton, $fid, $sortby, $sortordernow, $datecut;
+		global $templates, $lang, $gobutton, $fid, $sortby, $sortordernow, $datecut, $xthreads_forum_filter_form;
 		$searchval = '';
 		if($mybb->input['search']) {
 			$qstr = 'subject LIKE "%'.$db->escape_string_like($mybb->input['search']).'%"';
@@ -195,6 +208,40 @@ function xthreads_forumdisplay_filter() {
 			');
 		}
 	}
+	
+	// if we have custom filters/inline search, patch the forumdisplay paged URLs + sorter links
+	global $xthreads_forum_filter_args;
+	if($xthreads_forum_filter_args) {
+		$filterargs_html = htmlspecialchars_uni($xthreads_forum_filter_args);
+		$GLOBALS['sorturl'] .= $filterargs_html;
+		
+		// old method for URL injection into multipage
+		/* global $datecut;
+		if($datecut <= 0 || $datecut == 9999) $datecut = 9999.9; // .9 gets around == 9999 check, but gets intval'd anyway - does introduce a side effect in URLs though
+		$datecut .= $xthreads_forum_filter_args;
+		// hack to get URL in page links
+		if(!$mybb->input['datecut']) $mybb->input['datecut'] = 9999; */
+		
+		// new method - template cache hacks
+		global $templates;
+		$tpls = array('multipage_end', 'multipage_nextpage', 'multipage_page', 'multipage_prevpage', 'multipage_start');
+		foreach($tpls as &$t)
+			if(!isset($templates->cache[$t])) {
+				$templates->cache(implode(',', $tpls));
+				break;
+			}
+		
+		// may need to replace first &amp; with a ?
+		if(($mybb->settings['seourls'] == 'yes' || ($mybb->settings['seourls'] == 'auto' && $_SERVER['SEO_SUPPORT'] == 1)) && $GLOBALS['sortby'] == 'lastpost' && $GLOBALS['sortordernow'] == 'desc' && ($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999))
+			$filterargs_html = '?'.substr($filterargs_html, 5);
+		
+		foreach($tpls as &$t) {
+			$templates->cache[$t] = str_replace('{$page_url}', '{$page_url}'.$filterargs_html, $templates->cache[$t]);
+		}
+		
+		
+		$templates->cache['forumdisplay_threadlist'] = str_replace('<select name="sortby">', '{$xthreads_forum_filter_form}{$xthreads_forum_search_form}<select name="sortby">', $templates->cache['forumdisplay_threadlist']);
+	}
 }
 
 function xthreads_forumdisplay_thread() {
@@ -206,7 +253,7 @@ function xthreads_forumdisplay_thread() {
 		xthreads_get_xta_cache($v, $GLOBALS['tids']);
 		
 		$threadfields[$k] =& $thread['xthreads_'.$k];
-		xthreads_sanitize_disp($threadfields[$k], $v, ($thread['usrename'] ? $thread['username'] : $thread['threadusername']));
+		xthreads_sanitize_disp($threadfields[$k], $v, ($thread['username'] ? $thread['username'] : $thread['threadusername']));
 	}
 	// evaluate group separator
 	if($foruminfo['xthreads_grouping']) {
@@ -255,6 +302,7 @@ function xthreads_tpl_forumbits(&$forum) {
 	
 	if(!$done) {
 		$done = true;
+		$templates->cache['__null__forumbit_depth1_cat'] = $templates->cache['__null__forumbit_depth2_cat'] = $templates->cache['__null__forumbit_depth2_forum'] = $templates->cache['__null__forumbit_depth3'] = ' ';
 		control_object($templates, '
 			function get($title, $eslashes=1, $htmlcomments=1) {
 				$p =& $this->xthreads_forumbits_curforum[\'xthreads_tplprefix\'];
@@ -266,6 +314,9 @@ function xthreads_tpl_forumbits(&$forum) {
 		');
 	}
 	$templates->xthreads_forumbits_curforum =& $forum;
+	if($forum['xthreads_hideforum']) $forum['xthreads_tplprefix'] = '__null__';
+	
+	xthreads_set_threadforum_urlvars('forum', $forum['fid']);
 }
 
 function xthreads_global_forumbits_tpl() {
@@ -275,7 +326,7 @@ function xthreads_global_forumbits_tpl() {
 	// TODO: perhaps make this smarter??
 	$prefixes = array();
 	foreach($GLOBALS['cache']->read('forums') as $f) {
-		if($f['xthreads_tplprefix'])
+		if($f['xthreads_tplprefix'] && !$f['xthreads_hideforum'])
 			$prefixes[$f['xthreads_tplprefix']] = 1;
 	}
 	if(!empty($prefixes)) {

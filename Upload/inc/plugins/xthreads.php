@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.1);
+define('XTHREADS_VERSION', 1.2);
 
 
 // XThreads defines
@@ -21,6 +21,9 @@ define('XTHREADS_UPLOAD_FLOOD_TIME', 1800); // in seconds
 define('XTHREADS_UPLOAD_FLOOD_NUMBER', 50);
 // also, automatically remove xtattachments older than 3 hours when they try to upload something new
 define('XTHREADS_UPLOAD_EXPIRE_TIME', 3*3600); // in seconds
+
+// the size a file must be above to be considered a "large file"; large files will have their MD5 calculation deferred to a task; set to 0 to disable deferred MD5 hashing
+define('XTHREADS_UPLOAD_LARGEFILE_SIZE', 10*1048576); // in bytes, default is 10MB
 
 // some more defines can be found in xthreads_attach.php
 
@@ -50,6 +53,9 @@ $plugins->add_hook('portal_start', 'xthreads_fix_stats_portal', 10, $mischooks_f
 $plugins->add_hook('stats_start', 'xthreads_fix_stats_stats', 10, $mischooks_file);
 $plugins->add_hook('usercp_start', 'xthreads_fix_stats_usercp', 10, $mischooks_file);
 
+$plugins->add_hook('portal_start', 'xthreads_portal', 10, $mischooks_file);
+$plugins->add_hook('portal_announcement', 'xthreads_portal_announcement', 10, $mischooks_file);
+
 
 $plugins->add_hook('showthread_start', 'xthreads_showthread', 10, MYBB_ROOT.'inc/xthreads/xt_sthreadhooks.php');
 
@@ -62,7 +68,7 @@ $plugins->add_hook('datahandler_post_validate_post', 'xthreads_input_posthandler
 $plugins->add_hook('class_moderation_delete_thread', 'xthreads_delete_thread', 10, $updatehooks_file);
 
 $plugins->add_hook('newthread_start', 'xthreads_inputdisp', 10, $updatehooks_file);
-$plugins->add_hook(($GLOBALS['mybb']->version_code >= 1600 ? 'editpost_action_start' : 'editpost_start'), 'xthreads_inputdisp', 10, $updatehooks_file);
+$plugins->add_hook(($GLOBALS['mybb']->version_code >= 1412 ? 'editpost_action_start' : 'editpost_start'), 'xthreads_inputdisp', 10, $updatehooks_file);
 
 $plugins->add_hook('newreply_do_newreply_end', 'xthreads_js_remove_noreplies_notice', 10, $updatehooks_file);
 
@@ -117,9 +123,21 @@ function &xthreads_gettfcache($fid=0) {
 
 function xthreads_format_thread_date() {
 	// since this is so useful, always format start time/date for each thread
-	global $thread, $mybb;
+	global $thread, $mybb, $threadurl, $threadurl_q;
 	$thread['threaddate'] = my_date($mybb->settings['dateformat'], $thread['dateline']);
 	$thread['threadtime'] = my_date($mybb->settings['timeformat'], $thread['dateline']);
+	
+	// I'm lazy, also do threadurl evaluation here
+	xthreads_set_threadforum_urlvars('thread', $thread['tid']);
+}
+
+function xthreads_set_threadforum_urlvars($where, $id) {
+	$url = $where.'url';
+	$urlq = $url.'_q';
+	$func = 'get_'.$where.'_link';
+	$GLOBALS[$urlq] = $GLOBALS[$url] = $func($id);
+	if(strpos($GLOBALS[$urlq], '?')) $GLOBALS[$urlq] .= '&amp;';
+	else $GLOBALS[$urlq] .= '?';
 }
 
 
@@ -127,24 +145,26 @@ function xthreads_tplhandler() {
 	global $current_page, $mybb, $templatelist, $templates;
 	switch($current_page) {
 		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
-			// add in custom thread group separator template
-			if($current_page == 'forumdisplay.php') $templatelist .= ',forumdisplay_group_sep,forumdisplay_thread_null';
 			$fid = $mybb->input['fid'];
 			if($fid) break;
 			
 		case 'showthread.php': case 'newreply.php': case 'ratethread.php': case 'polls.php': case 'sendthread.php': case 'printthread.php':
 			if($tid = intval($mybb->input['tid'])) {
 				$thread = get_thread($tid);
-				if($thread['fid'])
+				if($thread['fid']) {
 					$fid = $thread['fid'];
+					xthreads_set_threadforum_urlvars('thread', $thread['tid']); // since it's convenient...
+				}
 			}
 			if($fid) break;
 			
 		case 'editpost.php':
 			if($pid = intval($mybb->input['pid'])) {
 				$post = get_post($pid);
-				if($post['fid'])
+				if($post['fid']) {
 					$fid = $post['fid'];
+					xthreads_set_threadforum_urlvars('thread', $post['tid']); // since it's convenient...
+				}
 			}
 			if($fid) {
 				$templatelist .= ',editpost_first';
@@ -204,6 +224,24 @@ function xthreads_tplhandler() {
 		if($forum['xthreads_force_postlayout']) {
 			$mybb->settings['postlayout'] = $forum['xthreads_force_postlayout'];
 		}
+		
+		// cache some more templates if necessary
+		switch($current_page) {
+			case 'forumdisplay.php':
+				if($forum['xthreads_grouping'])
+					$templatelist .= ',forumdisplay_group_sep,forumdisplay_thread_null';
+				if($forum['xthreads_inlinesearch'])
+					$templatelist .= ',forumdisplay_searchforum_inline';
+				if(function_exists('quickthread_run')) // Quick Thread plugin
+					$templatelist .= ',threadfields_inputrow';
+			break;
+			case 'editpost.php':
+			case 'newthread.php':
+				$templatelist .= ',threadfields_inputrow';
+			break;
+		}
+		
+		xthreads_set_threadforum_urlvars('forum', $forum['fid']);
 	}
 	if($current_page == 'index.php' || $current_page == 'forumdisplay.php') {
 		global $plugins;
@@ -250,8 +288,9 @@ function xthreads_tpl_get(&$obj, &$t, $prefix) {
 function xthreads_handle_uploads() {
 	global $mybb, $current_page;
 	if($mybb->request_method == 'post' && ($current_page == 'newthread.php' || $current_page == 'editpost.php')) {
+		global $thread;
 		if($current_page == 'editpost.php') {
-			global $thread;
+			if($mybb->input['action'] == 'deletepost' && $mybb->request_method == 'post') return;
 			// check if first post
 			if(!$thread) {
 				$post = get_post(intval($mybb->input['pid']));
@@ -261,9 +300,31 @@ function xthreads_handle_uploads() {
 			}
 			if($thread['firstpost'] != $post['pid'])
 				return;
-		} elseif(($mybb->input['action'] == 'editdraft' || $mybb->input['action'] == 'savedraft') && $mybb->input['tid']) {
-			$GLOBALS['thread'] = get_thread(intval($mybb->input['tid']));
+		} elseif($mybb->input['tid']) { /* ($mybb->input['action'] == 'editdraft' || $mybb->input['action'] == 'savedraft') && */
+			$thread = get_thread(intval($mybb->input['tid']));
+			if($thread['visible'] != -2 || $thread['uid'] != $mybb->user['uid']) // ensure that this is, indeed, a draft
+				unset($GLOBALS['thread']);
 		}
+		
+		// permissions check - ideally, should get MyBB to do this, but I see no easy way to implement it unfortunately
+		if($mybb->user['suspendposting'] == 1) return;
+		if($thread['fid']) $fid = $thread['fid'];
+		else $fid = intval($mybb->input['fid']);
+		$forum = get_forum($fid);
+		if(!$forum['fid'] || $forum['open'] == 0 || $forum['type'] != 'f') return;
+		
+		$forumpermissions = forum_permissions($fid);
+		if($forumpermissions['canview'] == 0) return;
+		if($current_page == 'newthread.php' && $forumpermissions['canpostthreads'] == 0) return;
+		elseif($current_page == 'editpost.php') {
+			if(!is_moderator($fid, 'caneditposts')) {
+				if($thread['closed'] == 1 || $forumpermissions['caneditposts'] == 0 || $mybb->user['uid'] != $thread['uid']) return;
+				if($mybb->settings['edittimelimit'] != 0 && $thread['dateline'] < (TIME_NOW-($mybb->settings['edittimelimit']*60))) return;
+			}
+		}
+		
+		check_forum_password($forum['fid']);
+		
 		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 		xthreads_upload_attachments();
 	}
@@ -352,8 +413,10 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		$s['uploadmime'] = htmlspecialchars_uni($s['uploadmime']);
 		if(!$s['updatetime']) $s['updatetime'] = $s['uploadtime'];
 		$s['filesize_friendly'] = get_friendly_size($s['filesize']);
-		$s['md5hash'] = unpack('H*', $s['md5hash']);
-		$s['md5hash'] = reset($s['md5hash']); // dunno why list($s['md5hash']) = unpack(...) doesn't work... - maybe need list($dummy, $s['md5hash']) = unpack() ?
+		if(isset($s['md5hash'])) {
+			$s['md5hash'] = unpack('H*', $s['md5hash']);
+			$s['md5hash'] = reset($s['md5hash']); // dunno why list($s['md5hash']) = unpack(...) doesn't work... - maybe need list($dummy, $s['md5hash']) = unpack() ?
+		}
 		$s['url'] = xthreads_get_xta_url($s);
 		$s['icon'] = get_attachment_icon(get_extension($s['filename']));
 		
@@ -384,14 +447,14 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 				xthreads_sanitize_disp_field($v, $tfinfo, $tfinfo['formatmap'], $mename);
 				if($tfinfo['dispitemformat']) {
 					$v = strtr(eval_str($tfinfo['dispitemformat']), array(
-						'{VALUE}' => $v, 
-						'{RAWVALUE}' => $raw_v, 
+						'<VALUE>' => $v, 
+						'<RAWVALUE>' => $raw_v, 
 					));
 				}
 			}
 			$s = implode($tfinfo['multival'], $vals);
 			if($dispfmt) {
-				$s = str_replace('{VALUE}', $s, eval_str($dispfmt));
+				$s = str_replace('<VALUE>', $s, eval_str($dispfmt));
 			}
 		}
 		else {
@@ -399,8 +462,8 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 			xthreads_sanitize_disp_field($s, $tfinfo, $tfinfo['formatmap'], $mename);
 			if($dispfmt) {
 				$s = strtr(eval_str($dispfmt), array(
-					'{VALUE}' => $s, 
-					'{RAWVALUE}' => $raw_s, 
+					'<VALUE>' => $s, 
+					'<RAWVALUE>' => $raw_s, 
 				));
 			}
 		}
@@ -443,6 +506,10 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$fmtmap, $mename) {
 
 function eval_str(&$s) {
 	if(strpos($s, '{$') === false) return $s;
+	
+	// sanitisation done in cache build - don't need to do it here
+	return eval('return "'.$s.'";');
+	/*
 	// cause of PHP's f***ing magic quotes, we need a second eval
 	$find = array('~\\{\\$([a-zA-Z_0-9]+)((-\\>[a-zA-Z_0-9]+|\\[[\'"]?[a-zA-Z_ 0-9]+[\'"]?\\])*)\\}~e');
 	$repl = array('eval("return \\\\$GLOBALS[\'$1\']".str_replace("\\\\\'", "\'", "$2").";")');
@@ -459,8 +526,6 @@ function eval_str(&$s) {
 			else $flink .= '?';
 			$find[] = '~\{\$forumurl\?\}~i';
 			$repl[] = $flink;
-			/* $find[] = '~\{\$forumurl#(\d*)\}~ie';
-			$repl[] = 'get_forum_link('.$fid.', $1 ? $1 : 1)'; */
 		}
 		$tid =& $GLOBALS['tid'];
 		if(!$tid) $tid = $GLOBALS['thread']['tid'];
@@ -472,12 +537,11 @@ function eval_str(&$s) {
 			else $tlink .= '?';
 			$find[] = '~\{\$threadurl\?\}~i';
 			$repl[] = $tlink;
-			/* $find[] = '~\{\$threadurl\$\}~i';
-			$repl[] = get_thread_link($tid); */
 		}
 	}
 	//return eval('return "'.strtr(preg_replace('~\\{\\$([a-zA-Z_0-9]+)~', '{$GLOBALS[\'$1\']', $s), array('\\' => '\\\\', '"' => '\\"')).'";');
 	return preg_replace($find, $repl, $s);
+	*/
 }
 
 // wildcard match like the *nix filesystem
@@ -491,6 +555,7 @@ function xthreads_wildcard_match($str, $wc) {
 }
 
 
+// note, $tf isn't used for loading xtattachment cache - it's only there to simplify loop-logic
 function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 	if(!$tids) return;
 	// our special query needed to get download info across
@@ -512,13 +577,16 @@ function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 	}
 }
 function xthreads_get_xta_url(&$xta) {
-	$md5hash = $xta['md5hash'];
-	if(isset($md5hash{15}) && !isset($md5hash{16})) {
-		$md5hash = unpack('H*', $md5hash);
-		$md5hash = reset($md5hash);
-	} elseif(!isset($md5hash{31}) || isset($md5hash{32}))
+	if(isset($xta['md5hash'])) {
+		$md5hash = $xta['md5hash'];
+		if(isset($md5hash{15}) && !isset($md5hash{16})) {
+			$md5hash = unpack('H*', $md5hash);
+			$md5hash = reset($md5hash);
+		} elseif(!isset($md5hash{31}) || isset($md5hash{32}))
+			$md5hash = '';
+		if($md5hash) $md5hash .= '/';
+	} else
 		$md5hash = '';
-	if($md5hash) $md5hash .= '/';
 	$updatetime = $xta['updatetime'];
 	if(!$updatetime) $updatetime = $xta['uploadtime'];
 	

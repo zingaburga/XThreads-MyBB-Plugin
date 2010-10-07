@@ -159,6 +159,8 @@ function do_processing() {
 
 	if($cached) {
 		header('HTTP/1.1 304 Not Modified');
+		header('ETag: '.$etag);
+		header('Vary: Range');
 		exit;
 	}
 
@@ -169,13 +171,46 @@ function do_processing() {
 		header('HTTP/1.1 500 Internal Server Error');
 		die('Failed to open file.');
 	}
+	
+	$range_start = 0;
+	$fsize = filesize($fn);
+	$range_end = $fsize-1;
 
+	if(isset($_SERVER['HTTP_RANGE']) && ($p = strpos($_SERVER['HTTP_RANGE'], '='))) {
+		$rangestr = substr($_SERVER['HTTP_RANGE'], $p+1);
+		$p = strpos($rangestr, '-');
+		$ostart = intval(substr($rangestr, 0, $p));
+		$oend = intval(substr($rangestr, $p+1));
+		
+		if($oend && $oend < $range_end && $oend > $range_start)
+			$range_end = $oend;
+		if($ostart && $ostart > $range_start && $ostart < $range_end)
+			$range_start = $ostart;
+	}
+	
+	if($range_start || $range_end != $fsize-1) {
+		// check If-Range header
+		$cached = true; // reuse this variable
+		if(isset($_SERVER['HTTP_IF_RANGE']) && ($etag_match = trim($_SERVER['HTTP_IF_RANGE']))) {
+			if($etag_match != $etag && (!strpos($etag_match, ',') || !in_array($etag, array_map('trim', explode(',', $etag_match))))) {
+				$cached = false;
+				// re-send whole file
+				$range_start = 0;
+				$range_end = $fsize -1;
+			}
+		}
+		if($cached)
+			header('HTTP/1.1 206 Partial Content');
+	}
+
+	if(COUNT_DOWNLOADS == 1 && !$thumb) increment_downloads($match[1]);
 	header('Accept-Ranges: bytes');
 	header('Allow: GET, HEAD');
 	header('Last-Modified: '.gmdate('D, d M Y H:i:s', $modtime).'GMT');
 	header('Expires: '.gmdate('D, d M Y H:i:s', time() + CACHE_TIME).'GMT');
 	header('Cache-Control: max-age='.CACHE_TIME);
 	header('ETag: '.$etag);
+	header('Vary: Range');
 
 	// check referrer?
 
@@ -271,29 +306,11 @@ function do_processing() {
 		header('Content-Disposition: '.$disposition.'; filename="'.strtr($match[5], array('"'=>'\\"', "\r"=>'', "\n"=>'')).'"');
 	}
 
-	$range_start = 0;
-	$fsize = filesize($fn);
-	$range_end = $fsize-1;
-
 	if($range_end < 0) {
 		// this is a 0 byte file
 		header('Content-Length: 0');
 		fclose($fp);
 		exit;
-	}
-
-	if(COUNT_DOWNLOADS == 1 && !$thumb) increment_downloads($match[1]);
-
-	if(isset($_SERVER['HTTP_RANGE']) && ($p = strpos($_SERVER['HTTP_RANGE'], '='))) {
-		$rangestr = substr($_SERVER['HTTP_RANGE'], $p+1);
-		$p = strpos($rangestr, '-');
-		$ostart = intval(substr($rangestr, 0, $p));
-		$oend = intval(substr($rangestr, $p+1));
-		
-		if($oend && $oend < $range_end && $oend > $range_start)
-			$range_end = $oend;
-		if($ostart && $ostart > $range_start && $ostart < $range_end)
-			$range_start = $ostart;
 	}
 
 	header('Content-Length: '.($range_end - $range_start + 1));

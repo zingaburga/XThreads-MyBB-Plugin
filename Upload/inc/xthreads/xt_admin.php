@@ -4,7 +4,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 //define('XTHREADS_THREADFILTER_SQL_STRICT', 1);
-define('XTHREADS_ADMIN_PATHSEP', ($mybb->version_code >= 1600 ? '-':'/'));
+define('XTHREADS_ADMIN_PATHSEP', ($mybb->version_code >= 1500 ? '-':'/'));
 define('XTHREADS_ADMIN_CONFIG_PATH', 'index.php?module=config'.XTHREADS_ADMIN_PATHSEP);
 
 $plugins->add_hook('admin_tools_cache_start', 'xthreads_admin_cachehack');
@@ -77,7 +77,7 @@ function xthreads_install() {
 			`filesize` bigint(30) unsigned not null default 0,
 			`attachname` varchar(120) not null default "",
 			`indir` varchar(40) not null default "",
-			`md5hash` binary(16) not null default "",
+			`md5hash` binary(16) default null,
 			`uploadtime` bigint(30) unsigned not null default 0,
 			`updatetime` bigint(30) unsigned not null default 0,
 			
@@ -113,6 +113,7 @@ function xthreads_install() {
 			`desc` varchar(255) not null default "",
 			`inputtype` tinyint(3) not null default 0,
 			`disporder` int(11) not null default 1,
+			`hideedit` tinyint(1) not null default 0,
 			`formhtml` text not null,
 			`defaultval` varchar(255) not null default "",
 			`fieldwidth` smallint(5) unsigned not null default 0,
@@ -140,6 +141,7 @@ function xthreads_install() {
 			ADD COLUMN `xthreads_threadsperpage` int(5) unsigned not null default 0,
 			ADD COLUMN `xthreads_postsperpage` int(5) unsigned not null default 0,
 			ADD COLUMN `xthreads_force_postlayout` varchar(15) not null default "",
+			ADD COLUMN `xthreads_hideforum` tinyint(3) not null default 0,
 			ADD COLUMN `xthreads_wol_announcements` varchar(255) not null default "",
 			ADD COLUMN `xthreads_wol_forumdisplay` varchar(255) not null default "",
 			ADD COLUMN `xthreads_wol_newthread` varchar(255) not null default "",
@@ -155,7 +157,7 @@ function xthreads_install() {
 	xthreads_write_xtcachefile();
 	
 	
-	$new_templates = array(
+	xthreads_insert_templates(array(
 		'editpost_first' => '<!-- this template allows you to have something different from the editpost template for when editing the first post of a thread; by default, will just display the editpost template -->'."\n".'{$editpost}',
 		'forumdisplay_group_sep' => '<!-- stick your thread group separator template here -->',
 		'forumdisplay_thread_null' => '<!-- stick your null thread template here -->',
@@ -172,28 +174,13 @@ Put your stuff here
 	<input type="hidden" name="sortby" value="{$sortby}" />
 	<input type="hidden" name="order" value="{$sortordernow}" />
 	<input type="hidden" name="datecut" value="{$datecut}" />
+	{$xthreads_forum_filter_form}
 	</form><br />',
 		'threadfields_inputrow' => '<tr>
 <td class="{$altbg}" width="20%"><strong>{$tf[\'title\']}</strong></td>
 <td class="{$altbg}">{$inputfield}<small style="display: block;">{$tf[\'desc\']}</small></td>
 </tr>'
-	);
-	
-	if($mybb->version_code >= 1600)
-		$tpl_ver = 1600;
-	elseif($mybb->version_code >= 1400) {
-		//$tpl_ver = min($mybb->version_code, 1411);
-		$tpl_ver = 1411;
-	}
-	foreach($new_templates as $name => &$tpl) {
-		$db->insert_query('templates', array(
-			'title' => $name,
-			'template' => $db->escape_string($tpl),
-			'sid' => -1,
-			'version' => $tpl_ver
-		));
-	}
-	unset($new_templates);
+	));
 	// TODO: perhaps modify existing forumdisplay_threadlist template to include the inline search with the listboxes
 	
 	
@@ -213,6 +200,24 @@ Put your stuff here
 	find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
 	find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
 	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
+}
+
+function xthreads_insert_templates($new_templates, $set=-1) {
+	global $mybb, $db;
+	if($mybb->version_code >= 1500) // MyBB 1.6 beta or final
+		$tpl_ver = 1600;
+	elseif($mybb->version_code >= 1400) {
+		//$tpl_ver = min($mybb->version_code, 1411);
+		$tpl_ver = 1413;
+	}
+	foreach($new_templates as $name => &$tpl) {
+		$db->insert_query('templates', array(
+			'title' => $name,
+			'template' => $db->escape_string($tpl),
+			'sid' => $set,
+			'version' => $tpl_ver
+		));
+	}
 }
 
 function xthreads_activate() {
@@ -264,7 +269,6 @@ function xthreads_uninstall() {
 	find_replace_templatesets('showthread', '#\\{\\$first_post\\}#', '', 0);
 	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$nullthreads\\}#', '', 0);
 	
-	
 	$query = $db->simple_select('adminoptions', 'uid,permissions');
 	while($adminopt = $db->fetch_array($query)) {
 		$perms = unserialize($adminopt['permissions']);
@@ -290,6 +294,7 @@ function xthreads_uninstall() {
 		'xthreads_threadsperpage',
 		'xthreads_postsperpage',
 		'xthreads_force_postlayout',
+		'xthreads_hideforum',
 		//'xthreads_pull_firstpost',
 		'xthreads_wol_announcements',
 		'xthreads_wol_forumdisplay',
@@ -335,6 +340,7 @@ function xthreads_buildtfcache() {
 	while($tf = $db->fetch_array($query)) {
 		// remove unnecessary fields
 		if($tf['editable_gids']) $tf['editable'] = 0;
+		if(!$tf['viewable_gids']) unset($tf['unviewableval']);
 		if($tf['inputtype'] != XTHREADS_INPUT_CUSTOM)
 			unset($tf['formhtml']);
 		switch($tf['inputtype']) {
@@ -417,10 +423,41 @@ function xthreads_buildtfcache() {
 		}
 		// santize -> separate mycode stuff?
 		
+		
+		// sanitise eval'd stuff
+		if($tf['unviewableval']) xthreads_sanitize_eval($tf['unviewableval']);
+		if($tf['dispformat']) xthreads_sanitize_eval($tf['dispformat']);
+		if($tf['dispitemformat']) xthreads_sanitize_eval($tf['dispitemformat']);
+		if($tf['blankval']) xthreads_sanitize_eval($tf['blankval']);
+		if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
+			foreach($tf['formatmap'] as &$fm)
+				xthreads_sanitize_eval($fm);
+		
 		$cd[$tf['field']] = $tf;
 	}
 	$db->free_result($query);
 	$cache->update('threadfields', $cd);
+}
+// sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
+function xthreads_sanitize_eval(&$s) {
+	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
+	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
+	$s = preg_replace(
+		array(
+			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((-\\>[a-zA-Z_][a-zA-Z_0-9]*|\\[(\'|\\\\"|)[a-zA-Z_ 0-9]+\\4\\])*)\\}~e',
+			'~\{\\\$forumurl\\\$\}~i',
+			'~\{\\\$forumurl\?\}~i',
+			'~\{\\\$threadurl\\\$\}~i',
+			'~\{\\\$threadurl\?\}~i'
+		), array(
+			'\'{$GLOBALS[\\\'$1\\\']\'.strtr(\'$2\', array(\'\\\\\\\\\\\'\' => \'\\\'\', \'\\\\\\\\\\\\\\\\"\' => \'\\\'\')).\'}\'', // rewrite double-quote to single quotes, cos it's faster
+			'{$GLOBALS[\'forumurl\']}',
+			'{$GLOBALS[\'forumurl_q\']}',
+			'{$GLOBALS[\'threadurl\']}',
+			'{$GLOBALS[\'threadurl_q\']}',
+		), strtr($s, array('\\' => '\\\\', '$' => '\\$', '"' => '\\"', '{VALUE}' => '<VALUE>', '{RAWVALUE}' => '<RAWVALUE>'))
+		// we convert (RAW)VALUE to tag format lessen likelihood that admin includes a variable where users can put in {VALUE}, (eg thread title)
+	);
 }
 
 
@@ -451,7 +488,7 @@ function xthreads_admin_forumedit() {
 		//$GLOBALS['plugins']->add_hook('admin_formcontainer_end', 'xthreads_admin_forumedit_hook2');
 		$done = true;
 		$fixcode='';
-		if($GLOBALS['mybb']->version_code >= 1600) {
+		if($GLOBALS['mybb']->version_code >= 1500) {
 			// unfortunately, the above effectively ditches the added Misc row
 			$GLOBALS['xt_fc_args'] = $args;
 			$fixcode = 'call_user_func_array(array($this, "output_row"), $GLOBALS[\'xt_fc_args\']);';
@@ -488,6 +525,7 @@ function xthreads_admin_forumedit() {
 				'xthreads_threadsperpage' => 0,
 				'xthreads_postsperpage' => 0,
 				'xthreads_force_postlayout' => '',
+				'xthreads_hideforum' => 0,
 				'xthreads_allow_blankmsg' => 0,
 				'xthreads_nostatcount' => 0,
 				'xthreads_wol_announcements' => '',
@@ -508,6 +546,7 @@ function xthreads_admin_forumedit() {
 			'threadsperpage' => 'text_box',
 			'postsperpage' => 'text_box',
 			'force_postlayout' => array('' => 'none', 'horizontal' => 'horizontal', 'classic' => 'classic'),
+			'hideforum' => 'yes_no_radio',
 			'allow_blankmsg' => 'yes_no_radio',
 			'nostatcount' => 'yes_no_radio',
 		);
@@ -582,6 +621,7 @@ function xthreads_admin_forumcommit() {
 		'xthreads_threadsperpage' => intval(trim($mybb->input['xthreads_threadsperpage'])),
 		'xthreads_postsperpage' => intval(trim($mybb->input['xthreads_postsperpage'])),
 		'xthreads_force_postlayout' => trim($mybb->input['xthreads_force_postlayout']),
+		'xthreads_hideforum' => intval($mybb->input['xthreads_hideforum']),
 //		'xthreads_deffilter' => $db->escape_string($deffilter),
 		'xthreads_wol_announcements' => $db->escape_string(trim($mybb->input['xthreads_wol_announcements'])),
 		'xthreads_wol_forumdisplay' => $db->escape_string(trim($mybb->input['xthreads_wol_forumdisplay'])),
@@ -639,7 +679,8 @@ function xthreads_admin_rebuildthumbs() {
 			$query = $db->simple_select('xtattachments', '*', $where, array('order_by' => 'aid', 'limit' => $perpage, 'limit_start' => ($page-1)*$perpage));
 			while($xta = $db->fetch_array($query)) {
 				// remove thumbs, then rebuild
-				$name = $xtadir.$xta['indir'].'file_'.$xta['aid'].'_'.$xta['attachname'];
+				$name = xthreads_get_attach_path($xta);
+				// unfortunately, we still need $xtadir
 				if($thumbs = @glob(substr($name, 0, -6).'*x*.thumb'))
 					foreach($thumbs as &$thumb) {
 						@unlink($xtadir.$xta['indir'].basename($thumb));

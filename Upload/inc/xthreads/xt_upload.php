@@ -32,7 +32,10 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	global $db, $mybb, $lang;
 	
 	$posthash = $db->escape_string($mybb->input['posthash']);
-
+	$path = $mybb->settings['uploadspath'].'/xthreads_ul/';
+	
+	if(!$lang->xthreads_threadfield_attacherror) $lang->load('xthreads');
+	
 	if(is_array($attachment)) {
 		if(isset($attachment['error']) && $attachment['error']) {
 			if($attachment['error'] >= 1 && $attachment['error'] <= 7) {
@@ -51,47 +54,40 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		
 		$file_size = $attachment['size']; // @filesize($attachment['tmp_name'])
 		
-		if(empty($attachment['name']) || $file_size < 1)
-			return array('error' => $lang->error_uploadfailed);
-		
 		$attachment['name'] = strtr($attachment['name'], array('/' => '', "\x0" => ''));
 		
-		// validation
-		if($tf['filemaxsize'] && $file_size > $tf['filemaxsize']) {
+		if($error = xthreads_validate_attachment($attachment, $tf)) {
 			@unlink($attachment['tmp_name']);
-			return array('error' => $lang->sprintf($lang->error_attachsize, $tf['filemaxsize']/1024));
+			return array('error' => $error);
 		}
-		if($tf['fileexts']) {
-			$ext = strtolower(get_extension($attachment['name']));
-			if(strpos('|'.strtolower($tf['fileexts']).'|', '|'.$ext.'|') === false) {
-				@unlink($attachment['tmp_name']);
-				return array('error' => $lang->error_attachtype);
-			}
-		}
-		if(!empty($tf['filemagic'])) {
-			$validmagic = false;
-			if($fp = @fopen($attachment['tmp_name'], 'rb')) {
-				$startbuf = fread($fp, 255); // since it's impossible to exceed this amount in the field (yes, it's dirty, lol)
-				fclose($fp);
-				foreach($tf['filemagic'] as &$magic) {
-					if(!$magic) continue;
-					if(substr($startbuf, 0, strlen($magic)) == $magic) {
-						$validmagic = true;
-						break;
-					}
-				}
-			} else
-				return array('error' => $lang->error_uploadfailed);
-			
-			if(!$validmagic) {
-				@unlink($attachment['tmp_name']);
-				return array('error' => $lang->error_attachtype);
-			}
-		}
-		
-		
 		
 		$movefunc = 'move_uploaded_file';
+	} elseif($mybb->usergroup['cancp'] == 1 && substr($attachment, 0, 7) == 'file://') {
+		// admin file move
+		$filename = strtr(substr($attachment, 7), array('/' => '', DIRECTORY_SEPARATOR => '', "\0" => ''));
+		$file = $path.'admindrop/'.$filename;
+		if(!$filename || !file_exists($file)) {
+			return array('error' => $lang->sprintf($lang->xthreads_xtaerr_admindrop_not_found, htmlspecialchars_uni($filename), htmlspecialchars_uni($file)));
+		}
+		if(!is_writable($file)) {
+			return array('error' => $lang->sprintf($lang->xthreads_xtaerr_admindrop_file_unwritable, htmlspecialchars_uni($filename)));
+		}
+		if(strtolower($file) == 'index.html') {
+			return array('error' => $lang->xthreads_xtaerr_admindrop_index_error);
+		}
+		
+		$attachment = array(
+			'name' => $filename,
+			'tmp_name' => $file,
+			'size' => @filesize($file),
+		);
+		unset($file, $filename);
+		if($error = xthreads_validate_attachment($attachment, $tf)) {
+			return array('error' => $error);
+		}
+		
+		$file_size = $attachment['size'];
+		$movefunc = 'rename';
 	} else {
 		// fetch URL
 		if(!empty($tf['filemagic']))
@@ -134,20 +130,26 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		// we won't actually bother checking MIME types - not a big issue anyway
 	}
 	
-	@set_time_limit(60); // as md5_file may take a while
-	$file_md5 = @md5_file($attachment['tmp_name'], true);
-	if(strlen($file_md5) == 32) {
-		// perhaps not PHP5
-		$file_md5 = pack('H*', $file_md5);
+	if(!XTHREADS_UPLOAD_LARGEFILE_SIZE || $file_size < XTHREADS_UPLOAD_LARGEFILE_SIZE) {
+		@set_time_limit(30); // as md5_file may take a while
+		$file_md5 = @md5_file($attachment['tmp_name'], true);
+		if(strlen($file_md5) == 32) {
+			// perhaps not PHP5
+			$file_md5 = pack('H*', $file_md5);
+		}
 	}
 	
 	if($update_attachment) {
-		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid,attachname,indir', 'aid='.intval($update_attachment)));
+		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid,attachname,indir,md5hash', 'aid='.intval($update_attachment)));
 		if(!$prevattach['aid']) $update_attachment = false;
 	} else {
 		// Check if attachment already uploaded
 		// TODO: this is actually a little problematic - perhaps verify that this is attached to this field (or maybe rely on checks in xt_updatehooks file)
-		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid', 'filename="'.$db->escape_string($attachment['name']).'" AND md5hash="'.$db->escape_string($file_md5).'" AND filesize='.$file_size.' AND (posthash="'.$posthash.'" OR (tid='.intval($tid).' AND tid!=0))'));
+		if(isset($file_md5))
+			$md5check = ' OR md5hash="'.$db->escape_string($file_md5).'"';
+		else
+			$md5check = '';
+		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid', 'filename="'.$db->escape_string($attachment['name']).'" AND (md5hash IS NULL'.$md5check.') AND filesize='.$file_size.' AND (posthash="'.$posthash.'" OR (tid='.intval($tid).' AND tid!=0))'));
 		if($prevattach['aid']) {
 			@unlink($attachment['tmp_name']);
 			// TODO: maybe return aid instead?
@@ -156,7 +158,6 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	}
 	
 	
-	$path = $mybb->settings['uploadspath'].'/xthreads_ul/';
 	// We won't use MyBB's nice monthly directories, instead, we'll use a more confusing system based on the timestamps
 	// note, one month = 2592000 seconds, so if we split up by 1mil, it'll be approx 11.5 days
 	// If safe_mode is enabled, don't attempt to use the monthly directories as it won't work
@@ -216,11 +217,13 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		'filesize' => $file_size,
 		'attachname' => $basename,
 		'indir' => $month_dir,
-		'md5hash' => $file_md5,
 		'downloads' => 0,
 		'uploadtime' => $timestamp,
 		'updatetime' => $timestamp,
 	);
+	if(isset($file_md5))
+		$attacharray['md5hash'] = $file_md5;
+	// set md5hash to null otherwise, but stupid #&#^&@ MyBB DB API is too stupid for that...
 	if(!empty($img_dimensions)) {
 		$origdimarray = array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2]);
 		$attacharray['thumbs'] = serialize(array('orig' => $origdimarray));
@@ -230,6 +233,8 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		unset($attacharray['downloads'], $attacharray['uploadtime']);
 		//$attacharray['updatetime'] = TIME_NOW;
 		$db->update_query('xtattachments', array_map(array($db, 'escape_string'), $attacharray), 'aid='.$prevattach['aid']);
+		if(isset($prevattach['md5hash']) && !isset($file_md5)) // ensure that MD5 hash is null too
+			$db->write_query('UPDATE '.$db->table_prefix.'xtattachments SET md5hash=NULL WHERE aid='.$prevattach['aid']);
 		$attacharray['aid'] = $prevattach['aid'];
 		
 		// and finally, delete old attachment
@@ -262,6 +267,41 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	return $attacharray;
 }
 
+function xthreads_validate_attachment(&$attachment, &$tf) {
+	global $lang;
+	if(empty($attachment['name']) || $attachment['size'] < 1) {
+		return $lang->error_uploadfailed;
+	}
+	if($tf['filemaxsize'] && $attachment['size'] > $tf['filemaxsize']) {
+		return $lang->sprintf($lang->error_attachsize, round($tf['filemaxsize']/1024, 2));
+	}
+	if($tf['fileexts']) {
+		$ext = strtolower(get_extension($attachment['name']));
+		if(strpos('|'.strtolower($tf['fileexts']).'|', '|'.$ext.'|') === false) {
+			return $lang->error_attachtype;
+		}
+	}
+	if(!empty($tf['filemagic'])) {
+		$validmagic = false;
+		if($fp = @fopen($attachment['tmp_name'], 'rb')) {
+			$startbuf = fread($fp, 255); // since it's impossible to exceed this amount in the field (yes, it's dirty, lol)
+			fclose($fp);
+			foreach($tf['filemagic'] as &$magic) {
+				if(!$magic) continue;
+				if(substr($startbuf, 0, strlen($magic)) == $magic) {
+					$validmagic = true;
+					break;
+				}
+			}
+		} else
+			return $lang->error_uploadfailed;
+		
+		if(!$validmagic) {
+			return $lang->error_attachtype;
+		}
+	}
+	return false; // no error
+}
 
 function &xthreads_build_thumbnail($thumbdims, $aid, $filename, $path, $month_dir, $img_dimensions=null) {
 	if(empty($img_dimensions)) {
@@ -419,7 +459,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		
 		// check for early termination conditions
 		if($ret['size'] && $max_size && $ret['size'] > $max_size) {
-			$ret['error'] = $lang->sprintf($lang->error_attachsize, $max_size/1024);
+			$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
 		}
 		elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') {
 			$ret['error'] = $lang->error_attachtype;
@@ -471,7 +511,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 						foreach(explode("\r\n", substr($data, 0, $p)) as $header) {
 							$res = xthreads_fetch_url_header($header);
 							if($res['size'] && $max_size && $res['size'] > $max_size) {
-								$ret['error'] = $lang->sprintf($lang->error_attachsize, $max_size/1024);
+								$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
 								break;
 							}
 							if($res['name'])
@@ -507,7 +547,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 						}
 						$datalen += $len;
 						if($max_size && $datalen > $max_size) {
-							$ret['error'] = $lang->sprintf($lang->error_attachsize, $max_size/1024);
+							$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
 							break;
 						}
 						fwrite($fp, $data);
@@ -545,7 +585,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 					
 					$datalen += $len;
 					if($max_size && $datalen > $max_size) {
-						$ret['error'] = $lang->sprintf($lang->error_attachsize, $max_size/1024);
+						$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
 						break;
 					}
 					fwrite($fp, $data);

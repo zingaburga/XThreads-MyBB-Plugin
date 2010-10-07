@@ -49,6 +49,7 @@ if($mybb->input['action'] == 'add')
 		'desc' => '',
 		'inputtype' => XTHREADS_INPUT_TEXT,
 		'disporder' => 1,
+		'hideedit' => 0,
 		'formhtml' => '',
 		
 		'filemagic' => '',
@@ -284,6 +285,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$mybb->input['fieldheight'] = intval($mybb->input['fieldheight']);
 		$mybb->input['vallist'] = trim($mybb->input['vallist']);
 		$mybb->input['disporder'] = intval($mybb->input['disporder']);
+		$mybb->input['hideedit'] = intval($mybb->input['hideedit']);
 		$mybb->input['formhtml'] = trim($mybb->input['formhtml']);
 		$mybb->input['allowfilter'] = intval($mybb->input['allowfilter']);
 		
@@ -483,6 +485,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				'field' => $db->escape_string($mybb->input['newfield']),
 				'forums' => $db->escape_string($mybb->input['forums']),
 				'disporder' => $db->escape_string($mybb->input['disporder']),
+				'hideedit' => $db->escape_string($mybb->input['hideedit']),
 				'editable' => $db->escape_string($mybb->input['editable']),
 				'editable_gids' => $db->escape_string($mybb->input['editable_gids']),
 				'viewable_gids' => $db->escape_string($mybb->input['viewable_gids']),
@@ -732,6 +735,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$data['viewable_gids'] = array_map('intval',array_map('trim',explode(',', $data['viewable_gids'])));
 	$form_container->output_row($lang->threadfields_viewable_gids, $lang->threadfields_viewable_gids_desc, xt_generate_group_select('viewable_gids[]', $data['viewable_gids'], array('multiple' => true, 'size' => 5, 'id' => 'viewable_gids')), 'viewable_gids', array(), array('id' => 'row_viewable_gids'));
 	make_form_row('unviewableval', 'text_area');
+	make_form_row('hideedit', 'yes_no_radio');
 	$form_container->end();
 	if($update)
 		$buttons[] = $form->generate_submit_button($lang->update_threadfield);

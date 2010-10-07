@@ -517,11 +517,15 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 							}
 						}
 						$this_xta =& $xta_cache[$defval];
-						$md5hash = unpack('H*', $this_xta['md5hash']);
-						$md5hash = reset($md5hash);
+						$md5title = '';
 						$url = xthreads_get_xta_url($this_xta);
+						if(isset($this_xta['md5hash'])) {
+							$md5hash = unpack('H*', $this_xta['md5hash']);
+							$md5hash = reset($md5hash);
+							$md5title = 'title="'.$lang->sprintf($lang->xthreads_md5hash, $md5hash).'" ';
+						}
 						// <input type="hidden"'.$tfname.' value="'.$defval.'" />
-						$tfinput[$k] = '<div><span title="'.$lang->sprintf($lang->xthreads_md5hash, $md5hash).'" id="xtaname_'.$tf['field'].'"><a href="'.$url.'" target="_blank">'.htmlspecialchars_uni($this_xta['filename']).'</a> ('.get_friendly_size($this_xta['filesize']).')</span>';
+						$tfinput[$k] = '<div><span '.$md5title.'id="xtaname_'.$tf['field'].'"><a href="'.$url.'" target="_blank">'.htmlspecialchars_uni($this_xta['filename']).'</a> ('.get_friendly_size($this_xta['filesize']).')</span>';
 						if($GLOBALS['mybb']->input['xtarm_'.$tf['field']])
 							$rmcheck = ' checked="checked"';
 						else
@@ -594,7 +598,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 		$altbg = alt_trow();
 		$inputfield =& $tfinput[$k];
 		eval('$tfinputrow[$k] = "'.$GLOBALS['templates']->get('threadfields_inputrow').'";');
-		$extra_threadfields .= $tfinputrow[$k];
+		if(!$tf['hideedit'])
+			$extra_threadfields .= $tfinputrow[$k];
 	}
 }
 
@@ -665,8 +670,10 @@ function xthreads_upload_attachments() {
 	}
 	$db->free_result($query);
 	
+	@ignore_user_abort(true);
+	
 	$errors = '';
-	$xta_remove = array();
+	$xta_remove = $threadfield_updates = array();
 	foreach($threadfield_cache as $k => &$v) {
 		if($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
 			$aid =& $mybb->input['xthreads_'.$k];
@@ -724,32 +731,42 @@ function xthreads_upload_attachments() {
 				}
 				else {
 					//unset($attachedfile['posthash'], $attachedfile['tid'], $attachedfile['downloads']);
-					$aid = $attachedfile['aid'];
-					$xta_cache[$aid] = $attachedfile;
+					
+					$xta_cache[$attachedfile['aid']] = $attachedfile;
 					if($mybb->input['xtaurl_'.$k])
 						unset($mybb->input['xtaurl_'.$k]);
 					if($mybb->input['xtarm_'.$k]) // since successful upload, don't tick remove box
 						unset($mybb->input['xtarm_'.$k]);
+					
+					if($attachedfile['aid'] != $aid) { // adding a new attachment
+						$aid = $attachedfile['aid'];
+						$threadfield_updates[$k] = $aid;
+					}
 				}
 				unset($_FILES['xthreads_'.$k]);
 			}
 			elseif($mybb->input['xtarm_'.$k] == '1' && $v['editable'] != XTHREADS_EDITABLE_REQ) {
 				// user wants to remove attachment
 				$xta_remove[$k] = $aid;
+				$threadfield_updates[$k] = 0;
 			}
 		}
 	}
 	
 	if(!empty($xta_remove)) {
-		@ignore_user_abort(true);
 		$db->delete_query('xtattachments', 'aid IN ('.implode(',',$xta_remove).')');
 		foreach($xta_remove as $k => $aid) {
 			xthreads_rm_attach_fs($xta_cache[$aid]);
 			$mybb->input['xthreads_'.$k] = 0;
 			//unset($mybb->input['xthreads_'.$k]);
 		}
-		@ignore_user_abort(false);
 	}
+	// if editing post, also commit change to thread field immediately (waiting for user to submit is unreliable)
+	if(($GLOBALS['current_page'] == 'editpost.php' || ($GLOBALS['thread']['tid'] && $GLOBALS['current_page'] == 'newthread.php')) && !empty($threadfield_updates)) {
+		$db->update_query('threadfields_data', $threadfield_updates, 'tid='.$GLOBALS['thread']['tid']);
+	}
+	
+	@ignore_user_abort(false);
 	
 	if($errors) {
 		global $theme, $templates;
@@ -778,19 +795,26 @@ function xthreads_editthread_ulattach_blockpreview() {
 
 
 
+function xthreads_get_attach_path(&$xta) {
+	if(!isset($path)) {
+		$path = $GLOBALS['mybb']->settings['uploadspath'].'/xthreads_ul/';
+		if(defined('IN_ADMINCP')) {
+			if($path{0} != '/') $path = '../'.$path; // TODO: perhaps check for absolute Windows paths as well?  but then, who uses Windows on a production server? :>
+		}
+	}
+	return $path.$xta['indir'].'file_'.$xta['aid'].'_'.$xta['attachname'];
+}
+
 
 // removes xtattachment from filesystem
 function xthreads_rm_attach_fs(&$xta) {
-	$path = $GLOBALS['mybb']->settings['uploadspath'].'/xthreads_ul/';
-	if(defined('IN_ADMINCP')) {
-		if($path{0} != '/') $path = '../'.$path; // TODO: perhaps check for absolute Windows paths as well?  but then, who uses Windows on a production server? :>
-	}
-	$name = $path.$xta['indir'].'file_'.$xta['aid'].'_'.$xta['attachname'];
+	$name = xthreads_get_attach_path($xta);
+	$path = dirname($name).'/';
 	$success = true;
 	// remove thumbnails
 	if($thumbs = @glob(substr($name, 0, -6).'*x*.thumb')) {
 		foreach($thumbs as &$thumb) {
-			$success = $success && @unlink($path.$xta['indir'].basename($thumb));
+			$success = $success && @unlink($path.basename($thumb));
 		}
 	}// else // glob _should_ succeed...
 	//	$success = false;
@@ -800,7 +824,7 @@ function xthreads_rm_attach_fs(&$xta) {
 	if($xta['indir']) {
 		$rmdir = true;
 		// check for other files
-		if($od = @opendir($path.$xta['indir'])) {
+		if($od = @opendir($path)) {
 			while(($file = readdir($od)) !== false) {
 				if($file != '.' && $file != '..' && $file != 'index.html') {
 					$rmdir = false;
@@ -810,8 +834,8 @@ function xthreads_rm_attach_fs(&$xta) {
 			closedir($od);
 		}
 		if($rmdir) {
-			@unlink($path.$xta['indir'].'index.html');
-			@rmdir($path.$xta['indir']);
+			@unlink($path.'index.html');
+			@rmdir($path);
 		}
 	}
 	return $success;

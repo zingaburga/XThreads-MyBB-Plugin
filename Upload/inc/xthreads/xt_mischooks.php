@@ -45,8 +45,7 @@ function xthreads_search() {
 }
 
 function xthreads_search_result(&$data, $tplname) {
-	global $threadfields, $threadfield_cache, $forumcache, $templates;
-	static $done_attach_dl_count = false;
+	global $threadfields, $threadfield_cache, $forumcache, $templates, $mybb;
 	if(!empty($threadfield_cache)) {
 		// make threadfields array
 		$threadfields = array(); // clear previous threadfields
@@ -62,18 +61,16 @@ function xthreads_search_result(&$data, $tplname) {
 			xthreads_get_xta_cache($v, $tidlist);
 			
 			$threadfields[$k] =& $data['xthreads_'.$k];
-			xthreads_sanitize_disp($threadfields[$k], $v, ($data['usrename'] ? $data['username'] : $data['userusername']));
+			xthreads_sanitize_disp($threadfields[$k], $v, ($data['username'] ? $data['username'] : $data['userusername']));
 		}
 	}
 	// template hack
-	$tplpref = $forumcache[$data['fid']]['xthreads_tplprefix'];
-	if($tplpref && $templates->cache[$tplpref.$tplname]) {
-		if(!isset($templates->cache['backup_'.$tplname.'_backup__']))
-			$templates->cache['backup_'.$tplname.'_backup__'] = $templates->cache[$tplname];
-		$templates->cache[$tplname] =& $templates->cache[$tplpref.$tplname];
-	}
-	elseif(isset($templates->cache['backup_'.$tplname.'_backup__']))
-		$templates->cache[$tplname] =& $templates->cache['backup_'.$tplname.'_backup__'];
+	xthreads_portalsearch_cache_hack($forumcache[$data['fid']]['xthreads_tplprefix'], $tplname);
+	
+	$data['threaddate'] = my_date($mybb->settings['dateformat'], $data['dateline']);
+	$data['threadtime'] = my_date($mybb->settings['timeformat'], $data['dateline']);
+	xthreads_set_threadforum_urlvars('thread', $data['tid']);
+	xthreads_set_threadforum_urlvars('forum', $data['fid']);
 }
 function xthreads_search_result_post() {
 	xthreads_search_result($GLOBALS['post'], 'search_results_posts_post');
@@ -81,6 +78,112 @@ function xthreads_search_result_post() {
 function xthreads_search_result_thread() {
 	xthreads_search_result($GLOBALS['thread'], 'search_results_threads_thread');
 }
+
+
+function xthreads_portal() {
+	global $threadfield_cache, $mybb;
+	$threadfield_cache = xthreads_gettfcache();
+	
+	$fids = array_map('intval', explode(',', $mybb->settings['portal_announcementsfid']));
+	$fields = '';
+	foreach($threadfield_cache as $k => &$v) {
+		$available = (!$v['forums']);
+		if(!$available)
+			foreach(explode(',', $v['forums']) as $fid) {
+				if(isset($fids[$fid])) {
+					$available = true;
+					break;
+				}
+			}
+		if($available)
+			$fields .= ', tfd.`'.$v['field'].'` AS `xthreads_'.$v['field'].'`';
+		else
+			unset($threadfield_cache[$k]);
+	}
+	
+	if($fields) {
+		// do DB hack
+		control_object($GLOBALS['db'], '
+			function query($string, $hide_errors=0, $write_query=0) {
+				static $done=false;
+				if(!$done && !$write_query && strpos($string, \'SELECT t.*, t.username AS threadusername, u.username, u.avatar, u.avatardimensions\')) {
+					$done = true;
+					$string = strtr($string, array(
+						\'SELECT t.*, t.username AS threadusername, u.username, u.avatar, u.avatardimensions\' => \'SELECT t.*, t.username AS threadusername, u.username, u.avatar, u.avatardimensions'.$fields.'\',
+						\'FROM '.TABLE_PREFIX.'threads t\' => \'FROM '.TABLE_PREFIX.'threads t LEFT JOIN '.TABLE_PREFIX.'threadfields_data tfd ON t.tid=tfd.tid\'
+					));
+				}
+				return parent::query($string, $hide_errors, $write_query);
+			}
+		');
+	}
+}
+
+
+function xthreads_portal_announcement() {
+	static $doneinit = false;
+	
+	global $threadfield_cache, $announcement, $threadfields;
+	
+	if(!$doneinit) {
+		$doneinit = true;
+		
+		global $forum;
+		// cache templates
+		$cachelist = '';
+		foreach($forum as &$f) {
+			if($f['xthreads_tplprefix'])
+				$cachelist .= ($cachelist?',':'').$f['xthreads_tplprefix'].'portal_announcement,'.$f['xthreads_tplprefix'].'portal_announcement_numcomments,'.$f['xthreads_tplprefix'].'portal_announcement_numcomments_no';
+		}
+		if($cachelist) $GLOBALS['templates']->cache($cachelist);
+	}
+	
+	
+	if(!empty($threadfield_cache)) {
+		// make threadfields array
+		$threadfields = array(); // clear previous threadfields
+		
+		foreach($threadfield_cache as $k => &$v) {
+			if($v['forums'] && strpos(','.$v['forums'].',', ','.$announcement['fid'].',') === false)
+				continue;
+			
+			$tids = '0'.$GLOBALS['tids'];
+			xthreads_get_xta_cache($v, $tids);
+			
+			$threadfields[$k] =& $announcement['xthreads_'.$k];
+			xthreads_sanitize_disp($threadfields[$k], $v, ($announcement['username'] ? $announcement['username'] : $announcement['threadusername']));
+		}
+	}
+	// template hack
+	$tplprefix =& $GLOBALS['forum'][$announcement['fid']]['xthreads_tplprefix'];
+	xthreads_portalsearch_cache_hack($tplprefix, 'portal_announcement');
+	if($tplprefix) {
+		$tplname = $tplprefix.'portal_announcement_numcomments'.($announcement['replies']?'':'_no');
+		if($GLOBALS['templates']->cache[$tplname]) {
+			global $lang, $mybb;
+			// re-evaluate comments template
+			eval('$GLOBALS[\'numcomments\'] = "'.$GLOBALS['templates']->get($tplname).'";');
+		}
+	}
+	
+	// following two lines not needed as we have $anndate and $anntime
+	//$announcement['threaddate'] = my_date($mybb->settings['dateformat'], $announcement['dateline']);
+	//$announcement['threadtime'] = my_date($mybb->settings['timeformat'], $announcement['dateline']);
+	xthreads_set_threadforum_urlvars('thread', $announcement['tid']);
+	xthreads_set_threadforum_urlvars('forum', $announcement['fid']);
+}
+
+function xthreads_portalsearch_cache_hack($tplpref, $tplname) {
+	$tplcache =& $GLOBALS['templates']->cache;
+	if($tplpref && $tplcache[$tplpref.$tplname]) {
+		if(!isset($tplcache['backup_'.$tplname.'_backup__']))
+			$tplcache['backup_'.$tplname.'_backup__'] = $tplcache[$tplname];
+		$tplcache[$tplname] =& $tplcache[$tplpref.$tplname];
+	}
+	elseif(isset($tplcache['backup_'.$tplname.'_backup__']))
+		$tplcache[$tplname] =& $tplcache['backup_'.$tplname.'_backup__'];
+}
+
 
 function xthreads_wol_patch(&$a) {
 	global $lang, $thread_fid_map;
@@ -150,7 +253,7 @@ function xthreads_wol_patch_init(&$ua) {
 				// hook in to get thread_fid_map
 				global $db;
 				$GLOBALS['thread_fid_map'] = array();
-				if($GLOBALS['mybb']->version_code >= 1600)
+				if($GLOBALS['mybb']->version_code >= 1500)
 					$hook = '
 						function query($string, $hide_errors=0, $write_query=0) {
 							static $done=false;

@@ -23,7 +23,7 @@ $l['threadfields_file_name_info'] = 'Variables are referenced with <code>{$GLOBA
 	<li><em>url</em> - URL of the file</li>
 	<li><em>filesize</em> - size of file, in bytes</li>
 	<li><em>filesize_friendly</em> - as above, but formatted (eg 1.5MB vs 1572864)</li>
-	<li><em>md5hash</em> - MD5 hash of file</li>
+	<li><em>md5hash</em> - MD5 hash of file (note: not guaranteed to be set for larger files)</li>
 	<li><em>upload_time</em> - time when file was initially uploaded</li>
 	<li><em>upload_date</em> - date when file was initially uploaded</li>
 	<li><em>update_time</em> - time when file was last updated (will be upload_time if never updated)</li>
@@ -55,6 +55,8 @@ $l['threadfields_sanitize_parser'] = 'MyBB Parser Options';
 $l['threadfields_sanitize_parser_desc'] = 'These options only apply if you have selected to parse this field with the MyBB parser.';
 $l['threadfields_disporder'] = 'Display Order';
 $l['threadfields_disporder_desc'] = 'The order in which this field is displayed on newthread/editthread.';
+$l['threadfields_hideedit'] = 'Hide Input Field';
+$l['threadfields_hideedit_desc'] = 'If yes, will not display the input field on newthread/editpost pages through the <code>{$extra_threadfields}</code> variable.  This is useful if you want to customise the HTML for this input field or place it in a different location.  You can still use the default HTML by using <code>{$tfinputrow[\'<em>key</em>\']}</code>';
 $l['threadfields_allowfilter'] = 'Allow Filtering';
 $l['threadfields_allowfilter_desc'] = 'Allows users to filter threads using this thread field in forumdisplay.  This does not affect templates, so you need to make appropriate changes to make this option useful.  The URL is based on the <code>filtertf_<em>key</em></code> variable.  For example, <code>forumdisplay.php?fid=2&amp;filtertf_status=Resolved</code> will only show threads with the thread field &quot;status&quot; having a value of &quot;Resolved&quot;.  Note, multiple filters are allowed, and you can also specify an array of values for a single field.  Also note, if this field allows multiple values, filtering can be rather slow and increase server load by a fair bit.';
 $l['threadfields_blankval'] = 'Blank Replacement Value';
@@ -91,7 +93,7 @@ $l['threadfields_fileimage_mindim_desc'] = 'Smallest acceptable image dimensions
 $l['threadfields_fileimage_maxdim'] = 'Maximum Image Dimensions';
 $l['threadfields_fileimage_maxdim_desc'] = 'Largest acceptable image dimensions, in <em>w</em>x<em>h</em> format, eg <em>1920x1080</em>.';
 $l['threadfields_fileimgthumbs'] = 'Image Thumbnail Generation';
-$l['threadfields_fileimgthumbs_desc'] = 'This field only applies if the above field is filled in.  This is a pipe (|) separated list of thumbnail dimensions which will be generated.  For example, if <em>160x120|320x240</em> is entered here, a 160x120 and a 320x240 thumbnail will be generated from the uploaded image.  These thumbnails can be accessed using something like <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\'][\'url\']}/thumb160x120</code>.<br />Note, if this field is changed whilst there are already images uploaded for this field, you may need to <a href="index.php?module=tools'.XTHREADS_ADMIN_PATHSEP.'recount_rebuild#rebuild_xtathumbs" target="_blank">rebuild thumbnails</a>.';
+$l['threadfields_fileimgthumbs_desc'] = 'This field only applies if this field only accepts images.  This is a pipe (|) separated list of thumbnail dimensions which will be generated.  For example, if <em>160x120|320x240</em> is entered here, a 160x120 and a 320x240 thumbnail will be generated from the uploaded image.  These thumbnails can be accessed using something like <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\'][\'url\']}/thumb160x120</code>.<br />Note, if this field is changed whilst there are already images uploaded for this field, you may need to <a href="index.php?module=tools'.XTHREADS_ADMIN_PATHSEP.'recount_rebuild#rebuild_xtathumbs" target="_blank">rebuild thumbnails</a>.';
 $l['threadfields_vallist'] = 'Values List';
 $l['threadfields_vallist_desc'] = 'A list of valid values which can be entered for this field.  Separate values with newlines.  HTML can be used with checkbox/radio button input.';
 $l['threadfields_formatmap'] = 'Formatting Map List';
@@ -159,7 +161,7 @@ $l['commit_changes'] = 'Commit Changes';
 
 $l['xthreads_opts'] = 'XThreads Options';
 $l['xthreads_tplprefix'] = 'Template Prefix';
-$l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.  This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* templates.';
+$l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.  This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* and <em>portal_announcement</em>* templates.';
 $l['xthreads_grouping'] = 'Thread Grouping';
 $l['xthreads_grouping_desc'] = 'How many threads to group together.  A value of 0 disables grouping.  If grouping is enabled, the <em>forumdisplay_group_sep</em> template is inserted every <em>X</em> threads on the forumdisplay.  This is mainly useful if you wish to display multiple threads in a single table row.  If the number of threads does not fully fill a group, the template <em>forumdisplay_thread_null</em> is appended as many times needed to completely fill the thread group.  Internal counter is reset between sticky/normal thread separators.';
 $l['xthreads_firstpostattop'] = 'Show first post on every showthread page';
@@ -175,6 +177,8 @@ $l['xthreads_force_postlayout_desc'] = 'This can be used to force a postbit layo
 $l['xthreads_force_postlayout_none'] = 'Don\'t force layout';
 $l['xthreads_force_postlayout_horizontal'] = 'Force horizontal postbit layout';
 $l['xthreads_force_postlayout_classic'] = 'Force classic postbit layout';
+$l['xthreads_hideforum'] = 'Hide Forum';
+$l['xthreads_hideforum_desc'] = 'If yes, will hide this forum on your index and forumdisplay pages.  This is slightly different to disabling the Can View Forum permission in that this does not affect permissions, it just merely hides it from display (so, for example, you could put a link to it in your main menu).';
 $l['xthreads_allow_blankmsg'] = 'Allow Blank Post Message';
 $l['xthreads_allow_blankmsg_desc'] = 'If ticked, new threads in this forum will not require a message to be entered.';
 $l['xthreads_nostatcount'] = 'Don\'t include this forum\'s threads/posts in global forum statistics';
