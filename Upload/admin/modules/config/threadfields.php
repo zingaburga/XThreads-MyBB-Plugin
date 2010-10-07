@@ -278,7 +278,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$mybb->input['defaultval'] = trim($mybb->input['defaultval']);
 		$mybb->input['dispformat'] = trim($mybb->input['dispformat']);
 		$mybb->input['dispitemformat'] = trim($mybb->input['dispitemformat']);
-		$mybb->input['textmask'] = trim($mybb->input['textmask']);
+		$mybb->input['textmask'] = trim(str_replace("\x0", '', $mybb->input['textmask']));
 		$mybb->input['maxlen'] = intval($mybb->input['maxlen']);
 		$mybb->input['fieldwidth'] = intval($mybb->input['fieldwidth']);
 		$mybb->input['fieldheight'] = intval($mybb->input['fieldheight']);
@@ -642,6 +642,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		99 => $lang->threadfields_editable_bygroup,
 	));
 	$form_container->output_row($lang->threadfields_editable_gids, $lang->threadfields_editable_gids_desc, xt_generate_group_select('editable_gids[]', $data['editable_gids'], array('multiple' => true, 'size' => 5)), 'editable_gids', array(), array('id' => 'row_editable_gids'));
+	$sanitize = $data['sanitize'];
+	$data['sanitize'] &= XTHREADS_SANITIZE_MASK;
 	make_form_row('sanitize', 'select_box', array(
 		XTHREADS_SANITIZE_HTML => $lang->threadfields_sanitize_plain,
 		XTHREADS_SANITIZE_HTML_NL => $lang->threadfields_sanitize_plain_nl,
@@ -649,12 +651,12 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		XTHREADS_SANITIZE_NONE => $lang->threadfields_sanitize_none,
 	));
 	$parser_opts = array(
-		'parser_nl2br' => $data['sanitize'] & XTHREADS_SANITIZE_PARSER_NL2BR,
-		'parser_nobadw' => $data['sanitize'] & XTHREADS_SANITIZE_PARSER_NOBADW,
-		'parser_html' => $data['sanitize'] & XTHREADS_SANITIZE_PARSER_HTML,
-		'parser_mycode' => $data['sanitize'] & XTHREADS_SANITIZE_PARSER_MYCODE,
-		'parser_mycodeimg' => $data['sanitize'] & XTHREADS_SANITIZE_PARSER_MYCODEIMG,
-		'parser_smilies' => $data['sanitize'] & XTHREADS_SANITIZE_PARSER_SMILIES,
+		'parser_nl2br' => $sanitize & XTHREADS_SANITIZE_PARSER_NL2BR,
+		'parser_nobadw' => $sanitize & XTHREADS_SANITIZE_PARSER_NOBADW,
+		'parser_html' => $sanitize & XTHREADS_SANITIZE_PARSER_HTML,
+		'parser_mycode' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODE,
+		'parser_mycodeimg' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODEIMG,
+		'parser_smilies' => $sanitize & XTHREADS_SANITIZE_PARSER_SMILIES,
 	);
 	$parser_opts_str = '';
 	foreach($parser_opts as $opt => $checked) {

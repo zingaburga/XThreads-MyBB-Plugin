@@ -541,11 +541,11 @@ function xthreads_input_generate(&$data, $fid) {
 		}
 		
 		if(isset($data[$k]))
-			$defval =& $data[$k];
+			$defval = $data[$k];
 		else
-			$defval =& $tf['defaultval'];
+			$defval = $tf['defaultval'];
 		
-		$defvals = null;
+		unset($defvals);
 		switch($tf['inputtype']) {
 			case XTHREADS_INPUT_SELECT:
 			case XTHREADS_INPUT_RADIO:
@@ -627,10 +627,9 @@ function xthreads_input_generate(&$data, $fid) {
 						$this_xta =& $xta_cache[$defval];
 						$md5hash = unpack('H*', $this_xta['md5hash']);
 						$md5hash = reset($md5hash);
-						$updatetime = $this_xta['updatetime'];
-						if(!$updatetime) $updatetime = $this_xta['uploadtime'];
-						$url = 'xthreads_attach.php/'.$this_xta['aid'].'_'.$updatetime.'_'.substr($this_xta['attachname'], 0, 8).'/'.$md5hash.'/'.urlencode($this_xta['filename']);
-						$tfinput[$k] = '<input type="hidden"'.$tfname.' value="'.$defval.'" /><div><span title="'.$lang->sprintf($lang->xthreads_md5hash, $md5hash).'" id="xtaname_'.$tf['field'].'"><a href="'.$url.'" target="_blank">'.htmlspecialchars_uni($this_xta['filename']).'</a> ('.get_friendly_size($this_xta['filesize']).')</span>';
+						$url = xthreads_get_xta_url($this_xta);
+						// <input type="hidden"'.$tfname.' value="'.$defval.'" />
+						$tfinput[$k] = '<div><span title="'.$lang->sprintf($lang->xthreads_md5hash, $md5hash).'" id="xtaname_'.$tf['field'].'"><a href="'.$url.'" target="_blank">'.htmlspecialchars_uni($this_xta['filename']).'</a> ('.get_friendly_size($this_xta['filesize']).')</span>';
 						if($GLOBALS['mybb']->input['xtarm_'.$tf['field']])
 							$rmcheck = ' checked="checked"';
 						else
@@ -896,28 +895,40 @@ function xthreads_rm_attach_fs(&$xta) {
 		if($path{0} != '/') $path = '../'.$path; // TODO: perhaps check for absolute Windows paths as well?  but then, who uses Windows on a production server? :>
 	}
 	$name = $path.$xta['indir'].'file_'.$xta['aid'].'_'.$xta['attachname'];
-	@unlink($name);
+	$success = true;
 	// remove thumbnails
 	foreach(glob(substr($name, 0, -6).'*x*.thumb') as $thumb) {
-		@unlink($path.$xta['indir'].basename($thumb));
+		$success = $success && @unlink($path.$xta['indir'].basename($thumb));
 	}
+	if(!$success) return false;
+	$success = $success && @unlink($name);
 	// remove month dir if possible
 	if($xta['indir']) {
 		@rmdir($path.$xta['indir']);
 	}
+	return $success;
 }
 function xthreads_rm_attach_query($where) {
 	global $db;
-	$has_attach = 0;
+	$has_attach = $successes = 0;
 	$query = $db->simple_select('xtattachments', 'aid,indir,attachname', $where);
+	$rmaid = '';
 	while($xta = $db->fetch_array($query)) {
-		xthreads_rm_attach_fs($xta);
+		if(xthreads_rm_attach_fs($xta)) {
+			if($successes) $rmaid .= ',';
+			$rmaid .= $xta['aid'];
+			++$successes;
+		}
 		++$has_attach;
 	}
 	$db->free_result($query);
-	if($has_attach)
-		$db->delete_query('xtattachments', $where);
-	return $has_attach;
+	if($has_attach) {
+		if($has_attach == $successes)
+			$db->delete_query('xtattachments', $where);
+		elseif($successes)
+			$db->delete_query('xtattachments', 'aid IN ('.$rmaid.')');
+	}
+	return $successes;
 }
 
 

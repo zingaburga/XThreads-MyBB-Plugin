@@ -61,6 +61,7 @@ function xthreads_showthread_firstpost() {
 			global $templates, $xthreads_postbit_templates, $page;
 			foreach($xthreads_postbit_templates as &$t) {
 				$pbname = substr($t, 7);
+				if(!$pbname) $pbname = '';
 				if($templates->cache['postbit_first'.$pbname]) {
 					$templates->cache[$t] = $templates->cache['backup_postbit'.$pbname.'_backup__'];
 				}
@@ -87,7 +88,8 @@ function xthreads_showthread_firstpost() {
 					$done = true;
 					$r = parent::get($title, $eslashes, $htmlcomments);
 					xthreads_tpl_postbitrestore();
-					return str_replace(\'{$post_extra_style}\', \'border-top-width: 0;\', $r);
+					//return str_replace(\'{$post_extra_style}\', \'border-top-width: 0;\', $r);
+					return \'".($post_extra_style="border-top-width: 0;"?"":"")."\'.$r;
 				} else
 					return parent::get($title, $eslashes, $htmlcomments);
 			}
@@ -180,6 +182,7 @@ function xthreads_tpl_postbithack() {
 		$templates->cache(implode(',', $xthreads_postbit_templates));
 	foreach($xthreads_postbit_templates as &$t) {
 		$pbname = substr($t, 7);
+		if(!$pbname) $pbname = '';
 		if($templates->cache['postbit_first'.$pbname]) {
 			$templates->cache['backup_postbit'.$pbname.'_backup__'] = $templates->cache[$t];
 			$templates->cache[$t] =& $templates->cache['postbit_first'.$pbname];

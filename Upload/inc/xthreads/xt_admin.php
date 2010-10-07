@@ -120,7 +120,7 @@ function xthreads_install() {
 			PRIMARY KEY (`field`),
 			KEY (`disporder`)
 		)');
-		//	`allowsort` tinyint(3) not null default 0,
+		// `allowsort` tinyint(3) not null default 0,
 	}
 	if(!$db->field_exists('xthreads_grouping', 'forums')) {
 		$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums`
@@ -348,6 +348,11 @@ function xthreads_buildtfcache() {
 			case XTHREADS_INPUT_CHECKBOX:
 			case XTHREADS_INPUT_SELECT:
 				unset($tf['textmask'], $tf['maxlen']);
+				
+				// fix multival here; we don't want it to be an array for textual inputs
+				if($tf['multival']) {
+					$tf['defaultval'] = explode("\n", str_replace("\r", '', $tf['defaultval']));
+				}
 		}
 		
 		switch($tf['inputtype']) {
@@ -382,9 +387,6 @@ function xthreads_buildtfcache() {
 			$tf['vallist'] = array_unique(array_map('trim', explode("\n", str_replace("\r", '', $tf['vallist']))));
 		}
 		// TODO: explode editable_gids?, forums, fileexts?
-		if($tf['multival']) {
-			$tf['defaultval'] = explode("\n", str_replace("\r", '', $tf['defaultval']));
-		}
 		if($tf['fileimgthumbs']) {
 			$tf['fileimgthumbs'] = array_unique(explode('|', $tf['fileimgthumbs']));
 		}
@@ -439,12 +441,18 @@ function xthreads_admin_forumedit() {
 	function xthreads_admin_forumedit_hook(&$args) {
 		if($args['title'] != $GLOBALS['lang']->misc_options) return;
 		//$GLOBALS['plugins']->add_hook('admin_formcontainer_end', 'xthreads_admin_forumedit_hook2');
-		morph_object($GLOBALS['form_container'], '
+		$fixcode='';
+		if($GLOBALS['mybb']->version_code >= 1600) {
+			// unfortunately, the above effectively ditches the added Misc row
+			$GLOBALS['xt_fc_args'] = $args;
+			$fixcode = 'call_user_func_array(array($this, "output_row"), $GLOBALS[\'xt_fc_args\']);';
+		}
+		control_object($GLOBALS['form_container'], '
 			function end($return=false) {
 				static $done=false;
 				if(!$done && !$return) {
 					$done = true;
-					call_user_func_array(array($this, "output_row"), $GLOBALS[\'xt_fc_args\']);
+					'.$fixcode.'
 					parent::end($return);
 					xthreads_admin_forumedit_run();
 					return;
@@ -452,8 +460,6 @@ function xthreads_admin_forumedit() {
 				return parent::end($return);
 			}
 		');
-		// unfortunately, the above effectively ditches the added Misc row
-		$GLOBALS['xt_fc_args'] = $args;
 		/* control_object($GLOBALS['form_container'], '
 			function end($return=false) {
 				static $done=false;

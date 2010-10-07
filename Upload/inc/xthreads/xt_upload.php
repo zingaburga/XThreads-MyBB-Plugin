@@ -6,6 +6,27 @@
 // note, $uid is used purely for flood checking; not verification, identification or anything else
 function upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $tid=0)
 {
+	$attacharray = do_upload_xtattachment($attachment, $tf, $update_attachment, $tid);
+	
+	// perform user flood checking
+	static $done_flood_check = false;
+	if($uid && !$done_flood_check) {
+		$done_flood_check = true;
+		xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
+		//xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' ORDER BY uploadtime DESC LIMIT 18446744073709551615 OFFSET '.XTHREADS_UPLOAD_FLOOD_NUMBER);
+		// 18446744073709551615 is recommended from http://dev.mysql.com/doc/refman/4.1/en/select.html
+		// we'll do an extra query to get around the issue of delete queries not supporting offsets
+		global $db;
+		$cutoff = $db->fetch_field($db->simple_select('xtattachments', 'uploadtime', 'tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME), array('order_by' => 'uploadtime', 'order_dir' => 'desc', 'limit' => 1, 'limit_start' => XTHREADS_UPLOAD_FLOOD_NUMBER)), 'uploadtime');
+		if($cutoff)
+			xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' AND uploadtime <= '.$cutoff);
+	}
+	
+	return $attacharray;
+}
+
+function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0, $timestamp=TIME_NOW)
+{
 	global $db, $mybb, $lang;
 	
 	$posthash = $db->escape_string($mybb->input['posthash']);
@@ -31,9 +52,7 @@ function upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $ti
 		if(empty($attachment['name']) || $file_size < 1)
 			return array('error' => $lang->error_uploadfailed);
 		
-		if(substr($attachment['name'], -1) == '/')
-			$attachment['name'] = preg_replace('~/+$~', '', $attachment['name']); // Make the filename safe
-		
+		$attachment['name'] = strtr($attachment['name'], array('/' => '', "\x0" => ''));
 		
 		// validation
 		if($tf['filemaxsize'] && $file_size > $tf['filemaxsize']) {
@@ -86,8 +105,7 @@ function upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $ti
 		if(empty($attachment['name']) || $file_size < 1)
 			return array('error' => $lang->error_uploadfailed);
 		
-		if(substr($attachment['name'], -1) == '/')
-			$attachment['name'] = preg_replace('~/+$~', '', $attachment['name']); // Make the filename safe
+		$attachment['name'] = strtr($attachment['name'], array('/' => '', "\x0" => ''));
 		
 		$movefunc = 'rename';
 	}
@@ -189,8 +207,8 @@ function upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $ti
 		'indir' => $month_dir,
 		'md5hash' => $file_md5,
 		'downloads' => 0,
-		'uploadtime' => TIME_NOW,
-		'updatetime' => TIME_NOW,
+		'uploadtime' => $timestamp,
+		'updatetime' => $timestamp,
 	);
 	if(!empty($img_dimensions)) {
 		$origdimarray = array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2]);
@@ -228,20 +246,6 @@ function upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $ti
 		$attacharray['thumbs'] = xthreads_build_thumbnail($tf['fileimgthumbs'], $attacharray['aid'], $new_file, $path, $month_dir, $img_dimensions);
 		$attacharray['thumbs']['orig'] = $origdimarray;
 		$attacharray['thumbs'] = serialize($attacharray['thumbs']);
-	}
-	
-	
-	// perform user flood checking
-	static $done_flood_check = false;
-	if($uid && !$done_flood_check) {
-		$done_flood_check = true;
-		xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
-		//xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' ORDER BY uploadtime DESC LIMIT 18446744073709551615 OFFSET '.XTHREADS_UPLOAD_FLOOD_NUMBER);
-		// 18446744073709551615 is recommended from http://dev.mysql.com/doc/refman/4.1/en/select.html
-		// we'll do an extra query to get around the issue of delete queries not supporting offsets
-		$cutoff = $db->fetch_field($db->simple_select('xtattachments', 'uploadtime', 'tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME), array('order_by' => 'uploadtime', 'order_dir' => 'desc', 'limit' => 1, 'limit_start' => XTHREADS_UPLOAD_FLOOD_NUMBER)), 'uploadtime');
-		if($cutoff)
-			xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' AND uploadtime <= '.$cutoff);
 	}
 	
 	return $attacharray;
@@ -296,6 +300,7 @@ function &xthreads_build_thumbnail($thumbdims, $aid, $filename, $path, $month_di
 function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array()) {
 	global $lang;
 	if(!$lang->xthreads_xtfurlerr_invalidurl) $lang->load('xthreads');
+	$url = str_replace("\x0", '', $url);
 	$purl = @parse_url($url);
 	if(!$purl['host']) return array('error' => $lang->xthreads_xtfurlerr_invalidurl);
 	if(XTHREADS_URL_FETCH_DISALLOW_HOSTS && in_array($purl['host'], explode(',', XTHREADS_URL_FETCH_DISALLOW_HOSTS)))
@@ -365,7 +370,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 						if($tmp) {
 							if($tmp{0} == '"' && $tmp{strlen($tmp)-1} == '"')
 								$tmp = substr($tmp, 1, -1);
-							return array('name' => $tmp);
+							return array('name' => trim(str_replace("\x0", '', $tmp)));
 						}
 					}
 				}

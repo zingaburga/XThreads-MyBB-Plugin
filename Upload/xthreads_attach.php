@@ -60,32 +60,40 @@ if(!@is_dir($basedir)) {
 }
 
 // parse input filename
-if(!isset($_SERVER['PATH_INFO'])) {
-	if(isset($_SERVER['SCRIPT_NAME']) && isset($_SERVER['PHP_SELF'])) {
-		$snlen = strlen($_SERVER['SCRIPT_NAME']);
-		if(substr($_SERVER['PHP_SELF'], 0, $snlen) == $_SERVER['SCRIPT_NAME'])
-			$_SERVER['PATH_INFO'] = substr($_SERVER['PHP_SELF'], $snlen);
+if(isset($_REQUEST['file']) && $_REQUEST['file']) { // using query string
+	$_SERVER['PATH_INFO'] = '/'.$_REQUEST['file'];
+} else {
+	if(!isset($_SERVER['PATH_INFO'])) {
+		if(isset($_SERVER['SCRIPT_NAME']) && isset($_SERVER['PHP_SELF'])) {
+			$snlen = strlen($_SERVER['SCRIPT_NAME']);
+			if(substr($_SERVER['PHP_SELF'], 0, $snlen) == $_SERVER['SCRIPT_NAME'])
+				$_SERVER['PATH_INFO'] = substr($_SERVER['PHP_SELF'], $snlen);
+		}
+	}
+
+	if(!isset($_SERVER['PATH_INFO']) || !$_SERVER['PATH_INFO']) {
+		header('HTTP/1.1 400 Bad Request');
+		exit;
 	}
 }
 
-if(!isset($_SERVER['PATH_INFO']) || !$_SERVER['PATH_INFO']) {
-	header('HTTP/1.1 400 Bad Request');
-	exit;
-}
-
 // maybe disallow \:*?"<>| in filenames, but then, they're valid *nix names...
-if(!preg_match('~^/([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})/([0-9a-fA-F]{32}/)?([^/]*)$~', $_SERVER['PATH_INFO'], $match)) {
+if(!preg_match('~^/([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})/([0-9a-fA-F]{32}/)?([^/]*)(/thumb([0-9]+x[0-9]+))?$~', $_SERVER['PATH_INFO'], $match)) {
 	header('HTTP/1.1 400 Bad Request');
 	exit;
 }
 
-if(isset($_REQUEST['thumb']) && preg_match('~^[0-9]+x[0-9]+$~', $_REQUEST['thumb']))
-	$fext = $_REQUEST['thumb'].'.thumb';
+$thumb = null;
+if($match[6]) $thumb =& $match[7];
+//if(isset($_REQUEST['thumb']) && preg_match('~^[0-9]+x[0-9]+$~', $_REQUEST['thumb']))
+if($thumb)
+	$fext = $thumb.'.thumb';
 else
 	$fext = 'upload';
 
 if(get_magic_quotes_gpc())
 	$match[5] = stripslashes($match[5]);
+$match[5] = str_replace("\x0", '', $match[5]);
 $month_dir = 'ts_'.floor($match[2] / 1000000).'/';
 $fn = 'file_'.$match[1].'_'.$match[3].'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $match[5])).'.'.$fext;
 if(file_exists($basedir.$month_dir.$fn))
@@ -185,7 +193,7 @@ if(!$content_type) {
 }
 header('Content-Type: '.$content_type);
 
-if(!isset($_REQUEST['thumb'])) { // don't send disposition for thumbnails
+if(!$thumb) { // don't send disposition for thumbnails
 	if(isset($_REQUEST['download']) && $_REQUEST['download'])
 		$disposition = 'attachment';
 	elseif((!isset($_SERVER['HTTP_USER_AGENT']) || strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'msie') === false) && (
@@ -208,7 +216,7 @@ if($range_end < 0) {
 	exit;
 }
 
-if(COUNT_DOWNLOADS == 1 && !isset($_REQUEST['thumb'])) increment_downloads($match[1]);
+if(COUNT_DOWNLOADS == 1 && !$thumb) increment_downloads($match[1]);
 
 if(isset($_SERVER['HTTP_RANGE']) && ($p = strpos($_SERVER['HTTP_RANGE'], '='))) {
 	$rangestr = substr($_SERVER['HTTP_RANGE'], $p+1);
@@ -238,7 +246,7 @@ if($reqmeth != 'HEAD') {
 	
 	if($range_end == $fsize-1) {
 		fpassthru($fp);
-		if(COUNT_DOWNLOADS == 2 && !isset($_REQUEST['thumb'])) increment_downloads($match[1]);
+		if(COUNT_DOWNLOADS == 2 && !$thumb) increment_downloads($match[1]);
 	} else {
 		$bytes = $range_end - $range_start + 1;
 		while(!feof($fp) && $bytes > 0) {

@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 0.51);
+define('XTHREADS_VERSION', 0.52);
 
 
 // XThreads defines
@@ -357,6 +357,11 @@ function xthreads_xmlhttp_blankpost_hack() {
  */
 // TODO: better file upload URL/file switch + remove attachment system
 
+// TODO: implement data types?
+// TODO: forumdisplay threadfield sorting
+// TODO: default forumdisplay sorting/filtering
+// TODO: easy mycodes for text filter (+ fix easy mycode plugin exploit)
+
 // TODO: make the forumbits template prefix feature loader a bit smarter
 // TODO: forum admin -> separate XThreads options into a separate table
 // TODO: format/hide posts in newreply's Thread Review?
@@ -387,10 +392,6 @@ function xthreads_xmlhttp_blankpost_hack() {
 // TODO: template prefixes in WOL?
 // TODO: colspan offset for forumdisplay??
 // TODO: newthread/editpost input field display - tabordering
-
-// TODO: implement data types?
-// TODO: forumdisplay threadfield sorting
-// TODO: default forumdisplay sorting/filtering
 
 // TODO: extra postfields?
 // TODO: search - also filter by threadfields?
@@ -424,7 +425,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		$s['filesize_friendly'] = get_friendly_size($s['filesize']);
 		$s['md5hash'] = unpack('H*', $s['md5hash']);
 		$s['md5hash'] = reset($s['md5hash']); // dunno why list($s['md5hash']) = unpack(...) doesn't work... - maybe need list($dummy, $s['md5hash']) = unpack() ?
-		$s['url'] = 'xthreads_attach.php/'.$s['aid'].'_'.$s['updatetime'].'_'.substr($s['attachname'], 0, 8).'/'.$s['md5hash'].'/'.urlencode($s['filename']);
+		$s['url'] = xthreads_get_xta_url($s);
 		$s['icon'] = get_attachment_icon(get_extension($s['filename']));
 		
 		$s['upload_time'] = my_date($mybb->settings['timeformat'], $s['uploadtime']);
@@ -553,11 +554,30 @@ function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 		$db->free_result($query);
 	}
 }
+function xthreads_get_xta_url(&$xta) {
+	$md5hash = $xta['md5hash'];
+	if(isset($md5hash{15}) && !isset($md5hash{16})) {
+		$md5hash = unpack('H*', $md5hash);
+		$md5hash = reset($md5hash);
+	} elseif(!isset($md5hash{31}) || isset($md5hash{32}))
+		$md5hash = '';
+	if($md5hash) $md5hash .= '/';
+	$updatetime = $xta['updatetime'];
+	if(!$updatetime) $updatetime = $xta['uploadtime'];
+	
+	static $use_qstr = null;
+	// to use query strings, or not to use; that is the question...
+	if(!isset($use_qstr))
+		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') == false) || stripos(SAPI_NAME, 'cgi') !== false || defined('ARCHIVE_QUERY_STRINGS'));
+	// yes, this is copied from the archive, even though you won't be defining ARCHIVE_QUERY_STRINGS...
+	
+	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).'/'.$md5hash.urlencode($xta['filename']);
+}
 
 
 
 
-if(!function_exists('control_object')) {
+/* if(!function_exists('control_object')) {
 	function control_object(&$obj, $code) {
 		static $cnt = 0;
 		$newname = '_objcont_'.(++$cnt);
@@ -569,13 +589,13 @@ if(!function_exists('control_object')) {
 		}');
 		$obj = new $newname($obj);
 	}
-}
+} */
 // improved version of control_object which morphs an object into the supplied class name, copying all variables (including private!) across
 // only problem with this method is that private/protected _resources_ won't get copied
-if(!function_exists('morph_object')) {
-	function morph_object(&$obj, $code) {
+if(!function_exists('control_object')) {
+	function control_object(&$obj, $code) {
 		static $cnt = 0;
-		$newname = '_objmorph_'.(++$cnt);
+		$newname = '_objcont_'.(++$cnt);
 		$objserial = serialize($obj);
 		$classname = get_class($obj);
 		$checkstr = 'O:'.strlen($classname).':"'.$classname.'":';
