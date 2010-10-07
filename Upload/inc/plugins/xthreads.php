@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.31);
+define('XTHREADS_VERSION', 1.32);
 
 
 // XThreads defines
@@ -24,6 +24,10 @@ define('XTHREADS_UPLOAD_EXPIRE_TIME', 3*3600); // in seconds
 
 // the size a file must be above to be considered a "large file"; large files will have their MD5 calculation deferred to a task; set to 0 to disable deferred MD5 hashing
 define('XTHREADS_UPLOAD_LARGEFILE_SIZE', 10*1048576); // in bytes, default is 10MB
+
+// allow PHP in threadfields' display format, unviewable format etc; note that if you change this value after XThreads has been installed, you may need to rebuild your "threadfields" cache
+// 0=disable, 1=enable, 2=enable only if PHP in Templates plugin is activated (default)
+define('XTHREADS_ALLOW_PHP_THREADFIELDS', 2);
 
 // some more defines can be found in xthreads_attach.php
 
@@ -66,6 +70,8 @@ $plugins->add_hook('datahandler_post_insert_thread_post', 'xthreads_input_postha
 $plugins->add_hook('datahandler_post_update_thread', 'xthreads_input_posthandler_insert', 10, $updatehooks_file);
 $plugins->add_hook('datahandler_post_validate_post', 'xthreads_input_posthandler_postvalidate', 10, $updatehooks_file);
 $plugins->add_hook('class_moderation_delete_thread', 'xthreads_delete_thread', 10, $updatehooks_file);
+$plugins->add_hook('class_moderation_copy_thread', 'xthreads_copy_thread', 10, $updatehooks_file);
+//$plugins->add_hook('class_moderation_split_posts', 'xthreads_split_posts', 10, $updatehooks_file);
 
 $plugins->add_hook('newthread_start', 'xthreads_inputdisp', 10, $updatehooks_file);
 $plugins->add_hook(($GLOBALS['mybb']->version_code >= 1412 ? 'editpost_action_start' : 'editpost_start'), 'xthreads_inputdisp', 10, $updatehooks_file);
@@ -451,11 +457,16 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		
 		$s['value'] = '';
 		if($dispfmt) {
-			$tr = array();
+			/* $tr = array();
 			foreach($s as $k => &$v)
 				if(!is_array($v))
 					$tr['<'.strtoupper($k).'>'] =& $v;
-			$s['value'] = strtr(eval_str($dispfmt), $tr);
+			$s['value'] = strtr(eval_str($dispfmt), $tr); */
+			$vars = array();
+			foreach($s as $k => &$v)
+				if(!is_array($v))
+					$vars[strtoupper($k)] =& $v;
+			$s['value'] = eval_str($dispfmt, $vars);
 		}
 	}
 	else {
@@ -466,7 +477,8 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 			}
 			$s = implode($tfinfo['multival'], $vals);
 			if($dispfmt) {
-				$s = str_replace('<VALUE>', $s, eval_str($dispfmt));
+				//$s = str_replace('<VALUE>', $s, eval_str($dispfmt));
+				$s = eval_str($dispfmt, array('VALUE' => $s));
 			}
 		}
 		else {
@@ -495,7 +507,7 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 					require_once MYBB_ROOT.'inc/class_parser.php';
 					$parser = new postParser;
 				}
-				$v = $parser->parse_message($v, array(
+				$parser_opts = array(
 					'nl2br' => ($type & XTHREADS_SANITIZE_PARSER_NL2BR ?1:0),
 					'filter_badwords' => ($type & XTHREADS_SANITIZE_PARSER_NOBADW ?1:0),
 					'allow_html' => ($type & XTHREADS_SANITIZE_PARSER_HTML ?1:0),
@@ -504,62 +516,83 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 					'allow_smilies' => ($type & XTHREADS_SANITIZE_PARSER_SMILIES ?1:0),
 					'allow_videocode' => ($type & XTHREADS_SANITIZE_PARSER_VIDEOCODE ?1:0),
 					'me_username' => $mename
-				));
+				);
+				$v = $parser->parse_message($v, $parser_opts);
 				break;
 		}
 	}
 	
 	if($dispfmt) {
+		/*
 		$v = strtr(eval_str($dispfmt), array(
 			'<VALUE>' => $v, 
 			'<RAWVALUE>' => $raw_v, 
 		));
 		if($tfinfo['regex_tokens']) {
-			if(preg_match('~'.str_replace('~', '\\~', $tfinfo['textmask']).'~si', $raw_v, $match))
-				$v = preg_replace('~\<VALUE\$(\d+)\>~e', '$match[$1]', $v);
+			if(preg_match('~'.str_replace('~', '\\~', $tfinfo['textmask']).'~si', $raw_v, $match)) {
+				switch($type & XTHREADS_SANITIZE_MASK) {
+					case XTHREADS_SANITIZE_HTML:
+						$repl = 'htmlspecialchars_uni($match[$1])';
+						break;
+					case XTHREADS_SANITIZE_HTML_NL:
+						$repl = 'nl2br(htmlspecialchars_uni($match[$1]))';
+						break;
+					case XTHREADS_SANITIZE_PARSER:
+						$repl = '$parser->parse_message($match[$1], $parser_opts)';
+						break;
+					default:
+						$repl = '$match[$1]';
+				}
+				$v = preg_replace(array(
+					'~\<VALUE\$(\d+)\>~e',
+					'~\<RAWVALUE\$(\d+)\>~e'
+				), array($repl, '$match[$1]'), $v);
+			}
 		}
+		*/
+		$vars = array(
+			'VALUE' => $v, 
+			'RAWVALUE' => $raw_v, 
+		);
+		if($tfinfo['regex_tokens']) {
+			if(preg_match('~'.str_replace('~', '\\~', $tfinfo['textmask']).'~si', $raw_v, $match)) {
+				$vars['RAWVALUE$'] =& $match;
+				switch($type & XTHREADS_SANITIZE_MASK) {
+					case XTHREADS_SANITIZE_HTML:
+					case XTHREADS_SANITIZE_HTML_NL:
+					case XTHREADS_SANITIZE_PARSER:
+						$vars['VALUE$'] = array();
+						foreach($match as $i => &$val) {
+							$setvar =& $vars['VALUE$'][$i];
+							switch($type & XTHREADS_SANITIZE_MASK) {
+								case XTHREADS_SANITIZE_HTML:
+									$setvar = htmlspecialchars_uni($val); break;
+								case XTHREADS_SANITIZE_HTML_NL:
+									$setvar = nl2br(htmlspecialchars_uni($val)); break;
+								case XTHREADS_SANITIZE_PARSER:
+									$setvar = $parser->parse_message($val, $parser_opts); break;
+							}
+						}
+						break;
+					default:
+						$vars['VALUE$'] =& $match;
+				}
+			}
+		}
+		$v = eval_str($dispfmt, $vars);
 	}
 }
 
-function eval_str(&$s) {
-	if(strpos($s, '{$') === false) // note that this isn't just an optimisation, the pre-sanitiser is designed for this behaviour (so that we don't need to reverse the optimisation for eval)
-		return $s;
+function eval_str(&$s, $vars=array()) {
+	//if(strpos($s, '{$') === false) // note that this isn't just an optimisation, the pre-sanitiser is designed for this behaviour (so that we don't need to reverse the optimisation for eval)
+	//	return $s;
+	
+	//foreach($vars as &$v)
+	//	$v = strtr($v, array('\\' => '\\\\', '$' => '\\$', '"' => '\\"'));
+	//unset($v);
 	
 	// sanitisation done in cache build - don't need to do it here
 	return eval('return "'.$s.'";');
-	/*
-	// cause of PHP's f***ing magic quotes, we need a second eval
-	$find = array('~\\{\\$([a-zA-Z_0-9]+)((-\\>[a-zA-Z_0-9]+|\\[[\'"]?[a-zA-Z_ 0-9]+[\'"]?\\])*)\\}~e');
-	$repl = array('eval("return \\\\$GLOBALS[\'$1\']".str_replace("\\\\\'", "\'", "$2").";")');
-	
-	if(strpos($s, '{$threadurl') !== false || strpos($s, '{$forumurl')) {
-		$fid =& $GLOBALS['fid'];
-		if(!$fid) $fid = $GLOBALS['foruminfo']['fid'];
-		if(!$fid) $fid = $GLOBALS['forum']['fid'];
-		if($fid) {
-			$flink = get_forum_link($fid);
-			$find[] = '~\{\$forumurl\$\}~i';
-			$repl[] = $flink;
-			if(strpos($flink, '?')) $flink .= '&amp;';
-			else $flink .= '?';
-			$find[] = '~\{\$forumurl\?\}~i';
-			$repl[] = $flink;
-		}
-		$tid =& $GLOBALS['tid'];
-		if(!$tid) $tid = $GLOBALS['thread']['tid'];
-		if($tid) {
-			$tlink = get_thread_link($tid);
-			$find[] = '~\{\$threadurl\$\}~i';
-			$repl[] = $tlink;
-			if(strpos($tlink, '?')) $tlink .= '&amp;';
-			else $tlink .= '?';
-			$find[] = '~\{\$threadurl\?\}~i';
-			$repl[] = $tlink;
-		}
-	}
-	//return eval('return "'.strtr(preg_replace('~\\{\\$([a-zA-Z_0-9]+)~', '{$GLOBALS[\'$1\']', $s), array('\\' => '\\\\', '"' => '\\"')).'";');
-	return preg_replace($find, $repl, $s);
-	*/
 }
 
 // wildcard match like the *nix filesystem
@@ -625,6 +658,14 @@ function xthreads_get_xta_url(&$xta) {
 	// yes, this is copied from the archive, even though you won't be defining ARCHIVE_QUERY_STRINGS...
 	
 	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).'/'.$md5hash.rawurlencode($xta['filename']);
+}
+
+function xthreads_phptpl_iif($condition, $true)
+{
+	$args = func_get_args();
+	for($i=1, $c=count($args); $i<$c; $i+=2)
+		if($args[$i-1]) return $args[$i];
+	return (isset($args[$i-1]) ? $args[$i-1] : '');
 }
 
 

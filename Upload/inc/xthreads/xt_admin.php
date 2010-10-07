@@ -24,6 +24,10 @@ $plugins->add_hook('admin_tools_recount_rebuild_start', 'xthreads_admin_rebuildt
 
 $plugins->add_hook('admin_load', 'xthreads_vercheck');
 
+if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2) {
+	$plugins->add_hook('admin_config_plugins_activate_commit', 'xthreads_plugins_phptpl_activate');
+	$plugins->add_hook('admin_config_plugins_deactivate_commit', 'xthreads_plugins_phptpl_deactivate');
+}
 
 function xthreads_info() {
 	global $lang;
@@ -56,12 +60,14 @@ function xthreads_is_installed() {
 
 function xthreads_install() {
 	global $db, $cache, $mybb;
-	// TODO: add type=myisam for mysql?
+	$create_table_suffix = $db->build_create_table_collation();
+	if($db->type == 'mysql' || $db->type == 'mysqli')
+		$create_table_suffix = ' TYPE=MyISAM'.$create_table_suffix;
 	if(!$db->table_exists('threadfields_data')) {
 		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields_data` (
 			`tid` int(10) unsigned not null,
 			PRIMARY KEY (`tid`)
-		)');
+		)'.$create_table_suffix);
 	}
 	if(!$db->table_exists('xtattachments')) {
 		$db->write_query('CREATE TABLE `'.$db->table_prefix.'xtattachments` (
@@ -88,7 +94,7 @@ function xthreads_install() {
 			KEY (`tid`,`uid`),
 			KEY (`posthash`),
 			KEY (`field`)
-		)');
+		)'.$create_table_suffix);
 	}
 	if(!$db->table_exists('threadfields')) {
 		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields` (
@@ -127,7 +133,7 @@ function xthreads_install() {
 			
 			PRIMARY KEY (`field`),
 			KEY (`disporder`)
-		)');
+		)'.$create_table_suffix);
 		// `allowsort` tinyint(3) not null default 0,
 	}
 	if(!$db->field_exists('xthreads_grouping', 'forums')) {
@@ -453,7 +459,21 @@ function xthreads_buildtfcache() {
 		}
 		else {
 			$sanitise_fields =& $sanitise_fields_normal;
+			/*
 			$tf['regex_tokens'] = false;
+			if($tf['inputtype'] != XTHREADS_INPUT_FILE && (
+				($tf['unviewableval']  && preg_match('~\<(?:RAW)?VALUE\$\d+\>~', $tf['unviewableval'])) ||
+				($tf['dispformat']     && preg_match('~\<(?:RAW)?VALUE\$\d+\>~', $tf['dispformat'])) ||
+				($tf['dispitemformat'] && preg_match('~\<(?:RAW)?VALUE\$\d+\>~', $tf['dispitemformat']))
+			)) {
+				$tf['regex_tokens'] = true;
+			}
+			*/
+			$tf['regex_tokens'] = (
+				($tf['unviewableval']  && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['unviewableval'])) ||
+				($tf['dispformat']     && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispformat'])) ||
+				($tf['dispitemformat'] && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispitemformat']))
+			);
 		}
 		if($tf['unviewableval']) xthreads_sanitize_eval($tf['unviewableval'], $sanitise_fields);
 		if($tf['dispformat']) xthreads_sanitize_eval($tf['dispformat'], $sanitise_fields);
@@ -463,14 +483,6 @@ function xthreads_buildtfcache() {
 			foreach($tf['formatmap'] as &$fm)
 				xthreads_sanitize_eval($fm, $sanitise_fields_none);
 		
-		if($tf['inputtype'] != XTHREADS_INPUT_FILE && (
-			($tf['unviewableval']  && preg_match('~\<VALUE\$\d+\>~', $tf['unviewableval'])) ||
-			($tf['dispformat']     && preg_match('~\<VALUE\$\d+\>~', $tf['dispformat'])) ||
-			($tf['dispitemformat'] && preg_match('~\<VALUE\$\d+\>~', $tf['dispitemformat']))
-		)) {
-			$tf['regex_tokens'] = true;
-		}
-		
 		$cd[$tf['field']] = $tf;
 	}
 	$db->free_result($query);
@@ -478,15 +490,6 @@ function xthreads_buildtfcache() {
 }
 // sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
 function xthreads_sanitize_eval(&$s, &$fields) {
-	$tr = array('\\' => '\\\\', '$' => '\\$', '"' => '\\"');
-	$do_value_repl = false;
-	foreach($fields as &$f) {
-		// we convert (RAW)VALUE to tag format lessen likelihood that admin includes a variable where users can put in {VALUE}, (eg thread title)
-		$tr['{'.$f.'}'] = '<'.$f.'>';
-		
-		if($f == 'VALUE') $do_value_repl = true;
-	}
-	if($do_value_repl) $s = preg_replace('~\{(VALUE\$\d+)\}~', '<$1>', $s);
 	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
 	$s = preg_replace(
@@ -502,10 +505,28 @@ function xthreads_sanitize_eval(&$s, &$fields) {
 			'{$GLOBALS[\'forumurl_q\']}',
 			'{$GLOBALS[\'threadurl\']}',
 			'{$GLOBALS[\'threadurl_q\']}',
-		), strtr($s, $tr)
+		), strtr($s, array('\\' => '\\\\', '$' => '\\$', '"' => '\\"'))
 	);
-	if(strpos($s, '{$') === false) // reverse our eval optimisation
-		$s = strtr($s, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
+	
+	// replace conditionals
+	@include_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
+	if(function_exists('xthreads_phptpl_parsetpl')) {
+		xthreads_phptpl_parsetpl($s, $fields);
+	}
+	
+	// replace value tokens at the end
+	$do_value_repl = false;
+	$tr = array();
+	foreach($fields as &$f) {
+		$tr['{'.$f.'}'] = '{$vars[\''.$f.'\']}';
+		
+		if($f == 'VALUE') $do_value_repl = true;
+	}
+	if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '{$vars[\'$1$\'][$2]}', $s);
+	$s = strtr($s, $tr);
+	
+	//if(strpos($s, '{$') === false) // reverse our eval optimisation
+	//	$s = strtr($s, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
 }
 
 
@@ -802,3 +823,12 @@ function xthreads_vercheck() {
 	}
 }
 
+// rebuild threadfields cache on phptpl activation/deactivation
+function xthreads_plugins_phptpl_activate() { xthreads_plugins_phptpl_reparse(true); }
+function xthreads_plugins_phptpl_deactivate() { xthreads_plugins_phptpl_reparse(false); }
+function xthreads_plugins_phptpl_reparse($active) {
+	if($GLOBALS['codename'] != 'phptpl' || !function_exists('phptpl_evalphp')) return;
+	
+	define('XTHREADS_ALLOW_PHP_THREADFIELDS_ACTIVATION', $active); // define is maybe safer?
+	xthreads_buildtfcache();
+}

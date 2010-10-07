@@ -525,10 +525,22 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					$fieldtype = 'varchar(255) not null default ""';
 					//$using_long_varchar = true;
 					break;
+				case XTHREADS_INPUT_SELECT:
+				case XTHREADS_INPUT_RADIO:
+				//case XTHREADS_INPUT_CHECKBOX:
+					if($new_tf['multival'] === '' || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) {
+						$fieldtype = 'varchar(255) not null default ""';
+						break;
+					}
+					
 				default:
-					// initially, try 1024 chars
-					$fieldtype = 'varchar(1024) not null default ""';
-					$using_long_varchar = true;
+					if($new_tf['allowfilter']) {
+						// initially, try 1024 chars
+						$fieldtype = 'varchar(1024) not null default ""';
+						$using_long_varchar = true;
+					} else {
+						$fieldtype = 'text not null';
+					}
 					/*
 					// we assume a 255 char limit
 					$fix_def = (strlen($mybb->input['defaultval']) > 255);
@@ -746,7 +758,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	make_form_row('blankval', 'text_area');
 	make_form_row('defaultval', 'text_area');
 	make_form_row('dispformat', 'text_area');
-	$data['multival_enable'] = ($data['multival'] ? 1:0);
+	$data['multival_enable'] = ($data['multival'] !== '' ? 1:0);
 	make_form_row('multival_enable', 'yes_no_radio');
 	unset($data['multival_enable']);
 	$lang->threadfields_multival .= ' <em>*</em>';

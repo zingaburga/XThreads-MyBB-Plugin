@@ -224,6 +224,68 @@ function xthreads_delete_thread($tid) {
 	xthreads_rm_attach_query('tid='.$tid);
 }
 
+function xthreads_copy_thread(&$a) {
+	control_object($GLOBALS['db'], '
+		function insert_query($table, $array) {
+			static $done = false;
+			$ret = parent::insert_query($table, $array);
+			if(!$done) {
+				$done = true;
+				xthreads_duplicate_threadfield_data($this->xthreads_copy_thread_tid, $ret);
+			}
+			return $ret;
+		}
+	');
+	$GLOBALS['db']->xthreads_copy_thread_tid = $a['tid'];
+}
+/* function xthreads_split_posts(&$a) {
+	// impossible to get the new tid!!
+	// or maybe there's a way...
+} */
+
+function xthreads_duplicate_threadfield_data($tid_old, $tid_new) {
+	global $db;
+	@ignore_user_abort(true); // not really that good, since cancelling elsewhere will break transaction, but, well, copies might be slow, so...
+	$tf = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$tid_old));
+	$tf['tid'] = $tid_new;
+	
+	// copy xtattachments over
+	/* $threadfields = xthreads_gettfcache();
+	foreach($threadfields as $k => &$v) {
+		if($v['inputtype'] == XTHREADS_INPUT_FILE && $tf[$k]) {
+			// we have a file we need to duplicate
+			
+			$tf[$k] = $db->insert_query('xtattachments', '');
+		}
+	} */
+	$query = $db->simple_select('xtattachments', '*', 'tid='.$tid_old);
+	while($xta = $db->fetch_array($query)) {
+		// we have a file we need to duplicate
+		$xta['tid'] = $tid_new;
+		$oldname = xthreads_get_attach_path($xta);
+		$oldpath = dirname($oldname).'/';
+		$xta['attachname'] = substr(md5(uniqid(mt_rand(), true).substr($mybb->post_code, 16)), 12, 8).substr($xta['attachname'], 8);
+		unset($xta['aid']);
+		$tf[$xta['field']] = $xta['aid'] = $db->insert_query('xtattachments', array_map(array($db, 'escape_string'), $xta));
+		
+		$newname = xthreads_get_attach_path($xta);
+		$newpath = dirname($newname).'/';
+		
+		$oldfpref = basename(substr($oldname, 0, -6));
+		$newfpref = basename(substr($newname, 0, -6));
+		if($thumbs = @glob($oldpath.$oldfpref.'*x*.thumb')) {
+			foreach($thumbs as &$thumb) {
+				$thumb = basename($thumb);
+				xthreads_hardlink_file($oldpath.$thumb, $newpath.str_replace($oldfpref, $newfpref, $thumb));
+			}
+		}
+		xthreads_hardlink_file($oldname, $newname);
+	}
+	
+	$db->insert_query('threadfields_data', array_map(array($db, 'escape_string'), $tf));
+	@ignore_user_abort(false);
+}
+
 function xthreads_inputdisp() {
 	global $thread, $post, $fid, $mybb, $plugins;
 	
@@ -409,7 +471,7 @@ function xthreads_inputdisp() {
 // should be very rare, but we'll be extra careful
 // also can potentially be problematic too, but deleting an attachment not abandoned is perhaps even rarer
 function xthreads_attach_clear_posthash() {
-	if($GLOBALS['rand'] > 1) return; // dirty hack to speed things up a little
+	if(mt_rand(0, 10) > 1) return; // dirty hack to speed things up a little
 	xthreads_rm_attach_query('posthash="'.$GLOBALS['db']->escape_string($GLOBALS['posthash']).'"');
 }
 function xthreads_editpost_first_tplhack() {
@@ -700,7 +762,7 @@ function xthreads_upload_attachments() {
 	
 	@ignore_user_abort(true);
 	
-	$errors = '';
+	$errors = array();
 	$xta_remove = $threadfield_updates = array();
 	foreach($threadfield_cache as $k => &$v) {
 		if($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
@@ -755,7 +817,7 @@ function xthreads_upload_attachments() {
 				$attachedfile = upload_xtattachment($ul, $v, $mybb->user['uid'], $aid, $GLOBALS['thread']['tid']);
 				if($attachedfile['error']) {
 					if(!$lang->xthreads_threadfield_attacherror) $lang->load('xthreads');
-					$errors .= '<li>'.$lang->sprintf($lang->xthreads_threadfield_attacherror, htmlspecialchars_uni($v['title']), $attachedfile['error']).'</li>';
+					$errors[] = $lang->sprintf($lang->xthreads_threadfield_attacherror, htmlspecialchars_uni($v['title']), $attachedfile['error']);
 				}
 				else {
 					//unset($attachedfile['posthash'], $attachedfile['tid'], $attachedfile['downloads']);
@@ -796,13 +858,23 @@ function xthreads_upload_attachments() {
 	
 	@ignore_user_abort(false);
 	
-	if($errors) {
-		global $theme, $templates;
-		$attachedfile = array('error' => '<ul>'.$errors.'</ul>');
-		eval('$GLOBALS[\'attacherror\'] .= "'.$templates->get('error_attacherror').'";');
-		// if there's going to be a MyBB attachment error, and it's not been evaluated yet, shove it in the template to force it through - safe since this function is guaranteed to run only once
-		$templates->cache['error_attacherror'] = str_replace('{$attachedfile[\'error\']}', '<ul>'.strtr($errors, array('\\' => '\\\\', '$' => '\\$', '{' => '\\{', '}' => '\\}')).'<li>{$attachedfile[\'error\']}</li></ul>', $templates->cache['error_attacherror']);
-		
+	if(!empty($errors)) {
+		// MyBB 1.4 - 1.5
+		// and MyBB 1.6 is inconsistent (does different things on newthread/editpost)...
+		if($mybb->version_code < 1600 || $GLOBALS['current_page'] == 'editpost.php') { // can't find a better way to check other than to check version numbers
+			global $theme, $templates;
+			$errstr = '<li>'.implode('</li><li>', $errors).'</li>';
+			$attachedfile = array('error' => '<ul>'.$errstr.'</ul>');
+			eval('$GLOBALS[\'attacherror\'] .= "'.$templates->get('error_attacherror').'";');
+			// if there's going to be a MyBB attachment error, and it's not been evaluated yet, shove it in the template to force it through - safe since this function is guaranteed to run only once
+			$templates->cache['error_attacherror'] = str_replace('{$attachedfile[\'error\']}', '<ul>'.strtr($errstr, array('\\' => '\\\\', '$' => '\\$', '{' => '\\{', '}' => '\\}')).'<li>{$attachedfile[\'error\']}</li></ul>', $templates->cache['error_attacherror']);
+		} else {
+			// for MyBB 1.6
+			if(empty($GLOBALS['errors']))
+				$GLOBALS['errors'] =& $errors;
+			else
+				$GLOBALS['errors'] = array_merge($GLOBALS['errors'], $errors);
+		}
 		$mybb->input['action'] = ($GLOBALS['current_page'] == 'newthread.php' ? 'newthread' : 'editpost');
 		
 		// block the preview, since a failed upload can stuff it up
@@ -889,6 +961,30 @@ function xthreads_rm_attach_query($where) {
 			$db->delete_query('xtattachments', 'aid IN ('.$rmaid.')');
 	}
 	return $successes;
+}
+
+// will try to create a hardlink/copy of a file
+function xthreads_hardlink_file($src, $dest) {
+	if($src == $dest) return false;
+	if(@link($src, $dest)) return true;
+	if(DIRECTORY_SEPARATOR == '\\' && @ini_get('safe_mode') != 'On') {
+		$allow_exec = true;
+		// check if exec() is allowed
+		if(($func_blacklist = @ini_get('suhosin.executor.func.blacklist')) && strpos(','.$func_blacklist.',', ',exec,') !== false)
+			$allow_exec = false;
+		if(($func_blacklist = @ini_get('disable_functions')) && strpos(','.$func_blacklist.',', ',exec,') !== false)
+			$allow_exec = false;
+		
+		if($allow_exec) {
+			// try mklink (Windows Vista / Server 2008 and later only)
+			// assuming mklink refers to the correct executable is a little dangerous perhaps, but it should work
+			@unlink($dest); // mklink won't overwrite
+			@exec('mklink /H '.escapeshellarg(str_replace('/', '\\', $src)).' '.escapeshellarg(str_replace('/', '\\', $dest)).' >NUL 2>NUL', $null, $ret);
+			if($ret==0 && @file_exists($dest)) return true;
+		}
+	}
+	// fail, resort to copy
+	return @copy($src, $dest);
 }
 
 

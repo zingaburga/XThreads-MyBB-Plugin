@@ -111,7 +111,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	
 	if($tf['fileimage']) {
 		$img_dimensions = @getimagesize($attachment['tmp_name']);
-		if(empty($img_dimensions)) {
+		if(empty($img_dimensions) || !in_array($img_dimensions[2], array(IMAGETYPE_GIF,IMAGETYPE_JPEG,IMAGETYPE_PNG))) {
 			@unlink($attachment['tmp_name']);
 			return array('error' => $lang->error_attachtype);
 		}

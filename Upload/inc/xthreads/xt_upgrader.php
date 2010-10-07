@@ -51,9 +51,9 @@ if($info['version'] < 1.2) {
 
 if($info['version'] < 1.3) {
 	// we won't bother to fix potential issues with multiple values with textboxes
-	xthreads_buildtfcache();
 }
 
+/*
 if($info['version'] < 1.31) {
 	// make table alterations for longer varchars + removal of default value
 	$query = $db->simple_select('threadfields', 'field', 'inputtype IN ('.implode(',', array(XTHREADS_INPUT_TEXT, XTHREADS_INPUT_SELECT, XTHREADS_INPUT_RADIO, XTHREADS_INPUT_CHECKBOX)).')');
@@ -65,6 +65,38 @@ if($info['version'] < 1.31) {
 			$db->write_query($qry_base.$alterfield_base.'varchar(255)'.$qry_suf);
 		}
 	}
+}
+*/
+
+if($info['version'] < 1.32) {
+	// fix DB collations
+	$collation = $db->build_create_table_collation();
+	if($collation && ($db->type == 'mysql' || $db->type == 'mysqli')) {
+		foreach(array('threadfields_data','xtattachments','threadfields') as $table) {
+			$db->write_query('ALTER TABLE `'.$db->table_prefix.$table.'` CONVERT TO '.$collation);
+		}
+	}
+	
+	// make table alterations for longer varchars + removal of default value
+	$query = $db->simple_select('threadfields', 'field,allowfilter,inputtype,multival', 'inputtype IN ('.implode(',', array(XTHREADS_INPUT_TEXT, XTHREADS_INPUT_SELECT, XTHREADS_INPUT_RADIO, XTHREADS_INPUT_CHECKBOX)).')');
+	$qry_base = 'ALTER TABLE `'.$db->table_prefix.'threadfields_data` MODIFY ';
+	$qry_suf_vc = ' not null default ""';
+	while($field = $db->fetch_array($query)) {
+		$alterfield_base = '`'.$field['field'].'` ';
+		if($field['allowfilter']) {
+			if($field['inputtype'] == XTHREADS_INPUT_TEXT || $field['inputtype'] == XTHREADS_INPUT_CHECKBOX || ($field['inputtype'] == XTHREADS_INPUT_SELECT && $field['multival'] !== '')) {
+				if(!$db->write_query($qry_base.$alterfield_base.'varchar(1024)'.$qry_suf_vc, true)) {
+					$db->write_query($qry_base.$alterfield_base.'varchar(255)'.$qry_suf_vc);
+				}
+			} else {
+				$db->write_query($qry_base.$alterfield_base.'varchar(255)'.$qry_suf_vc);
+			}
+		} else {
+			$db->write_query($qry_base.$alterfield_base.'text not null');
+		}
+	}
+	
+	xthreads_buildtfcache();
 }
 
 return true;

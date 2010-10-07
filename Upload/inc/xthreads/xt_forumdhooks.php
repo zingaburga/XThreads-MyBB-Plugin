@@ -11,8 +11,8 @@ function xthreads_forumdisplay() {
 	$threadfield_cache = xthreads_gettfcache($fid);
 	$tf_filters = array();
 	$filters_set = array(
-		'__search' => array('hiddencss' => '', 'visiblecss' => 'display: none;'),
-		'__all' => array('hiddencss' => '', 'visiblecss' => 'display: none;'),
+		'__search' => array('hiddencss' => '', 'visiblecss' => 'display: none;', 'selected' => array('' => ' selected="selected"'), 'checked' => array('' => ' checked="checked"'), 'active' => array('' => 'filtertf_active'), 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active'),
+		'__all' => array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active'),
 	);
 	$xthreads_forum_filter_form = $xthreads_forum_filter_args = '';
 	if(!empty($threadfield_cache)) {
@@ -46,7 +46,14 @@ function xthreads_forumdisplay() {
 		// also check for forumdisplay filters/sort
 		// and generate form HTML
 		foreach($threadfield_cache as $n => &$tf) {
-			$filters_set[$n] = array('hiddencss' => '', 'visiblecss' => 'display: none;');
+			$filters_set[$n] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
+			if($tf['ignoreblankfilter']) {
+				// will be overwritten if not blank
+				$filters_set[$n]['selected'] = array('' => ' selected="selected"');
+				$filters_set[$n]['checked'] = array('' => ' checked="checked"');
+				$filters_set[$n]['active'] = array('' => 'filtertf_active');
+			}
+			
 			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n])) {
 				$tf_filters[$n] = $mybb->input['filtertf_'.$n];
 				// ignore blank inputs
@@ -111,6 +118,7 @@ function xthreads_forumdisplay() {
 				$filters_set['__all']['forminput'] = $xthreads_forum_filter_form;
 				$filters_set['__all']['hiddencss'] = 'display: none;';
 				$filters_set['__all']['visiblecss'] = '';
+				unset($filters_set['__all']['nullselected'], $filters_set['__all']['nullchecked'], $filters_set['__all']['nullactive']);
 			}
 			//if($mybb->input['sortby'] == 'tf_'.$n)
 			//	$tf_sort = $n;
@@ -120,7 +128,7 @@ function xthreads_forumdisplay() {
 		if(function_exists('quickthread_run'))
 			xthreads_forumdisplay_quickthread();
 	}
-	if($forum['xthreads_inlinesearch'] && $mybb->input['search']) {
+	if($forum['xthreads_inlinesearch'] && isset($mybb->input['search']) && $mybb->input['search'] !== '') {
 		$urlarg = 'search='.rawurlencode($mybb->input['search']);
 		$xthreads_forum_filter_args .= '&'.$urlarg;
 		$GLOBALS['xthreads_forum_search_form'] = '<input type="hidden" name="search" value="'.htmlspecialchars_uni($mybb->input['search']).'" />';
@@ -134,6 +142,7 @@ function xthreads_forumdisplay() {
 		$filters_set['__search']['active'] = array($mybb->input['search'] => 'filtertf_active');
 		$filters_set['__search']['hiddencss'] = 'display: none;';
 		$filters_set['__search']['visiblecss'] = '';
+		unset($filters_set['__search']['nullselected'], $filters_set['__search']['nullchecked'], $filters_set['__search']['nullactive']);
 	}
 	
 	if($forum['xthreads_inlinesearch'] || !empty($tf_filters)) {
@@ -207,7 +216,7 @@ function xthreads_forumdisplay_filter() {
 	if(!empty($tf_filters)) {
 		foreach($tf_filters as $field => &$val) {
 			// $threadfield_cache is guaranteed to be set here
-			if(is_array($val)) {
+			if(is_array($val) && count($val) > 1) {
 				if(!empty($val)) {
 					if($threadfield_cache[$field]['multival']) {
 						// ugly, but no other way to really do this...
@@ -226,10 +235,14 @@ function xthreads_forumdisplay_filter() {
 				}
 			}
 			else {
-				if($threadfield_cache[$field]['multival'])
-					$qstr = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\"")).' LIKE "%'."\n".$db->escape_string_like($val)."\n".'%"';
+				if(is_array($val)) // single element
+					$val2 = reset($val);
 				else
-					$qstr = 'tfd.`'.$db->escape_string($field).'` = "'.$db->escape_string($val).'"';
+					$val2 =& $val;
+				if($threadfield_cache[$field]['multival'])
+					$qstr = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\"")).' LIKE "%'."\n".$db->escape_string_like($val2)."\n".'%"';
+				else
+					$qstr = 'tfd.`'.$db->escape_string($field).'` = "'.$db->escape_string($val2).'"';
 			}
 			$q .= ' AND '.$qstr;
 			$tvisibleonly .= ' AND '.$qstr;
