@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 0.54);
+define('XTHREADS_VERSION', 1.0);
 
 
 // XThreads defines
@@ -174,24 +174,6 @@ function xthreads_tplhandler() {
 					return parent::get($title, $eslashes, $htmlcomments);
 				}
 			');
-			/*eval('
-				class xthreads_tpl extends '.get_class($templates).' {
-					function xthreads_tpl(&$o) {
-						foreach(get_object_vars($o) as $k => $v)
-							$this->$k = $v;
-					}
-					
-					function cache($templates) {
-						xthreads_tpl_cache($templates, \''.$forum['xthreads_tplprefix'].'\', $this);
-					}
-					
-					function get($title, $eslashes=1, $htmlcomments=1) {
-						xthreads_tpl_get($this, $title, \''.$forum['xthreads_tplprefix'].'\');
-						return parent::get($title, $eslashes, $htmlcomments);
-					}
-				}
-			');
-			$templates = new xthreads_tpl($templates);*/
 		}
 		if($forum['xthreads_firstpostattop']) {
 			switch($current_page) {
@@ -261,38 +243,8 @@ function xthreads_tpl_get(&$obj, &$t, $prefix) {
 		if($GLOBALS['mybb']->debug_mode)
 			$obj->uncached_templates[$t] = $t;
 		$obj->cache($t);
-		/*
-		$obj->cache($t.','.$prefix.$t);
-		if(isset($obj->cache[$prefix.$t]))
-			$obj->cache[$t] =& $obj->cache[$prefix.$t];
-		elseif(!isset($obj->cache[$t])) // template doesn't exist?  make blank so we don't query again
-			$obj->cache[$t] = '';
-		*/
 	}
 }
-/* old func
-function xthreads_tpl_get(&$obj, &$t, $prefix) {
-	if(!isset($obj->cache[$prefix.$t])) {
-		if(!isset($obj->cache[$t])) {
-			// template not loaded, load it
-			if($GLOBALS['mybb']->debug_mode)
-				$obj->uncached_templates[$t] = $t;
-			$obj->cache($t.','.$prefix.$t);
-			// template doesn't exist?  make blank so we don't query again
-			if(!isset($obj->cache[$t]))
-				$obj->cache[$t] = '';
-			// if custom template exists, use it
-			if(isset($obj->cache[$prefix.$t]))
-				$t = $prefix.$t;
-			else
-				$obj->cache[$prefix.$t] = '';
-		}
-		//otherwise, we simply just don't have a custom template, so use default
-	} else {
-		// custom template exists, hack system to use it
-		$t = $prefix.$t;
-	}
-}*/
 
 
 function xthreads_handle_uploads() {
@@ -309,6 +261,8 @@ function xthreads_handle_uploads() {
 			}
 			if($thread['firstpost'] != $post['pid'])
 				return;
+		} elseif(($mybb->input['action'] == 'editdraft' || $mybb->input['action'] == 'savedraft') && $mybb->input['tid']) {
+			$GLOBALS['thread'] = get_thread(intval($mybb->input['tid']));
 		}
 		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 		xthreads_upload_attachments();
@@ -336,70 +290,6 @@ function xthreads_xmlhttp_blankpost_hack() {
 	}
 }
 
-// TODO: test displayed fields in search (posts view)
-// TODO: xtattach saved outside monthdir
-
-// TODO: admin logs - use proper text
-// TODO: admincp - separate required field from editable
-// TODO: child threads?
-// TODO: check internal db state / data consistency function in admincp
-/* - unreferenced attachments in xtattachments (ignore orphaned attachments)
-   - referenced attachments in threadfields_data (check aid, tid, field, md5hash)
-   - non existent attachments + file system scan
-   - thumbnail integrity checks
-   - validate file magic, image (+dimensions), size + extensions for xtattachments
-   - threadfields_data - invalid tid references
-   - threadfields <> threadfields_data fields mismatch
-   - ensure threadfields_data field types are correct + right indexes are being used
-   - invalid allowed forums? + editable gids
-   - invalid values for editable, textmask, sanitize, inputtype
-   - invalid states for fields, eg can't have allowfilter if inputtype is textarea
-   - data missing when required field set in threadfields_data
- */
-// TODO: better file upload URL/file switch + remove attachment system
-
-// TODO: implement data types?
-// TODO: forumdisplay threadfield sorting
-// TODO: default forumdisplay sorting/filtering
-// TODO: easy mycodes for text filter
-// TODO: silent upgrader
-
-// TODO: make the forumbits template prefix feature loader a bit smarter
-// TODO: forum admin -> separate XThreads options into a separate table
-// TODO: format/hide posts in newreply's Thread Review?
-
-// TODO: FILE_URL input (+ validation that input is valid URL)
-// TODO: xtattachment load user session + wol patch
-// TODO: include stuff for forumdisplay_threadlist template to include inline search with listboxes?
-
-// TODO: override settings per forum
-/*
-	- max avatar display dims
-	- threaded view
-	- show quick reply
-	- show multiquote
-	- show similar threads
-	
-	- replies/views for hot topic
-	- announcement limit
-	
-	- min/max post length
-	- max img+attach per post
-	- show attachment as img/thumb/download link
-	- edit time limit
-	- word wrapping
-	- max poll length/options
-*/
-
-// TODO: template prefixes in WOL?
-// TODO: colspan offset for forumdisplay??
-// TODO: newthread/editpost input field display - tabordering
-
-// TODO: extra postfields?
-// TODO: search - also filter by threadfields?
-
-// TODO: preparse stuff
-
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 	if($s === '' || $s === null) {
 		if($tfinfo['blankval']) $s = eval_str($tfinfo['blankval']);
@@ -417,10 +307,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 			return;
 		$s = $xta_cache[$s];
 		$s['downloads_friendly'] = my_number_format($s['downloads']);
-		//$s = unserialize($s);
-		//$s['thumbnail'] = htmlspecialchars_uni($s['thumbnail']);
-		//$s['thumbext'] = '&amp;thumbnail=1';
-		//if($s['thumbnail'] == 'SMALL') $s['thumbext'] = '';
 		$s['filename'] = htmlspecialchars_uni($s['filename']);
 		$s['uploadmime'] = htmlspecialchars_uni($s['uploadmime']);
 		if(!$s['updatetime']) $s['updatetime'] = $s['uploadtime'];
@@ -449,11 +335,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		}
 	}
 	else {
-		/* $fmtmap = null;
-		if($tfinfo['formatmap']) { // cache map format in case of multivals
-			$fmtmap = unserialize($tfinfo['formatmap']);
-		} */
-		
 		if($tfinfo['multival']) {
 			$vals = explode("\n", str_replace("\r", '', $s));
 			foreach($vals as &$v) {
@@ -538,7 +419,7 @@ function xthreads_wildcard_match($str, $wc) {
 
 function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 	if(!$tids) return;
-	// our special query needed to get download counts across
+	// our special query needed to get download info across
 	static $done_attach_dl_count = false;
 	if(!$done_attach_dl_count && $tf['inputtype'] == XTHREADS_INPUT_FILE || $tf['inputtype'] == XTHREADS_INPUT_FILE_URL) {
 		$done_attach_dl_count = true;
@@ -570,7 +451,7 @@ function xthreads_get_xta_url(&$xta) {
 	static $use_qstr = null;
 	// to use query strings, or not to use; that is the question...
 	if(!isset($use_qstr))
-		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') == false) || stripos(SAPI_NAME, 'cgi') !== false || defined('ARCHIVE_QUERY_STRINGS'));
+		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') === false) || stripos(SAPI_NAME, 'cgi') !== false || defined('ARCHIVE_QUERY_STRINGS'));
 	// yes, this is copied from the archive, even though you won't be defining ARCHIVE_QUERY_STRINGS...
 	
 	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).'/'.$md5hash.rawurlencode($xta['filename']);
@@ -578,22 +459,6 @@ function xthreads_get_xta_url(&$xta) {
 
 
 
-
-/* if(!function_exists('control_object')) {
-	function control_object(&$obj, $code) {
-		static $cnt = 0;
-		$newname = '_objcont_'.(++$cnt);
-		eval('class '.$newname.' extends '.get_class($obj).' {
-			function '.$newname.'(&$o) {
-				foreach(get_object_vars($o) as $k => $v)
-					$this->$k = $v;
-			}'.$code.'
-		}');
-		$obj = new $newname($obj);
-	}
-} */
-// improved version of control_object which morphs an object into the supplied class name, copying all variables (including private!) across
-// only problem with this method is that private/protected _resources_ won't get copied
 if(!function_exists('control_object')) {
 	function control_object(&$obj, $code) {
 		static $cnt = 0;
@@ -602,74 +467,28 @@ if(!function_exists('control_object')) {
 		$classname = get_class($obj);
 		$checkstr = 'O:'.strlen($classname).':"'.$classname.'":';
 		$checkstr_len = strlen($checkstr);
-		eval('class '.$newname.' extends '.$classname.' {'.$code.'}');
 		if(substr($objserial, 0, $checkstr_len) == $checkstr) {
-			$vars = get_object_vars($obj);
-			$obj = unserialize('O:'.strlen($newname).':"'.$newname.'":'.substr($objserial, $checkstr_len));
-			foreach($vars as $k => &$v) // need to copy to ensure resources get across (but won't get private/protected vars unfortunately)
-				$obj->$k = $v;
-		}
-		// else not a valid object or PHP serialize has changed
-	}
-}
-/* if(!function_exists('morph_object')) {
-	function morph_object(&$obj, $name) {
-		$objserial = serialize($obj);
-		$classname = get_class($obj);
-		$checkstr = 'O:'.strlen($classname).':"'.$classname.'":';
-		$checkstr_len = strlen($checkstr);
-		eval('class __'.$name.' extends '.$classname.' { }');
-		if(substr($objserial, 0, $checkstr_len) == $checkstr)
-			$obj = unserialize('O:'.strlen($name).':"'.$name.'":'.substr($objserial, $checkstr_len));
-		// else not a valid object or PHP serialize has changed
-	}
-} */
-
-/*
-function control_object(&$obj, $funcs) {
-	static $cnt = 0;
-	$newname = '_objcont_'.(++$cnt);
-	
-	$code = '';
-	foreach($funcs as $k => &$f) {
-		if(is_array($f['args'])) {
-			$callargs = $funcargs = $comma = '';
-			foreach($f['args'] as $arg => &$def) {
-				$callargs .= $comma.'$'.$arg;
-				if(isset($def)) $callargs .= '='.$def;
-				$comma = ', ';
+			$vars = array();
+			// grab resources/object etc, stripping scope info from keys
+			foreach((array)$obj as $k => $v) {
+				if($p = strrpos($k, "\0"))
+					$k = substr($k, $p+1);
+				$vars[$k] = $v;
 			}
-			if(!empty($f['args']))
-				$funcargs = ', $'.implode(', $', array_keys($f['args']));
-			$code .= '
-				function '.$k.'('.$callargs.') {
-					'.($f['pre'] ? 'if(($ret = '.$f['pre'].'($this'.$funcargs.')) !== null) return $ret;':'').'
-					'.($f['post'] ? $f['post'].'(':'return ').'parent::'.$k.'('.$funcargs.')'.($f['post'] ? ', $this'.$funcargs.')':'').';
-				}
-			';
+			if(!empty($vars))
+				$code .= '
+					function ___setvars(&$a) {
+						foreach($a as $k => &$v)
+							$this->$k = $v;
+					}
+				';
+			eval('class '.$newname.' extends '.$classname.' {'.$code.'}');
+			$obj = unserialize('O:'.strlen($newname).':"'.$newname.'":'.substr($objserial, $checkstr_len));
+			if(!empty($vars))
+				$obj->___setvars($vars);
 		}
-		else {
-			$code .= '
-				function '.$k.'() {
-					$args = $args2 = func_get_args();
-					array_unshift($args2, $this);
-					'.($f['pre'] ? 'if(($ret = call_user_func_array(\''.$f['pre'].'\', $args2)) !== null) return $ret;':'').'
-					'.($f['post'] ? '$ret =':'return').' call_user_func_array(array(parent, \''.$k.'\'), $args);
-					'.($f['post'] ? '
-						array_unshift($args2, $ret);
-						return call_user_func_array(\''.$f['post'].'\', $args2);
-					':'').'
-				}
-			';
-		}
+		// else not a valid object or PHP serialize has changed
 	}
-	
-	eval('class '.$newname.' extends '.get_class($obj).' {
-		function '.$newname.'(&$o) {
-			foreach(get_object_vars($o) as $k => $v)
-				$this->$k = $v;
-		}'.$code.'
-	}');
-	$obj = new $newname($obj);
 }
-*/
+
+

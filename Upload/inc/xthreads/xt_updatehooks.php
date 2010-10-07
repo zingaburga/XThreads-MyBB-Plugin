@@ -71,78 +71,6 @@ function xthreads_input_posthandler_validate(&$ph, $update=false) {
 	
 	foreach($data as $k => &$v)
 		$ph->data['xthreads_'.$k] = $v;
-	
-	/*
-	global $mybb;
-	// set things from input
-	foreach($threadfield_cache as $k => &$v) {
-		if($v['editable'] == XTHREADS_EDITABLE_NONE) continue;
-		
-		if(isset($mybb->input['xthreads_'.$k])) {
-			if($v['inputtype'] == XTHREADS_INPUT_FILE) {
-				$inval = intval($mybb->input['xthreads_'.$k]);
-			}
-			elseif($v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
-				if(is_numeric($mybb->input['xthreads_'.$k]))
-					$inval = intval($mybb->input['xthreads_'.$k]);
-				else
-					$inval = trim($mybb->input['xthreads_'.$k]);
-			}
-			elseif($v['multival'] && is_array($mybb->input['xthreads_'.$k])) {
-				$inval = array_map('trim', $mybb->input['xthreads_'.$k]);
-				foreach($inval as $valkey => &$val)
-					if(!$val) unset($inval[$valkey]);
-			}
-			else
-				$inval = trim($mybb->input['xthreads_'.$k]);
-		}
-		else {
-			$inval = null;
-			if($update) continue;
-		}
-		
-		if($v['editable'] == XTHREADS_EDITABLE_REQ && (!isset($inval) || empty($inval))) {
-			//if($update)
-			//	unset($inval);
-			//else
-				$ph->set_error('threadfield_required', htmlspecialchars_uni($v['title']));
-		}
-		elseif(isset($inval)) {
-			if($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
-				// TODO: perhaps have URL validation here (for type FILE_URL)
-				$ph->data['xthreads_'.$k] = $inval;
-			}
-			else {
-				// validate input
-				if(is_array($inval))
-					$inval_list =& $inval;
-				else
-					$inval_list = array($inval); // &$inval generates recursion for some odd reason at times
-				foreach($inval_list as &$val) {
-					if($v['maxlen'] && my_strlen($val) > $v['maxlen']) {
-						$ph->set_error('threadfield_toolong', array(htmlspecialchars_uni($v['title']), $v['maxlen']));
-						break;
-					}
-					elseif($val && !empty($v['vallist'])) {
-						if(!in_array($val, $v['vallist'])) {
-							$ph->set_error('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
-							break;
-						}
-					}
-					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', $val)) {
-						$ph->set_error('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
-						break;
-					}
-				}
-				
-				if(is_array($inval))
-					$ph->data['xthreads_'.$k] = implode("\n", $inval);
-				else
-					$ph->data['xthreads_'.$k] = $inval;
-			}
-		}
-	}
-	*/
 }
 function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 	global $mybb;
@@ -224,6 +152,9 @@ function xthreads_input_posthandler_insert(&$ph) {
 	elseif(!empty($ph->thread_insert_data)) {
 		$data = &$ph->thread_insert_data;
 		$update = false;
+		// try to determine if updating a draft (dirty, but should work)
+		if(!isset($data['fid']) && !isset($data['uid']))
+			$update = true;
 	}
 	else return;
 	
@@ -248,8 +179,10 @@ function xthreads_input_posthandler_insert(&$ph) {
 	
 	if($ph->tid)
 		$tid = $ph->tid;
-	else
+	elseif($data['tid'])
 		$tid = $data['tid'];
+	else
+		$tid = $ph->data['tid'];
 	
 	if(!empty($xtaupdates)) {
 		$db->update_query('xtattachments', array('tid' => $tid), 'aid IN ('.implode(',', $xtaupdates).')');
@@ -272,36 +205,25 @@ function xthreads_delete_thread($tid) {
 	$db->delete_query('threadfields_data', 'tid='.$tid);
 	
 	xthreads_rm_attach_query('tid='.$tid);
-	/*
-	// check for xtattachments
-	$has_xtattach = false;
-	$query = $db->simple_select('xtattachments', 'aid,attachname,indir', 'tid='.$tid);
-	$path = $GLOBALS['mybb']->settings['uploadspath'].'/xthreads_ul/';
-	while($xta = $db->fetch_array($query)) {
-		xthreads_rm_attach_fs($xta);
-		$has_xtattach = true;
-	}
-	$db->free_result($query);
-	if($has_xtattach)
-		$db->delete_query('xtattachments', 'tid='.$tid);
-	*/
 }
 
 function xthreads_inputdisp() {
-	global $thread, $fid, $mybb, $plugins;
+	global $thread, $post, $fid, $mybb, $plugins;
 	$editpost = ($GLOBALS['current_page'] == 'editpost.php');
 	if($editpost) {
-		if(!$thread) {
-			// because the placement of the editpost_start hook really sucks...
+		// because the placement of the editpost_start hook really sucks...
+		if(!$post) {
 			$post = get_post(intval($mybb->input['pid'])); // hopefully MyBB will also use get_post in their code too...
+		}
+		if(!$thread) {
 			if(!empty($post))
 				$thread = get_thread($post['tid']);
 			if(empty($thread)) return;
 		}
 		if(!$fid) $fid = $thread['fid'];
+		// check if first post
+		if($post['pid'] != $thread['firstpost']) return;
 	}
-	// check if first post
-	if($editpost && $GLOBALS['post']['pid'] != $thread['firstpost']) return;
 	
 	if($mybb->request_method == 'post') {
 		//xthreads_upload_attachments();
@@ -312,7 +234,7 @@ function xthreads_inputdisp() {
 				$recvfields[substr($k, 9)] =& $v;
 		xthreads_input_generate($recvfields, $fid);
 	}
-	elseif($editpost) {
+	elseif($editpost || ($mybb->input['action'] == 'editdraft' && $thread['tid'])) {
 		global $db;
 		$fields = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$thread['tid']));
 		xthreads_input_generate($fields, $fid);
@@ -465,16 +387,6 @@ function xthreads_inputdisp() {
 function xthreads_attach_clear_posthash() {
 	if($GLOBALS['rand'] > 1) return; // dirty hack to speed things up a little
 	xthreads_rm_attach_query('posthash="'.$GLOBALS['db']->escape_string($GLOBALS['posthash']).'"');
-	/*
-	global $db, $posthash;
-	$query = $db->simple_select('xtattachments', '*', 'posthash="'.$db->escape_string($posthash).'"');
-	if($db->num_rows($query)) {
-		while($xta = $db->fetch_array($query))
-			xthreads_rm_attach_fs($xta);
-		$db->free_result($query);
-		$db->delete_query('xtattachments', 'posthash="'.$db->escape_string($posthash).'"');
-	}
-	*/
 }
 function xthreads_editpost_first_tplhack() {
 	control_object($GLOBALS['templates'], '
@@ -487,14 +399,6 @@ function xthreads_editpost_first_tplhack() {
 			return parent::get($title, $eslashes, $htmlcomments);
 		}
 	');
-	/*
-	// no harm in calling this twice... (should really be placed before hook though)
-	$fn =& $GLOBALS['forum']['name'];
-	$fn = strip_tags($fn);
-	global $templates;
-	eval('$GLOBALS[\'editpost\'] = "'.$templates->get('editpost').'";');
-	$templates->cache['editpost'] =& $templates->cache['editpost_first'];
-	*/
 }
 
 function xthreads_input_generate(&$data, $fid) {
@@ -972,168 +876,3 @@ function xthreads_js_remove_noreplies_notice() {
 	$templates->cache['postbit_classic'] = $js.$templates->cache['postbit_classic'];
 }
 
-/*
-function xthreads_freeze_stats() {
-	global $cache;
-	$stats = $cache->read('stats');
-	eval('
-		class xthreads_cache_freezestat extends '.get_class($cache).' {
-			function xthreads_cache_freezestat(&$olddb) {
-				foreach(get_object_vars($olddb) as $k => $v)
-					$this->$k = $v;
-			}
-			function update($name, $contents) {
-				static $done = false;
-				if(!$done && $name == "stats") {
-					$done = true;
-					$contents[\'numthreads\'] = '.$stats['numthreads'].';
-					$contents[\'numposts\'] = '.$stats['numposts'].';
-				}
-				return parent::update($name, $contents);
-			}
-		}
-	');
-	$cache = new xthreads_cache_freezestat($cache);
-}
-*/
-
-
-
-
-/*
-function xthreads_input_posthandler_validate(&$ph, $update=false) {
-	global $threadfield_cache, $mybb, $fid, $lang;
-	if(!isset($threadfield_cache))
-		$threadfield_cache = xthreads_gettfcache($fid);
-	// remove uneditable fields
-	xthreads_filter_tfeditable($threadfield_cache, $fid); // NOTE: modifies the global tfcache!
-	if(empty($threadfield_cache)) return;
-	
-	// language setup
-	$lang->load('xthreads');
-	
-	// first, run through to see if we have already uploaded some attachments
-	$aids = array();
-	foreach($threadfield_cache as $k => &$v) {
-		if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && $mybb->input['xthreads_'.$k] && empty($_FILES['xthreads_'.$k]) && is_numeric($mybb->input['xthreads_'.$k])) {
-			$aids[] = intval($mybb->input['xthreads_'.$k]);
-		}
-	}
-	$attachments = array();
-	if(!empty($aids)) {
-		global $db;
-		if($mybb->input['pid'])
-			$attachwhere = 'pid='.intval($mybb->input['pid']);
-		else
-			$attachwhere = 'posthash="'.$db->escape_string($mybb->input['posthash']).'"';
-		$query = $db->simple_select('attachments', 'aid,filename,filesize,uploadmime,attachname,indir,md5hash,uploadtime,updatetime', 'aid IN ('.implode(',', $aids).') AND '.$attachwhere);
-		while($attachment = $db->fetch_array($query))
-			$attachments[$attachment['aid']] = $attachment;
-	}
-	unset($aids);
-	
-	// set things from input
-	foreach($threadfield_cache as $k => &$v) {
-		if($v['editable'] == XTHREADS_EDITABLE_NONE) continue;
-		
-		$input_is_numeric = is_numeric($mybb->input['xthreads_'.$k]);
-		if($v['inputtype'] == XTHREADS_INPUT_FILE) {
-			if(empty($_FILES['xthreads_'.$k]) && $mybb->input['xthreads_'.$k] && $input_is_numeric)
-				$inval =& $attachments[intval($mybb->input['xthreads_'.$k])];
-			else
-				$inval = $_FILES['xthreads_'.$k];
-		}
-		elseif($v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
-			if(!empty($_FILES['xthreads_'.$k]))
-				$inval = $_FILES['xthreads_'.$k];
-			elseif($mybb->input['xthreads_'.$k]) {
-				if($input_is_numeric)
-					$inval =& $attachments[intval($mybb->input['xthreads_'.$k])];
-				else
-					$inval = trim($mybb->input['xthreads_'.$k]);
-			}
-			else
-				$inval = null;
-		}
-		elseif(isset($mybb->input['xthreads_'.$k])) {
-			if($v['multival'] && is_array($mybb->input['xthreads_'.$k])) {
-				$inval = array_map('trim', $mybb->input['xthreads_'.$k]);
-				foreach($inval as $valkey => &$val)
-					if(!$val) unset($inval[$valkey]);
-			}
-			else
-				$inval = trim($mybb->input['xthreads_'.$k]);
-		}
-		else
-			$inval = null;
-		
-		if($input_is_numeric && empty($inval)) {
-			// referenced attachment isn't valid
-			$input_is_numeric = false;
-		}
-		
-		if($v['editable'] == XTHREADS_EDITABLE_REQ && !$update && (!isset($inval) || empty($inval))) {
-			$ph->set_error('threadfield_required', htmlspecialchars_uni($v['title']));
-		}
-		elseif(isset($inval)) {
-			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_array($inval)) {
-				// handle file upload
-				
-				if($input_is_numeric && empty($_FILES['xthreads_'.$k]['name'])) {
-					// already uploaded
-					//$ph->data['xthreads_'.$k] = serialize($inval);
-					$ph->data['xthreads_'.$k] = $inval['aid'];
-					$GLOBALS['xta_cache'][$inval['aid']] = $inval;
-				}
-				else {
-					require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
-					// TODO: it may be possible to fool this by supplying an invalid attachment id; shouldn't really be much of an issue, since it will only affect this thread though but maybe we should put an effort in to stopping this anyway
-					// actually, it may allow users to continually upload stuff, so maybe we should
-					$attachedfile = upload_xtattachment($inval, $v, ($input_is_numeric ? $mybb->input['xthreads_'.$k] : 0));
-					if($attachedfile['error'])
-						$ph->set_error('threadfield_attacherror', array(htmlspecialchars_uni($v['title']), $attachedfile['error']));
-					else {
-						unset($attachedfile['posthash'], $attachedfile['tid'], $attachedfile['downloads']);
-						//$mybb->input['xthreads_'.$k] = $ph->data['xthreads_'.$k] = serialize($attachedfile);
-						$mybb->input['xthreads_'.$k] = $ph->data['xthreads_'.$k] = $attachedfile['aid'];
-						$GLOBALS['xta_cache'][$attachedfile['aid']] = $attachedfile;
-						unset($_FILES['xthreads_'.$k]);
-					}
-				}
-			}
-			else {
-				// TODO: perhaps have URL validation here (for type FILE_URL)
-				$validvals = null;
-				// validate input
-				if(is_array($inval))
-					$inval_list =& $inval;
-				else
-					$inval_list = array(&$inval);
-				foreach($inval_list as &$val) {
-					if($v['maxlen'] && my_strlen($val) > $v['maxlen']) {
-						$ph->set_error('threadfield_toolong', array(htmlspecialchars_uni($v['title']), $v['maxlen']));
-						break;
-					}
-					elseif($val && trim($v['vallist'])) {
-						if(!isset($validvals)) // cache it in case of multiple vals
-							$validvals = array_map('trim', explode("\n", str_replace("\r", '', $v['vallist'])));
-						if(!in_array($val, $validvals)) {
-							$ph->set_error('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
-							break;
-						}
-					}
-					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', $val)) {
-						$ph->set_error('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
-						break;
-					}
-				}
-				
-				if(is_array($inval))
-					$ph->data['xthreads_'.$k] = implode("\n", $inval);
-				else
-					$ph->data['xthreads_'.$k] = $inval;
-			}
-		}
-	}
-}
-*/

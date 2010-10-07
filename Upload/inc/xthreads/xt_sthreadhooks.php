@@ -94,26 +94,6 @@ function xthreads_showthread_firstpost() {
 					return parent::get($title, $eslashes, $htmlcomments);
 			}
 		');
-		/*eval('
-			class xthreads_tpl_firstpost extends '.get_class($templates).' {
-				function xthreads_tpl_firstpost(&$o) {
-					foreach(get_object_vars($o) as $k => $v)
-						$this->$k = $v;
-				}
-				
-				function get($title, $eslashes=1, $htmlcomments=1) {
-					static $done=false;
-					if(!$done && ($title == \'postbit\' || $title == \'postbit_classic\')) {
-						$done = true;
-						$r = parent::get($title, $eslashes, $htmlcomments);
-						xthreads_tpl_postbitrestore();
-						return str_replace(\'{$post_extra_style}\', \'border-top-width: 0;\', $r);
-					} else
-						return parent::get($title, $eslashes, $htmlcomments);
-				}
-			}
-		');
-		$templates = new xthreads_tpl_firstpost($templates);*/
 		
 		// and now actually do the hack to display the first post on each page
 		control_object($db, '
@@ -134,32 +114,6 @@ function xthreads_showthread_firstpost() {
 			}
 		');
 		$db->xthreads_firstpost_hack = false;
-		/*eval('
-			class xthreads_db_firstpost extends '.get_class($db).' {
-				function xthreads_db_firstpost(&$o) {
-					foreach(get_object_vars($o) as $k => $v)
-						$this->$k = $v;
-					$this->xthreads_firstpost_hack = false;
-				}
-				
-				function simple_select($table, $fields=\'*\', $conditions=\'\', $options=array()) {
-					static $done=false;
-					if(!$done && $table == \'posts p\' && $fields == \'p.pid\' && $options[\'order_by\'] == \'p.dateline\') {
-						$done = true;
-						if($options[\'limit_start\']) $this->xthreads_firstpost_hack = true;
-					}
-					return parent::simple_select($table, $fields, $conditions, $options);
-				}
-				function fetch_array($query) {
-					if($this->xthreads_firstpost_hack) {
-						$this->xthreads_firstpost_hack = false;
-						return array(\'pid\' => $GLOBALS[\'thread\'][\'firstpost\']);
-					}
-					return parent::fetch_array($query);
-				}
-			}
-		');
-		$db = new xthreads_db_firstpost($db);*/
 		
 		// this is a dirty hack we probably shouldn't be relying on (but eh, it works)
 		// basically '-0' evaluates to true, effectively skipping the check in build_postbit()

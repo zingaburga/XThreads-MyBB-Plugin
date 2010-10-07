@@ -168,7 +168,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 			@mkdir($path.$month_dir);
 			// Still doesn't exist - oh well, throw it in the main directory
 			if(@is_dir($path.$month_dir)) {
-				// write index directory
+				// write index file
 				if($index = fopen($path.$month_dir.'index.html', 'w')) {
 					fwrite($index, '<html><body></body></html>');
 					fclose($index);
@@ -183,7 +183,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	
 	// All seems to be good, lets move the attachment!
 	$basename = substr(md5(uniqid(rand())), 12, 8).'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $attachment['name'])).'.upload';
-	$filename = 'file_'.($prevattach['aid'] ? $prevattach['aid'] : TIME_NOW).'_'.$basename;
+	$filename = 'file_'.($prevattach['aid'] ? $prevattach['aid'] : 't'.TIME_NOW).'_'.$basename;
 	
 	@ignore_user_abort(true); // don't let the user break this integrity between file system and DB
 	if(isset($GLOBALS['xtfurl_tmpfiles'])) { // if using url fetch, remove this from list of temp files
@@ -307,13 +307,48 @@ function &xthreads_build_thumbnail($thumbdims, $aid, $filename, $path, $month_di
 
 
 // copied from MyBB's fetch_remote_file function, but modified for our needs
-// this will "smartly" terminate the transfer early if it's going to end up rejected anyway
+// this will attempt to "smartly" terminate the transfer early if it's going to end up rejected anyway
 function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array()) {
 	global $lang;
 	if(!$lang->xthreads_xtfurlerr_invalidurl) $lang->load('xthreads');
 	$url = str_replace("\x0", '', $url);
 	$purl = @parse_url($url);
 	if(!$purl['host']) return array('error' => $lang->xthreads_xtfurlerr_invalidurl);
+	
+	// attempt to decode special IP tricks, eg 0x7F.0.0.0 or even 127.000.0.0
+	if(substr_count($purl['host'], '.') == 3 && preg_match('~^[0-9a-fA-FxX.]+$~', $purl['host'])) {
+		$parts = explode('.', $purl['host']);
+		$modify = true;
+		foreach($parts as &$part) {
+			if($part === '') return array('error' => $lang->xthreads_xtfurlerr_invalidurl);
+			if($part{0} == '0' && isset($part{1})) {
+				if($part{1} == 'x' || $part{1} == 'X') {
+					// check hex digit
+					$hexpart = substr($part, 2);
+					if($hexpart === '' || !ctype_xdigit($hexpart)) {
+						$modify = false;
+						break;
+					} else {
+						$part = hexdec($hexpart);
+					}
+				} elseif(!is_numeric($part)) {
+					$modify = false;
+					break;
+				} elseif(preg_match('~^[0-7]+$~', $part)) {
+					$part = octdec($part);
+				} else {
+					$part = intval($part);
+				}
+			}
+			elseif(!is_numeric($part)) {
+				$modify = false;
+				break;
+			} else
+				$part = intval($part); // converts stuff like 000 into 0, although above should do that
+		}
+		if($modify) $purl['host'] = implode('.', $parts);
+	}
+	
 	if(XTHREADS_URL_FETCH_DISALLOW_HOSTS && in_array($purl['host'], explode(',', XTHREADS_URL_FETCH_DISALLOW_HOSTS)))
 		return array('error' => $lang->xthreads_xtfurlerr_badhost);
 	
@@ -529,7 +564,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 			@unlink($ret['tmp_name']);
 	}
 	
-	@set_time_limit(0);
+	@set_time_limit(30);
 	return $ret;
 }
 function xthreads_fetch_url_validext(&$name, &$exts) {
@@ -660,6 +695,12 @@ function xthreads_fetch_url_tmp_shutdown() {
 	global $xtfurl_tmpfiles;
 	foreach($xtfurl_tmpfiles as $name => $foo) {
 		@unlink($name); // should always succeed (hopefully)...
+	}
+}
+
+if(!function_exists('ctype_xdigit')) {
+	function ctype_xdigit($s) {
+		return (bool)preg_match('~^[0-9a-fA-F]+$~', $s);
 	}
 }
 

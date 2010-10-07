@@ -104,15 +104,6 @@ if($mybb->input['action'] == 'inline')
 			@set_time_limit(0);
 			require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 			xthreads_rm_attach_query('field IN ("'.implode('","', $delattach).'")');
-			/*
-			$qwhere = 'field IN ("'.implode('","', $delattach).'")';
-			$query = $db->simple_select('xtattachments', '*', $qwhere);
-			while($xta = $db->fetch_array($query)) {
-				xthreads_rm_attach_fs($xta);
-			}
-			$db->free_result($query);
-			$db->delete_query('xtattachments', $qwhere);
-			*/
 		}
 	}
 	// Log admin action
@@ -153,8 +144,14 @@ if(!$mybb->input['action'])
 			else {
 				$fids = array_unique(array_map('intval', array_map('trim', explode(',', $tf_forum))));
 				$fnames = '';
-				foreach($fids as &$fid)
-					$fnames .= ($fnames ? ', ' : '').$forums[$fid]['name'];
+				foreach($fids as &$fid) {
+					if(!isset($forums[$fid]['name']))
+						// forum deleted
+						$fname = '<em>'.$lang->sprintf($lang->threadfields_deleted_forum_id, $fid).'</em>';
+					else
+						$fname = $forums[$fid]['name'];
+					$fnames .= ($fnames ? ', ' : '').$fname;
+				}
 				$celldata = $lang->sprintf($lang->threadfields_for_forums, $fnames);
 			}
 			$table->construct_cell($celldata, array('colspan' => 6, 'style' => 'padding: 2px;'));

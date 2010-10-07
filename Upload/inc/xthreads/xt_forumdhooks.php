@@ -37,26 +37,6 @@ function xthreads_forumdisplay() {
 				return parent::query($string, $hide_errors, $write_query);
 			}
 		');
-		/*
-		eval('
-			class xthreads_db_forumdisplay extends '.get_class($db).' {
-				function xthreads_db_forumdisplay(&$olddb) {
-					foreach(get_object_vars($olddb) as $k => $v)
-						$this->$k = $v;
-				}
-				
-				function query($string, $hide_errors=0, $write_query=0) {
-					static $done=false;
-					if(!$done && !$write_query && strpos($string, \'SELECT t.*, \') && strpos($string, \'t.username AS threadusername, u.username\') && strpos($string, \'FROM '.TABLE_PREFIX.'threads t\')) {
-						$done = true;
-						xthreads_forumdisplay_dbhook($string, $this);
-					}
-					return parent::query($string, $hide_errors, $write_query);
-				}
-			}
-		');
-		$db = new xthreads_db_forumdisplay($db);
-		*/
 		
 		// also check for forumdisplay filters/sort
 		foreach($threadfield_cache as $n => &$tf) {
@@ -79,27 +59,6 @@ function xthreads_forumdisplay() {
 				return parent::get($title, $eslashes, $htmlcomments);
 			}
 		');
-		/*
-		global $templates;
-		eval('
-			class xthreads_tpl_fdfilter extends '.get_class($templates).' {
-				function xthreads_tpl_fdfilter(&$o) {
-					foreach(get_object_vars($o) as $k => $v)
-						$this->$k = $v;
-				}
-				
-				function get($title, $eslashes=1, $htmlcomments=1) {
-					static $done=false;
-					if(!$done && $title == \'forumdisplay_orderarrow\') {
-						$done = true;
-						xthreads_forumdisplay_filter();
-					}
-					return parent::get($title, $eslashes, $htmlcomments);
-				}
-			}
-		');
-		$templates = new xthreads_tpl_fdfilter($templates);
-		*/
 		
 		/*
 		if($forum['xthreads_inlinesearch']) {
@@ -208,21 +167,6 @@ function xthreads_forumdisplay_filter() {
 					return parent::simple_select($table, $fields, $conditions, $options);
 				}
 			');
-			/*
-			eval('
-				class xthreads_db_filter extends '.get_class($db).' {
-					function xthreads_db_filter(&$olddb) {
-						foreach(get_object_vars($olddb) as $k => $v)
-							$this->$k = $v;
-					}
-					function simple_select($table, $fields="*", $conditions="", $options=array()) {
-						'.$dbt.$dbf.'
-						return parent::simple_select($table, $fields, $conditions, $options);
-					}
-				}
-			');
-			$db = new xthreads_db_filter($db);
-			*/
 		}
 	}
 }
@@ -294,23 +238,6 @@ function xthreads_tpl_forumbits(&$forum) {
 				return parent::get($title, $eslashes, $htmlcomments);
 			}
 		');
-		/*eval('
-			class xthreads_tpl_forumbits extends '.get_class($templates).' {
-				function xthreads_tpl_forumbits(&$o) {
-					foreach(get_object_vars($o) as $k => $v)
-						$this->$k = $v;
-				}
-				
-				function get($title, $eslashes=1, $htmlcomments=1) {
-					$p =& $this->xthreads_forumbits_curforum[\'xthreads_tplprefix\'];
-					if($p && $this->cache[$p.$title] && substr($title, 0, 9) == \'forumbit_\') {
-						return parent::get($p.$title, $eslashes, $htmlcomments);
-					}
-					return parent::get($title, $eslashes, $htmlcomments);
-				}
-			}
-		');
-		$templates = new xthreads_tpl_forumbits($templates);*/
 	}
 	$templates->xthreads_forumbits_curforum =& $forum;
 }

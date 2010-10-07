@@ -13,12 +13,16 @@ $plugins->add_hook('admin_tools_cache_rebuild', 'xthreads_admin_cachehack');
 $plugins->add_hook('admin_config_menu', 'xthreads_admin_menu');
 $plugins->add_hook('admin_config_action_handler', 'xthreads_admin_action');
 $plugins->add_hook('admin_config_permissions', 'xthreads_admin_perms');
-$plugins->add_hook('admin_forum_management_edit', 'xthreads_admin_forumedit');
-$plugins->add_hook('admin_forum_management_add', 'xthreads_admin_forumedit');
+// priority = 9 for the following to hook in before (bad!) MyPlaza Turbo
+$plugins->add_hook('admin_forum_management_edit', 'xthreads_admin_forumedit', 9);
+$plugins->add_hook('admin_forum_management_add', 'xthreads_admin_forumedit', 9);
 $plugins->add_hook('admin_forum_management_add_commit', 'xthreads_admin_forumcommit');
+$plugins->add_hook('admin_forum_management_add_insert_query', 'xthreads_admin_forumcommit_myplazaturbo_fix');
 $plugins->add_hook('admin_forum_management_edit_commit', 'xthreads_admin_forumcommit');
 
 $plugins->add_hook('admin_tools_recount_rebuild_start', 'xthreads_admin_rebuildthumbs');
+
+$plugins->add_hook('admin_load', 'xthreads_vercheck');
 
 
 function xthreads_info() {
@@ -52,6 +56,7 @@ function xthreads_is_installed() {
 
 function xthreads_install() {
 	global $db, $cache, $mybb;
+	// TODO: add type=myisam for mysql?
 	if(!$db->table_exists('threadfields_data')) {
 		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields_data` (
 			`tid` int(10) unsigned not null,
@@ -145,6 +150,7 @@ function xthreads_install() {
 		$cache->update_forums();
 	}
 	xthreads_buildtfcache();
+	xthreads_write_xtcachefile();
 	
 	
 	$new_templates = array(
@@ -247,7 +253,8 @@ function xthreads_uninstall() {
 		
 		$GLOBALS['page']->output_confirm_action($link, $GLOBALS['lang']->xthreads_confirm_uninstall);
 		exit;
-	}
+	} else
+		unset($mybb->input['confirm_uninstall']);
 	
 	require MYBB_ROOT.'inc/adminfunctions_templates.php';
 	find_replace_templatesets('editpost', '#\\{\\$extra_threadfields\\}#', '', 0);
@@ -281,6 +288,7 @@ function xthreads_uninstall() {
 		'xthreads_threadsperpage',
 		'xthreads_postsperpage',
 		'xthreads_force_postlayout',
+		//'xthreads_pull_firstpost',
 		'xthreads_wol_announcements',
 		'xthreads_wol_forumdisplay',
 		'xthreads_wol_newthread',
@@ -299,13 +307,25 @@ function xthreads_uninstall() {
 	$cache->update_forums();
 	
 	$cache->update('threadfields', null);
-	if(is_object($cache->handler) && method_exists($cache->handler, 'delete'))
+	if(is_object($cache->handler) && method_exists($cache->handler, 'delete')) {
 		$cache->handler->delete('threadfields');
+	}
 	$db->delete_query('datacache', 'title="threadfields"');
+	
+	@unlink(MYBB_ROOT.'cache/xthreads.php');
 	
 	$db->delete_query('templates', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
 }
 
+function xthreads_write_xtcachefile() {
+	if($fp = @fopen(MYBB_ROOT.'cache/xthreads.php', 'w')) {
+		fwrite($fp, '<?php if(!defined("IN_MYBB")) exit;
+return array(
+	"version" => '.XTHREADS_VERSION.'
+);');
+		fclose($fp);
+	}
+}
 function xthreads_buildtfcache() {
 	global $db, $cache;
 	$cd = array();
@@ -408,21 +428,6 @@ function xthreads_admin_cachehack() {
 			xthreads_buildtfcache();
 		}
 	');
-	/*
-	global $cache;
-	eval('
-		class xthreads_cache extends '.get_class($cache).' {
-			function xthreads_cache(&$olddb) {
-				foreach(get_object_vars($olddb) as $k => $v)
-					$this->$k = $v;
-			}
-			
-			function update_threadfields() {
-				xthreads_buildtfcache();
-			}
-		}');
-	$cache = new xthreads_cache($cache);
-	*/
 }
 function xthreads_admin_menu(&$menu) {
 	global $lang;
@@ -439,8 +444,10 @@ function xthreads_admin_perms(&$perms) {
 }
 function xthreads_admin_forumedit() {
 	function xthreads_admin_forumedit_hook(&$args) {
-		if($args['title'] != $GLOBALS['lang']->misc_options) return;
+		static $done = false;
+		if($done || $args['title'] != $GLOBALS['lang']->misc_options) return;
 		//$GLOBALS['plugins']->add_hook('admin_formcontainer_end', 'xthreads_admin_forumedit_hook2');
+		$done = true;
 		$fixcode='';
 		if($GLOBALS['mybb']->version_code >= 1600) {
 			// unfortunately, the above effectively ditches the added Misc row
@@ -460,36 +467,12 @@ function xthreads_admin_forumedit() {
 				return parent::end($return);
 			}
 		');
-		/* control_object($GLOBALS['form_container'], '
-			function end($return=false) {
-				static $done=false;
-				
-				$GLOBALS["plugins"]->run_hooks("admin_formcontainer_end", $return);
-				if($return == true)
-					return $this->_container->output($this->_title, 1, "general form_container {$this->extra_class}", true);
-				else
-					echo $this->_container->output($this->_title, 1, "general form_container {$this->extra_class}", false);
-				
-				if(!$done && !$return) {
-					$done = true;
-					xthreads_admin_forumedit_run();
-				}
-			}
-		'); */
 	}
 	$GLOBALS['plugins']->add_hook('admin_formcontainer_output_row', 'xthreads_admin_forumedit_hook');
-	/* function xthreads_admin_forumedit_hook2(&$r) {
-		if($r) return;
-		$GLOBALS['plugins']->remove_hook('admin_formcontainer_end', 'xthreads_admin_forumedit_hook2');
-		xthreads_admin_forumedit_run();
-	} */
 	function xthreads_admin_forumedit_run() {
 		global $lang, $form, $forum_data, $form_container;
 		
 		if(!$lang->xthreads_tplprefix) $lang->load('xthreads');
-		/* $form_container->end();
-		unset($GLOBALS['form_container']);
-		global $form_container; */
 		$form_container = new FormContainer($lang->xthreads_opts);
 		
 		if(isset($forum_data['xthreads_tplprefix'])) // editing (or adding with submitted errors)
@@ -561,42 +544,32 @@ function xthreads_admin_forumedit() {
 		}
 		$form_container->output_row($lang->xthreads_cust_wolstr, $lang->xthreads_cust_wolstr_desc, '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$wolhtml.'</table>');
 		
-		/*
-		$html .= '<div class="forum_settings_bit"><label>'.$lang->xthreads_tplprefix.'<br /><small>'.$lang->xthreads_tplprefix_desc.'</small><br />'.$form->generate_text_box('xthreads_tplprefix', $data['xthreads_tplprefix'], array('id' => 'xthreads_tplprefix')).'</label></div>
-		<div class="forum_settings_bit"><label>'.$lang->xthreads_threadgrouping.'<br /><small>'.$lang->xthreads_threadgrouping_desc.'</small><br />'.$form->generate_text_box('xthreads_grouping', $data['xthreads_grouping'], array('id' => 'xthreads_grouping')).'</label></div>
-		<div class="forum_settings_bit">'.$form->generate_check_box('xthreads_firstpostattop', 1, $lang->xthreads_firstposttop, array('id' => 'xthreads_firstpostattop', 'checked' => $data['xthreads_firstpostattop'])).'<br /><label><small>'.$lang->xthreads_firstposttop_desc.'</small></label></div>
-		<div class="forum_settings_bit">'.$form->generate_check_box('xthreads_inlinesearch', 1, $lang->xthreads_inlinesearch, array('id' => 'xthreads_inlinesearch', 'checked' => $data['xthreads_inlinesearch'])).'<br /><label><small>'.$lang->xthreads_inlinesearch_desc.'</small></label></div>
-		<div class="forum_settings_bit"><label>'.$lang->xthreads_threadsperpage.'<br /><small>'.$lang->xthreads_threadsperpage_desc.'</small><br />'.$form->generate_text_box('xthreads_threadsperpage', $data['xthreads_threadsperpage'], array('id' => 'xthreads_threadsperpage')).'</label></div>
-		<div class="forum_settings_bit"><label>'.$lang->xthreads_postsperpage.'<br /><small>'.$lang->xthreads_postsperpage_desc.'</small><br />'.$form->generate_text_box('xthreads_postsperpage', $data['xthreads_postsperpage'], array('id' => 'xthreads_postsperpage')).'</label></div>
-				<div class="forum_settings_bit">'.$form->generate_check_box('xthreads_allow_blankmsg', 1, $lang->xthreads_allow_blankmsg, array('id' => 'xthreads_allow_blankmsg', 'checked' => $data['xthreads_allow_blankmsg'])).'<br /><label><small>'.$lang->xthreads_allow_blankmsg_desc.'</small></label></div>
-				<div class="forum_settings_bit">'.$form->generate_check_box('xthreads_nostatcount', 1, $lang->xthreads_nostatcount, array('id' => 'xthreads_nostatcount', 'checked' => $data['xthreads_nostatcount'])).'<br /><label><small>'.$lang->xthreads_nostatcount_desc.'</small></label></div>
-				<div class="forum_settings_bit">'.$lang->xthreads_cust_wolstr.'<br /><small>'.$lang->xthreads_cust_wolstr_desc.'</small><table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$wolhtml.'</table></div>
-			';
-		$args['this']->output_row($lang->xthreads_opts, '', $html);
-		*/
 		$form_container->end();
 	}
+}
+
+function xthreads_admin_forumcommit_myplazaturbo_fix() {
+	// pull out the fid into global scope
+	control_object($GLOBALS['db'], '
+		function insert_query($table, $array) {
+			static $done=false;
+			if(!$done && $table == "forums") {
+				$done = true;
+				$r = $GLOBALS["fid"] = parent::insert_query($table, $array);
+				return $r;
+			}
+			return parent::insert_query($table, $array);
+		}
+	');
 }
 
 function xthreads_admin_forumcommit() {
 	// hook is after forum is added/edited, so we actually need to go back and update
 	global $fid, $db, $cache, $mybb;
-/*	$deffilter = trim($mybb->input['xthreads_deffilter']);
-	if(defined('XTHREADS_THREADFILTER_SQL_STRICT') && XTHREADS_THREADFILTER_SQL_STRICT) {
-		$conds = array_map('trim', explode(',', $deffilter));
-		foreach($conds as $k => &$cond) {
-			if(preg_match('~^([`\'"])?([a-zA-Z_][a-zA-Z0-9_.]*)\\1\s+([<>=]|[<>]=|like)\s+([0-9.]+|([\'"]).*\\5)$~si', $cond, $cmatch)) {
-				// TODO: check if field actually exists
-				$cond = '`'.$cmatch[2].'` '.strtoupper($cmatch[3]).' ';
-				if(is_numeric($cmatch[4]))
-					$cond .= $cmatch[4];
-				else
-					$cond .= '"'.$db->escape_string($cmatch[4]).'"';
-			} else
-				unset($conds[$k]); // TODO: handle this a bit better...
-		}
+	if(!$fid) {
+		// bad MyPlaza Turbo! (or any other plugin which does the same thing)
+		$fid = intval($mybb->input['fid']);
 	}
-*/
 	$db->update_query('forums', array(
 		'xthreads_tplprefix' => $db->escape_string(trim($mybb->input['xthreads_tplprefix'])),
 		'xthreads_grouping' => intval(trim($mybb->input['xthreads_grouping'])),
@@ -698,45 +671,41 @@ function xthreads_admin_rebuildthumbs_show() {
 }
 
 
-/*
-function xthreads_admin_statshack() {
-	global $mybb, $cache;
-	if($mybb->request_method == 'post') {
-		function _xthreads_admin_statshack() {
-			global $db;
-			eval('
-				class xthreads_db_stathack extends '.get_class($db).' {
-					function xthreads_db_stathack(&$olddb) {
-						foreach(get_object_vars($olddb) as $k => $v)
-							$this->$k = $v;
-					}
-					function simple_select($table, $fields="*", $conditions="", $options=array()) {
-						static $done=0;
-						if($done < 2 && $table == "forums" && !$conditions && empty($options)) {
-							if($fields == "SUM(threads) AS numthreads" || $fields == "SUM(posts) AS numposts") {
-								++$done;
-								$conditions = "xthreads_nostatcount != 1";
-							}
-						}
-						return parent::simple_select($table, $fields, $conditions, $options);
-					}
-				}
-			');
-			$db = new xthreads_db_stathack($db);
-		}
-		eval('
-			class xthreads_cache_stathack extends '.get_class($cache).' {
-				function xthreads_cache_stathack(&$olddb) {
-					foreach(get_object_vars($olddb) as $k => $v)
-						$this->$k = $v;
-				}
-				function update_stats() {
-					_xthreads_admin_statshack();
-					return parent::update_stats();
+function xthreads_vercheck() {
+	$info = @include(MYBB_ROOT.'cache/xthreads.php');
+	//if(!is_array($info)) return;
+	if(!is_array($info)) $info = array('version' => 0.54); // assumption for earlier versions without this upgrader system
+	if($info['version'] < XTHREADS_VERSION) {
+		global $admin_session, $lang, $mybb;
+		// need to upgrade
+		if(!$lang->xthreads_upgrade_done) $lang->load('xthreads');
+		if($mybb->input['xthreads_upgrade'] && $mybb->input['my_post_key'] == $mybb->post_code) {
+			// perform upgrade
+			$result = require(MYBB_ROOT.'inc/xthreads/xt_upgrader.php');
+			if($result === true) {
+				xthreads_write_xtcachefile();
+				$msg = array('message' => $lang->xthreads_upgrade_done, 'type' => 'success');
+			} else {
+				$msg = array('message' => $lang->xthreads_upgrade_failed, 'type' => 'error');
+				if(is_string($result) && $result)
+					$msg['message'] .= ' '.$result;
+			}
+			unset($mybb->input['xthreads_upgrade']);
+		} else {
+			$link = 'index.php?xthreads_upgrade=1&amp;my_post_key='.$mybb->post_code;
+			if($mybb->request_mode != 'post') {
+				foreach($mybb->input as $k => &$v) {
+					if($k != 'my_post_key')
+						$link .= '&amp;'.htmlspecialchars($k).'='.htmlspecialchars($v);
 				}
 			}
-		');
-		$cache = new xthreads_cache_stathack($cache);
+			
+			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, $info['version'], XTHREADS_VERSION, $link), 'type' => '');
+		}
+		if($admin_session['data']['flash_message'])
+			$admin_session['data']['flash_message']['message'] .= '</div><br /><div class="'.$msg['type'].'">'.$msg['message'];
+		else
+			$admin_session['data']['flash_message'] =& $msg;
 	}
 }
-*/
+

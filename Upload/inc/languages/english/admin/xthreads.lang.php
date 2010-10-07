@@ -85,8 +85,6 @@ $l['threadfields_fileimage_mindim'] = 'Minimum Image Dimensions';
 $l['threadfields_fileimage_mindim_desc'] = 'Smallest acceptable image dimensions, in <em>w</em>x<em>h</em> format, eg <em>60x30</em>.';
 $l['threadfields_fileimage_maxdim'] = 'Maximum Image Dimensions';
 $l['threadfields_fileimage_maxdim_desc'] = 'Largest acceptable image dimensions, in <em>w</em>x<em>h</em> format, eg <em>1920x1080</em>.';
-//$l['threadfields_fileimage'] = 'Image Dimension Restrictions';
-//$l['threadfields_fileimage_desc'] = 'Enforce dimension limits on the uploaded image.  To just enforce a minimum dimension, use <em>[min_width]x[min_height]</em>.  To just enforce maximum dimensions, use <em>0x0|[max_width]x[max_height].  For enforcing both min/max, use <em>[min_width]x[min_height]|[max_width]x[max_height]</em>.';
 $l['threadfields_fileimgthumbs'] = 'Image Thumbnail Generation';
 $l['threadfields_fileimgthumbs_desc'] = 'This field only applies if the above field is filled in.  This is a pipe (|) separated list of thumbnail dimensions which will be generated.  For example, if <em>160x120|320x240</em> is entered here, a 160x120 and a 320x240 thumbnail will be generated from the uploaded image.  These thumbnails can be accessed using something like <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\'][\'url\']}/thumb160x120</code>.<br />Note, if this field is changed whilst there are already images uploaded for this field, you may need to <a href="index.php?module=tools'.XTHREADS_ADMIN_PATHSEP.'recount_rebuild#rebuild_xtathumbs" target="_blank">rebuild thumbnails</a>.';
 $l['threadfields_vallist'] = 'Values List';
@@ -126,6 +124,7 @@ $l['threadfields_sanitize_parser_mycodeimg'] = 'Allow [img] MyCode';
 $l['threadfields_sanitize_parser_smilies'] = 'Parse Smilies';
 $l['threadfields_for_forums'] = 'For forum(s): {1}';
 $l['threadfields_for_all_forums'] = 'For all forum(s)';
+$l['threadfields_deleted_forum_id'] = 'Deleted Forum #{1}';
 $l['error_invalid_field'] = 'Nonexistent thread field';
 $l['add_threadfield'] = 'Add Thread Field';
 $l['edit_threadfield'] = 'Edit Thread Field';
@@ -190,6 +189,18 @@ $l['xthreads_confirm_uninstall'] = 'Are you sure you wish to uninstall XThreads?
 
 $l['xthreads_orphancleanup_name'] = 'Prune XThreads Orphaned Attachments';
 $l['xthreads_orphancleanup_desc'] = 'Removes orphaned XThreads attachments more than one day old.  Orphaned attachments usually arise when users upload an attachment but decide not to post the thread.  Note that this does not affect MyBB\'s attachment system in any way.';
+
+
+$l['xthreads_do_upgrade'] = 'You have uploaded a newer version of XThreads, v{1}, however the version currently installed is v{2}.  You may need to perform an upgrade for your board to be functional - to perform an upgrade, please <a href="{3}">click here</a>.';
+$l['xthreads_upgrade_done'] = 'XThreads successfully upgraded.';
+$l['xthreads_upgrade_failed'] = 'XThreads upgraded failed.';
+
+
+
+
+
+
+
 
 
 

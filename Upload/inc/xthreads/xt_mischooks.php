@@ -28,24 +28,6 @@ function xthreads_search() {
 				return parent::query($string, $hide_errors, $write_query);
 			}
 		');
-		/*eval('
-			class xthreads_db_search extends '.get_class($db).' {
-				function xthreads_db_search(&$olddb) {
-					foreach(get_object_vars($olddb) as $k => $v)
-						$this->$k = $v;
-				}
-				
-				function query($string, $hide_errors=0, $write_query=0) {
-					static $done=false;
-					if(!$done && !$write_query && strpos($string, \'SELECT \') && strpos($string, \'u.username AS userusername\') && strpos($string, \'LEFT JOIN '.TABLE_PREFIX.'users u ON \')) {
-						$done = true;
-						xthreads_search_dbhook($string, $this);
-					}
-					return parent::query($string, $hide_errors, $write_query);
-				}
-			}
-		');
-		$db = new xthreads_db_search($db);*/
 	}
 	
 	global $cache, $plugins;
@@ -211,30 +193,10 @@ function xthreads_wol_patch_init(&$ua) {
 					}
 				');
 				$db->xthreads_db_wol_hook = false;
-				/*eval('
-					class xthreads_db_wol extends '.get_class($db).' {
-						function xthreads_db_wol(&$olddb) {
-							foreach(get_object_vars($olddb) as $k => $v)
-								$this->$k = $v;
-							$this->xthreads_db_wol_hook = false;
-						}
-						
-						'.$hook.'
-						
-						function fetch_array($query) {
-							if($this->xthreads_db_wol_hook) {
-								$r = parent::fetch_array($query);
-								$GLOBALS[\'thread_fid_map\'][$r[\'tid\']] = $r[\'fid\'];
-								return $r;
-							}
-							return parent::fetch_array($query);
-						}
-					}
-				');
-				$db = new xthreads_db_wol($db);*/
 			}
 			break;
 		case 'unknown':
+			// TODO: the following URL isn't guaranteed as query strings may be used
 			if(($p = strpos($ua['location'], '/xthreads_attach.php/')) !== false) {
 				// check if really is xtattach page
 				if(strpos($ua['location'], '.php') > $p) {
@@ -279,21 +241,6 @@ function xthreads_fix_stats() {
 				return xthreads_fix_stats_read(parent::read($name, $hard), $hard);
 		}
 	');
-	/*eval('
-		class xthreads_cache_fixstat extends '.get_class($cache).' {
-			function xthreads_cache_fixstat(&$olddb) {
-				foreach(get_object_vars($olddb) as $k => $v)
-					$this->$k = $v;
-			}
-			function read($name, $hard=false) {
-				if($name != "stats")
-					return parent::read($name, $hard);
-				else
-					return xthreads_fix_stats_read(parent::read($name, $hard), $hard);
-			}
-		}
-	');
-	$cache = new xthreads_cache_fixstat($cache);*/
 }
 
 function xthreads_fix_stats_index() {
