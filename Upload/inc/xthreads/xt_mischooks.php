@@ -46,6 +46,13 @@ function xthreads_search() {
 
 function xthreads_search_result(&$data, $tplname) {
 	global $threadfields, $threadfield_cache, $forumcache, $templates, $mybb;
+	
+	// need to set these variables before doing threadfields stuff!
+	$data['threaddate'] = my_date($mybb->settings['dateformat'], $data['dateline']);
+	$data['threadtime'] = my_date($mybb->settings['timeformat'], $data['dateline']);
+	xthreads_set_threadforum_urlvars('thread', $data['tid']);
+	xthreads_set_threadforum_urlvars('forum', $data['fid']);
+	
 	if(!empty($threadfield_cache)) {
 		// make threadfields array
 		$threadfields = array(); // clear previous threadfields
@@ -66,11 +73,6 @@ function xthreads_search_result(&$data, $tplname) {
 	}
 	// template hack
 	xthreads_portalsearch_cache_hack($forumcache[$data['fid']]['xthreads_tplprefix'], $tplname);
-	
-	$data['threaddate'] = my_date($mybb->settings['dateformat'], $data['dateline']);
-	$data['threadtime'] = my_date($mybb->settings['timeformat'], $data['dateline']);
-	xthreads_set_threadforum_urlvars('thread', $data['tid']);
-	xthreads_set_threadforum_urlvars('forum', $data['fid']);
 }
 function xthreads_search_result_post() {
 	xthreads_search_result($GLOBALS['post'], 'search_results_posts_post');
@@ -165,6 +167,12 @@ function xthreads_portal_announcement() {
 	}
 	
 	
+	// following two lines not needed as we have $anndate and $anntime
+	//$announcement['threaddate'] = my_date($mybb->settings['dateformat'], $announcement['dateline']);
+	//$announcement['threadtime'] = my_date($mybb->settings['timeformat'], $announcement['dateline']);
+	xthreads_set_threadforum_urlvars('thread', $announcement['tid']);
+	xthreads_set_threadforum_urlvars('forum', $announcement['fid']);
+	
 	if(!empty($threadfield_cache)) {
 		// make threadfields array
 		$threadfields = array(); // clear previous threadfields
@@ -191,12 +199,6 @@ function xthreads_portal_announcement() {
 			eval('$GLOBALS[\'numcomments\'] = "'.$GLOBALS['templates']->get($tplname).'";');
 		}
 	}
-	
-	// following two lines not needed as we have $anndate and $anntime
-	//$announcement['threaddate'] = my_date($mybb->settings['dateformat'], $announcement['dateline']);
-	//$announcement['threadtime'] = my_date($mybb->settings['timeformat'], $announcement['dateline']);
-	xthreads_set_threadforum_urlvars('thread', $announcement['tid']);
-	xthreads_set_threadforum_urlvars('forum', $announcement['fid']);
 }
 
 function xthreads_portalsearch_cache_hack($tplpref, $tplname) {

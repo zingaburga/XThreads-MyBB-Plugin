@@ -54,4 +54,17 @@ if($info['version'] < 1.3) {
 	xthreads_buildtfcache();
 }
 
+if($info['version'] < 1.31) {
+	// make table alterations for longer varchars + removal of default value
+	$query = $db->simple_select('threadfields', 'field', 'inputtype IN ('.implode(',', array(XTHREADS_INPUT_TEXT, XTHREADS_INPUT_SELECT, XTHREADS_INPUT_RADIO, XTHREADS_INPUT_CHECKBOX)).')');
+	$qry_base = 'ALTER TABLE `'.$db->table_prefix.'threadfields_data` MODIFY ';
+	$qry_suf = ' not null default ""';
+	while($field = $db->fetch_array($query)) {
+		$alterfield_base = '`'.$field['field'].'` ';
+		if(!$db->write_query($qry_base.$alterfield_base.'varchar(1024)'.$qry_suf, true)) {
+			$db->write_query($qry_base.$alterfield_base.'varchar(255)'.$qry_suf);
+		}
+	}
+}
+
 return true;

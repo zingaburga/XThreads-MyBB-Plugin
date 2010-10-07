@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.3);
+define('XTHREADS_VERSION', 1.31);
 
 
 // XThreads defines
@@ -86,6 +86,7 @@ define('XTHREADS_SANITIZE_PARSER_HTML', 0x10);
 define('XTHREADS_SANITIZE_PARSER_MYCODE', 0x20);
 define('XTHREADS_SANITIZE_PARSER_MYCODEIMG', 0x40);
 define('XTHREADS_SANITIZE_PARSER_SMILIES', 0x80);
+define('XTHREADS_SANITIZE_PARSER_VIDEOCODE', 0x100); // 1.6 only, but harmless in 1.4
 
 define('XTHREADS_EDITABLE_ALL', 0);   // editable by all
 define('XTHREADS_EDITABLE_REQ', 1);   // required field; implies editable by all
@@ -501,6 +502,7 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 					'allow_mycode' => ($type & XTHREADS_SANITIZE_PARSER_MYCODE ?1:0),
 					'allow_imgcode' => ($type & XTHREADS_SANITIZE_PARSER_MYCODEIMG ?1:0),
 					'allow_smilies' => ($type & XTHREADS_SANITIZE_PARSER_SMILIES ?1:0),
+					'allow_videocode' => ($type & XTHREADS_SANITIZE_PARSER_VIDEOCODE ?1:0),
 					'me_username' => $mename
 				));
 				break;

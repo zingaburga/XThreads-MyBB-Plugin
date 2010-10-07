@@ -43,7 +43,7 @@ if($mybb->input['action'] == 'add')
 		'fieldheight' => 5,
 		'vallist' => '',
 		'multival' => '',
-		'sanitize' => XTHREADS_SANITIZE_HTML | XTHREADS_SANITIZE_PARSER_NOBADW | XTHREADS_SANITIZE_PARSER_MYCODE | XTHREADS_SANITIZE_PARSER_SMILIES,
+		'sanitize' => XTHREADS_SANITIZE_HTML | XTHREADS_SANITIZE_PARSER_NOBADW | XTHREADS_SANITIZE_PARSER_MYCODE | XTHREADS_SANITIZE_PARSER_SMILIES | XTHREADS_SANITIZE_PARSER_VIDEOCODE,
 		'allowfilter' => 0,
 		
 		'desc' => '',
@@ -362,6 +362,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				'parser_html' => XTHREADS_SANITIZE_PARSER_HTML,
 				'parser_mycode' => XTHREADS_SANITIZE_PARSER_MYCODE,
 				'parser_mycodeimg' => XTHREADS_SANITIZE_PARSER_MYCODEIMG,
+				'parser_mycodevid' => XTHREADS_SANITIZE_PARSER_VIDEOCODE,
 				'parser_smilies' => XTHREADS_SANITIZE_PARSER_SMILIES,
 			);
 			foreach($parser_opts as $opt => $n)
@@ -395,13 +396,14 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		switch($mybb->input['inputtype']) {
 			case XTHREADS_INPUT_SELECT:
-				$mybb->input['sanitize'] = XTHREADS_SANITIZE_HTML;
-				$mybb->input['textmask'] = '';
-				break;
 			case XTHREADS_INPUT_RADIO:
 			case XTHREADS_INPUT_CHECKBOX:
-				$mybb->input['sanitize'] = XTHREADS_SANITIZE_NONE;
+				$mybb->input['sanitize'] = ($mybb->input['inputtype'] == XTHREADS_INPUT_SELECT ? XTHREADS_SANITIZE_HTML : XTHREADS_SANITIZE_NONE);
 				$mybb->input['textmask'] = '';
+				
+				// must have value defined
+				if(!$mybb->input['vallist'])
+					$errors[] = $lang->error_require_valllist;
 				break;
 			
 			case XTHREADS_INPUT_TEXTAREA:
@@ -521,9 +523,20 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					break;
 				case XTHREADS_INPUT_FILE_URL:
 					$fieldtype = 'varchar(255) not null default ""';
+					//$using_long_varchar = true;
 					break;
 				default:
-					$fieldtype = 'varchar(255) not null default "'.$new_tf['defaultval'].'"';
+					// initially, try 1024 chars
+					$fieldtype = 'varchar(1024) not null default ""';
+					$using_long_varchar = true;
+					/*
+					// we assume a 255 char limit
+					$fix_def = (strlen($mybb->input['defaultval']) > 255);
+					if($fix_def)
+						$fieldtype = 'varchar(255) not null default "'.$db->escape_string(substr($mybb->input['defaultval'], 0, 255)).'"';
+					else
+						$fieldtype = 'varchar(255) not null default "'.$new_tf['defaultval'].'"';
+					*/
 			}
 			if($update) {
 				$plugins->run_hooks('admin_config_threadfields_edit_commit');
@@ -532,21 +545,29 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$alterations = array();
 				// TODO: perhaps only run this query if necessary
 				//if($mybb->input['field'] != $mybb->input['newfield'])
-				$alterations[] = 'CHANGE `'.$db->escape_string($mybb->input['field']).'` `'.$new_tf['field'].'` '.$fieldtype;
+				$alterfield_base = 'CHANGE `'.$db->escape_string($mybb->input['field']).'` `'.$new_tf['field'].'` ';
+				$alterations['field'] = $alterfield_base.$fieldtype;
 				
 				if($new_tf['allowfilter'] != $oldfield['allowfilter']) {
 					if($new_tf['allowfilter'])
-						$alterations[] = 'ADD KEY `'.$new_tf['field'].'` (`'.$new_tf['field'].'`)';
+						$alterations['addkey'] = 'ADD KEY `'.$new_tf['field'].'` (`'.$new_tf['field'].'`)';
 					else
-						$alterations[] = 'DROP KEY `'.$db->escape_string($mybb->input['field']).'`';
+						$alterations['dropkey'] = 'DROP KEY `'.$db->escape_string($mybb->input['field']).'`';
 				}
 				elseif($new_tf['allowfilter'] && $mybb->input['field'] != $mybb->input['newfield']) {
 					// change key name - only way to do this in MySQL appears to be recreating the key...
-					$alterations[] = 'DROP KEY `'.$db->escape_string($mybb->input['field']).'`';
-					$alterations[] = 'ADD KEY `'.$new_tf['field'].'` (`'.$new_tf['field'].'`)';
+					$alterations['dropkey'] = 'DROP KEY `'.$db->escape_string($mybb->input['field']).'`';
+					$alterations['addkey'] = 'ADD KEY `'.$new_tf['field'].'` (`'.$new_tf['field'].'`)';
 				}
 				if(!empty($alterations)) {
-					$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields_data` '.implode(', ', $alterations));
+					$qry_base = 'ALTER TABLE `'.$db->table_prefix.'threadfields_data` ';
+					if($using_long_varchar) {
+						if(!$db->write_query($qry_base.implode(', ', $alterations), true)) {
+							$alterations['field'] = $alterfield_base.str_replace('varchar(1024)', 'varchar(255)', $fieldtype);
+							$db->write_query($qry_base.implode(', ', $alterations));
+						}
+					} else
+						$db->write_query($qry_base.implode(', ', $alterations));
 					if($mybb->input['field'] != $mybb->input['newfield'] && ($new_tf['inputtype'] == XTHREADS_INPUT_FILE || $new_tf['inputtype'] == XTHREADS_INPUT_FILE_URL)) {
 						// need to update xtattachments table too!
 						$db->update_query('xtattachments', array('field' => $new_tf['field']), 'field="'.$db->escape_string($mybb->input['field']).'"');
@@ -557,11 +578,25 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$plugins->run_hooks('admin_config_threadfields_add_commit');
 				$db->insert_query('threadfields', $new_tf);
 				
+				$addkey = '';
 				if($new_tf['allowfilter'])
-					$fieldtype .= ', ADD KEY (`'.$new_tf['field'].'`)';
+					$addkey .= ', ADD KEY (`'.$new_tf['field'].'`)';
 				
-				$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields_data` ADD COLUMN `'.$new_tf['field'].'` '.$fieldtype);
+				$qry_base = 'ALTER TABLE `'.$db->table_prefix.'threadfields_data` ADD COLUMN `'.$new_tf['field'].'` ';
+				if($using_long_varchar) {
+					if(!$db->write_query($qry_base.$fieldtype.$addkey, true)) {
+						$db->write_query($qry_base.str_replace('varchar(1024)', 'varchar(255)', $fieldtype).$addkey);
+					}
+				}
+				else
+					$db->write_query($qry_base.$fieldtype.$addkey);
 			}
+			
+			/*
+			if($fix_def)
+				// try changing the default value
+				$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields_data` MODIFY `'.$new_tf['field'].'` varchar(255) not null default "'.$new_tf['defaultval'].'"', true);
+			*/
 
 			// Log admin action
 			log_admin_action($new_tf['field'], $mybb->input['title']);
@@ -620,7 +655,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		XTHREADS_INPUT_CHECKBOX => $lang->threadfields_inputtype_checkbox,
 		XTHREADS_INPUT_FILE => $lang->threadfields_inputtype_file,
 		//XTHREADS_INPUT_FILE_URL => $lang->threadfields_inputtype_file_url,
-		XTHREADS_INPUT_CUSTOM => $lang->threadfields_inputtype_custom,
+		//XTHREADS_INPUT_CUSTOM => $lang->threadfields_inputtype_custom,
 	);
 	if($update) { // disable some conversions as they are not possible
 		if(isset($errors['error_invalid_inputtype'])) { // but if invalid type is supplied, don't lock the user in either
@@ -675,8 +710,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		'parser_html' => $sanitize & XTHREADS_SANITIZE_PARSER_HTML,
 		'parser_mycode' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODE,
 		'parser_mycodeimg' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODEIMG,
+		'parser_mycodevid' => $sanitize & XTHREADS_SANITIZE_PARSER_VIDEOCODE,
 		'parser_smilies' => $sanitize & XTHREADS_SANITIZE_PARSER_SMILIES,
 	);
+	if($mybb->version_code < 1600) unset($parser_opts['parser_mycodevid']);
 	$parser_opts_str = '';
 	foreach($parser_opts as $opt => $checked) {
 		$langstr = 'threadfields_sanitize_'.$opt;

@@ -215,6 +215,8 @@ function xthreads_input_posthandler_insert(&$ph) {
 	$db->replace_query('threadfields_data', $updates);
 }
 function xthreads_delete_thread($tid) {
+	//if(function_exists('softdelete_fd_thread')) return; // if Soft Delete plugin is active, don't remove anything
+	
 	global $db;
 	// awesome thing about this is that it will delete threadfields even if the thread was moved to a different forum
 	$db->delete_query('threadfields_data', 'tid='.$tid);

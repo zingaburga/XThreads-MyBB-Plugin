@@ -49,6 +49,14 @@ function xthreads_forumdisplay() {
 			$filters_set[$n] = array('hiddencss' => '', 'visiblecss' => 'display: none;');
 			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n])) {
 				$tf_filters[$n] = $mybb->input['filtertf_'.$n];
+				// ignore blank inputs
+				if($tf['ignoreblankfilter'] && (
+					(is_array($mybb->input['filtertf_'.$n]) && (empty($tf_filters[$n]) || $tf_filters[$n] == array(''))) ||
+					($tf_filters[$n] === '')
+				)) {
+					unset($tf_filters[$n]);
+					continue;
+				}
 				if(is_array($tf_filters[$n])) {
 					$filters_set[$n] = array(
 						'value' => '',
@@ -58,6 +66,7 @@ function xthreads_forumdisplay() {
 						'forminput' => '',
 						'selected' => array(),
 						'checked' => array(),
+						'active' => array(),
 						'hiddencss' => 'display: none;',
 						'visiblecss' => '',
 					);
@@ -67,8 +76,9 @@ function xthreads_forumdisplay() {
 						$filterurl .= ($filterurl ? '&':'').'filtertf_'.rawurlencode($n).'[]='.rawurlencode($val);
 						
 						$filters_set[$n]['value'] .= ($filters_set[$n]['value'] ? ', ':'').htmlspecialchars_uni($val);
-						$filters_set[$n]['selected'] = array($val => ' selected="selected"');
-						$filters_set[$n]['checked'] = array($val => ' checked="checked"');
+						$filters_set[$n]['selected'][$val] = ' selected="selected"';
+						$filters_set[$n]['checked'][$val] = ' checked="checked"';
+						$filters_set[$n]['active'][$val] = 'filtertf_active';
 					}
 					$filters_set[$n]['urlarg'] = htmlspecialchars_uni($filterurl);
 					$filters_set[$n]['urlarga'] = '&amp;'.$filters_set[$n]['urlarg'];
@@ -88,6 +98,7 @@ function xthreads_forumdisplay() {
 						'forminput' => $formarg,
 						'selected' => array($tf_filters[$n] => ' selected="selected"'),
 						'checked' => array($tf_filters[$n] => ' checked="checked"'),
+						'active' => array($tf_filters[$n] => 'filtertf_active'),
 						'hiddencss' => 'display: none;',
 						'visiblecss' => '',
 					);
@@ -120,6 +131,7 @@ function xthreads_forumdisplay() {
 		$filters_set['__search']['urlargq'] = '?'.$filters_set['__search']['urlarg'];
 		$filters_set['__search']['selected'] = array($mybb->input['search'] => ' selected="selected"');
 		$filters_set['__search']['checked'] = array($mybb->input['search'] => ' checked="checked"');
+		$filters_set['__search']['active'] = array($mybb->input['search'] => 'filtertf_active');
 		$filters_set['__search']['hiddencss'] = 'display: none;';
 		$filters_set['__search']['visiblecss'] = '';
 	}
@@ -201,7 +213,7 @@ function xthreads_forumdisplay_filter() {
 						// ugly, but no other way to really do this...
 						$qstr = '(';
 						$qor = '';
-						$cfield = xthreads_db_concat_sql(array("\"\n\"", $db->escape_string($field), "\"\n\""));
+						$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\""));
 						foreach($val as &$v) {
 							$qstr .= $qor.$cfield.' LIKE "%'."\n".$db->escape_string_like($v)."\n".'%"';
 							if(!$qor) $qor = ' OR ';

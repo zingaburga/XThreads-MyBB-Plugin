@@ -440,6 +440,12 @@ function xthreads_buildtfcache() {
 		}
 		// santize -> separate mycode stuff?
 		
+		if($tf['allowfilter']) {
+			$tf['ignoreblankfilter'] = ($tf['editable'] == XTHREADS_EDITABLE_REQ);
+			if($tf['ignoreblankfilter'] && !empty($tf['vallist'])) {
+				$tf['ignoreblankfilter'] = !in_array('', $tf['vallist']);
+			}
+		}
 		
 		// sanitise eval'd stuff
 		if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
@@ -486,9 +492,9 @@ function xthreads_sanitize_eval(&$s, &$fields) {
 	$s = preg_replace(
 		array(
 			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((-\\>[a-zA-Z_][a-zA-Z_0-9]*|\\[(\'|\\\\"|)[a-zA-Z_ 0-9]+\\4\\])*)\\}~e',
-			'~\{\\\\\$forumurl\\\$\}~i',
+			'~\{\\\\\$forumurl\\\\\$\}~i',
 			'~\{\\\\\$forumurl\?\}~i',
-			'~\{\\\\\$threadurl\\\$\}~i',
+			'~\{\\\\\$threadurl\\\\\$\}~i',
 			'~\{\\\\\$threadurl\?\}~i'
 		), array(
 			'\'{$GLOBALS[\\\'$1\\\']\'.strtr(\'$2\', array(\'\\\\\\\\\\\'\' => \'\\\'\', \'\\\\\\\\\\\\\\\\"\' => \'\\\'\')).\'}\'', // rewrite double-quote to single quotes, cos it's faster
