@@ -19,10 +19,6 @@ function xthreads_showthread() {
 			xthreads_sanitize_disp($v, $threadfield_cache[$k], $thread['username']);
 		}
 	}
-	
-	if($forum['xthreads_postsperpage']) {
-		$GLOBALS['mybb']->settings['postsperpage'] = $forum['xthreads_postsperpage'];
-	}
 }
 
 function xthreads_showthread_firstpost() {

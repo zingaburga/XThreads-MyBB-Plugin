@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.24);
+define('XTHREADS_VERSION', 1.25);
 
 
 // XThreads defines
@@ -221,9 +221,13 @@ function xthreads_tplhandler() {
 					}
 			}
 		}
-		if($forum['xthreads_force_postlayout']) {
+		// settings overrides
+		if($forum['xthreads_force_postlayout'])
 			$mybb->settings['postlayout'] = $forum['xthreads_force_postlayout'];
-		}
+		if($forum['xthreads_threadsperpage'])
+			$mybb->settings['threadsperpage'] = $forum['xthreads_threadsperpage'];
+		if($forum['xthreads_postsperpage'])
+			$mybb->settings['postsperpage'] = $forum['xthreads_postsperpage'];
 		
 		// cache some more templates if necessary
 		switch($current_page) {
@@ -323,6 +327,7 @@ function xthreads_handle_uploads() {
 			}
 		}
 		
+		if(!verify_post_check($mybb->input['my_post_key'], true)) return;
 		check_forum_password($forum['fid']);
 		
 		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';

@@ -83,9 +83,6 @@ function xthreads_forumdisplay() {
 		// generate stuff for pagination/sort-links and fields for forms (sort listboxes, inline search)
 		
 	}
-	if($forum['xthreads_threadsperpage']) {
-		$mybb->settings['threadsperpage'] = $forum['xthreads_threadsperpage'];
-	}
 	
 }
 

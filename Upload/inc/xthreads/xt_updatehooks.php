@@ -32,7 +32,7 @@ function xthreads_input_posthandler_postvalidate(&$ph) {
 		xthreads_input_posthandler_validate($ph, true);
 }
 function xthreads_input_posthandler_validate(&$ph, $update=false) {
-	global $threadfield_cache, $fid, $lang, $forum;
+	global $threadfield_cache, $lang, $forum;
 	
 	// blank message hack
 	if($forum['xthreads_allow_blankmsg'] && (isset($ph->data['message']) || $ph->method == 'insert') && my_strlen($ph->data['message']) == 0) {
@@ -45,9 +45,11 @@ function xthreads_input_posthandler_validate(&$ph, $update=false) {
 		}
 	}
 	
+	$fid = $ph->data['fid']; // TODO: will this ever be NOT set?
 	if(!$fid) {
 		global $thread, $post, $foruminfo;
-		if($forum['fid']) $fid = $forum['fid'];
+		if($GLOBALS['fid']) $fid = $GLOBALS['fid'];
+		elseif($forum['fid']) $fid = $forum['fid'];
 		elseif($thread['fid']) $fid = $thread['fid'];
 		elseif($post['fid']) $fid = $post['fid'];
 		elseif($foruminfo['fid']) $fid = $foruminfo['fid'];
@@ -159,7 +161,9 @@ function xthreads_input_posthandler_insert(&$ph) {
 	else return;
 	
 	
-	global $threadfield_cache, $fid, $db;
+	global $threadfield_cache, $db;
+	$fid = $data['fid']; // TODO: will this ever NOT be set?
+	if(!$fid) $fid = $GLOBALS['fid'];
 	if(!isset($threadfield_cache))
 		$threadfield_cache = xthreads_gettfcache($fid);
 	if(empty($threadfield_cache)) return;

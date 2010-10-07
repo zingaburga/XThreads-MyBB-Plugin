@@ -27,6 +27,20 @@ define('CACHE_TIME', 604800);
 
 
 /**
+ * Redirect proxy response; this only applies if you're using a front-end web server to serve static files (eg nginx -> Apache for serving PHP files)
+ * to use this feature, you specify the header, along with the root of the xthreads_ul folder (with trailing slash) as the front-end webserver sees it.  Note that it is up to you to set up the webserver correctly
+ * 
+ * example for nginx
+ *  define('PROXY_REDIR_HEADER_PREFIX', 'X-Accel-Redirect: /forums/uploads/xthreads_ul/');
+ * example for lighttpd / mod_xsendfile
+ *  define('PROXY_REDIR_HEADER_PREFIX', 'X-Sendfile: /forums/uploads/xthreads_ul/');
+ *
+ * defaults to empty string, which tunnels the file through PHP
+ * note that using this option will cause a COUNT_DOWNLOADS setting of 2, to become 1 (can't count downloads after redirect header sent)
+ */
+define('PROXY_REDIR_HEADER_PREFIX', '');
+
+/**
  * if disabled, MyBB core will not be loaded
  ***** DO NOT CHANGE THIS! *****
  * the original idea was to perform permission checking, but I have not decided to implement this; file downloads probably still work with it turned on, however, there isn't any reason to do this
@@ -134,13 +148,14 @@ function do_processing() {
 	$month_dir = 'ts_'.floor($match[2] / 1000000).'/';
 	$fn = 'file_'.$match[1].'_'.$match[3].'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $match[5])).'.'.$fext;
 	if(file_exists($basedir.$month_dir.$fn))
-		$fn = $basedir.$month_dir.$fn;
+		$fn_rel = $month_dir.$fn;
 	elseif(file_exists($basedir.$fn))
-		$fn = $basedir.$fn;
+		$fn_rel = $fn;
 	else {
 		header('HTTP/1.1 404 Not Found');
 		die('Specified attachment not found.');
 	}
+	$fn = $basedir.$fn_rel;
 
 	// check to see if unmodified/cached
 	$cached = false;
@@ -166,45 +181,49 @@ function do_processing() {
 
 	global $fp, $fsize, $range_start, $range_end;
 	
-	$fp = fopen($fn, 'rb');
-	if(!$fp) {
-		header('HTTP/1.1 500 Internal Server Error');
-		die('Failed to open file.');
-	}
-	
-	$range_start = 0;
-	$fsize = filesize($fn);
-	$range_end = $fsize-1;
-
-	if(isset($_SERVER['HTTP_RANGE']) && ($p = strpos($_SERVER['HTTP_RANGE'], '='))) {
-		$rangestr = substr($_SERVER['HTTP_RANGE'], $p+1);
-		$p = strpos($rangestr, '-');
-		$ostart = intval(substr($rangestr, 0, $p));
-		$oend = intval(substr($rangestr, $p+1));
-		
-		if($oend && $oend < $range_end && $oend > $range_start)
-			$range_end = $oend;
-		if($ostart && $ostart > $range_start && $ostart < $range_end)
-			$range_start = $ostart;
-	}
-	
-	if($range_start || $range_end != $fsize-1) {
-		// check If-Range header
-		$cached = true; // reuse this variable
-		if(isset($_SERVER['HTTP_IF_RANGE']) && ($etag_match = trim($_SERVER['HTTP_IF_RANGE']))) {
-			if($etag_match != $etag && (!strpos($etag_match, ',') || !in_array($etag, array_map('trim', explode(',', $etag_match))))) {
-				$cached = false;
-				// re-send whole file
-				$range_start = 0;
-				$range_end = $fsize -1;
-			}
+	if(!PROXY_REDIR_HEADER_PREFIX) {
+		$fp = fopen($fn, 'rb');
+		if(!$fp) {
+			header('HTTP/1.1 500 Internal Server Error');
+			die('Failed to open file.');
 		}
-		if($cached)
-			header('HTTP/1.1 206 Partial Content');
-	}
+		
+		$range_start = 0;
+		$fsize = filesize($fn);
+		$range_end = $fsize-1;
 
-	if(COUNT_DOWNLOADS == 1 && !$thumb) increment_downloads($match[1]);
-	header('Accept-Ranges: bytes');
+		if(isset($_SERVER['HTTP_RANGE']) && ($p = strpos($_SERVER['HTTP_RANGE'], '='))) {
+			$rangestr = substr($_SERVER['HTTP_RANGE'], $p+1);
+			$p = strpos($rangestr, '-');
+			$ostart = intval(substr($rangestr, 0, $p));
+			$oend = intval(substr($rangestr, $p+1));
+			
+			if($oend && $oend < $range_end && $oend > $range_start)
+				$range_end = $oend;
+			if($ostart && $ostart > $range_start && $ostart < $range_end)
+				$range_start = $ostart;
+		}
+		
+		if($range_start || $range_end != $fsize-1) {
+			// check If-Range header
+			$cached = true; // reuse this variable
+			if(isset($_SERVER['HTTP_IF_RANGE']) && ($etag_match = trim($_SERVER['HTTP_IF_RANGE']))) {
+				if($etag_match != $etag && (!strpos($etag_match, ',') || !in_array($etag, array_map('trim', explode(',', $etag_match))))) {
+					$cached = false;
+					// re-send whole file
+					$range_start = 0;
+					$range_end = $fsize -1;
+				}
+			}
+			if($cached)
+				header('HTTP/1.1 206 Partial Content');
+		}
+
+		if(COUNT_DOWNLOADS == 1 && !$thumb) increment_downloads($match[1]);
+		header('Accept-Ranges: bytes');
+	} else {
+		if(COUNT_DOWNLOADS && !$thumb) increment_downloads($match[1]);
+	}
 	header('Allow: GET, HEAD');
 	header('Last-Modified: '.gmdate('D, d M Y H:i:s', $modtime).'GMT');
 	header('Expires: '.gmdate('D, d M Y H:i:s', time() + CACHE_TIME).'GMT');
@@ -284,9 +303,10 @@ function do_processing() {
 	if(!$content_type) {
 		// try system MIME file
 		if(function_exists('mime_content_type'))
-			$content_type = @mime_content_type($match[5]);
+			//$content_type = @mime_content_type($match[5]);
+			$content_type = @mime_content_type($fn);
 		elseif(function_exists('finfo_open') && ($fi = @finfo_open(FILEINFO_MIME))) {
-			$content_type = @finfo_file($fi, $match[5]);
+			$content_type = @finfo_file($fi, $fn);
 			finfo_close($fi);
 		}
 	}
@@ -306,6 +326,12 @@ function do_processing() {
 		header('Content-Disposition: '.$disposition.'; filename="'.strtr($match[5], array('"'=>'\\"', "\r"=>'', "\n"=>'')).'"');
 	}
 
+	if(PROXY_REDIR_HEADER_PREFIX) {
+		// we terminate here and let the webserver do the rest of the work
+		header(PROXY_REDIR_HEADER_PREFIX.$fn_rel);
+		exit;
+	}
+	
 	if($range_end < 0) {
 		// this is a 0 byte file
 		header('Content-Length: 0');

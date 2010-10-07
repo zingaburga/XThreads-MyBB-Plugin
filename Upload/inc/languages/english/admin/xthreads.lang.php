@@ -159,7 +159,7 @@ $l['error_field_name_too_long'] = 'Key names must be 50 characters long or less.
 $l['threadfields_enable_js'] = 'It appears that you have JavaScript disabled.  To make things easier for you, it is strongly recommended to enable JavaScript for this page.';
 $l['commit_changes'] = 'Commit Changes';
 
-$l['xthreads_opts'] = 'XThreads Options';
+$l['xthreads_opts'] = 'XThreads Options <span style="font-size: smaller;">(note that these settings do not cascade down into child forums)</span>';
 $l['xthreads_tplprefix'] = 'Template Prefix';
 $l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.  This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* and <em>portal_announcement</em>* templates.';
 $l['xthreads_grouping'] = 'Thread Grouping';
@@ -180,9 +180,9 @@ $l['xthreads_force_postlayout_classic'] = 'Force classic postbit layout';
 $l['xthreads_hideforum'] = 'Hide Forum';
 $l['xthreads_hideforum_desc'] = 'If yes, will hide this forum on your index and forumdisplay pages.  This is slightly different to disabling the Can View Forum permission in that this does not affect permissions, it just merely hides it from display (so, for example, you could put a link to it in your main menu).';
 $l['xthreads_allow_blankmsg'] = 'Allow Blank Post Message';
-$l['xthreads_allow_blankmsg_desc'] = 'If ticked, new threads in this forum will not require a message to be entered.';
+$l['xthreads_allow_blankmsg_desc'] = 'If yes, new threads in this forum will not require a message to be entered.';
 $l['xthreads_nostatcount'] = 'Don\'t include this forum\'s threads/posts in global forum statistics';
-$l['xthreads_nostatcount_desc'] = 'If ticked, threads and posts made in this forum will not increase the forum\'s statistics on the number of threads and posts across all forums (eg at the bottom of the forum home, or stats.php).';
+$l['xthreads_nostatcount_desc'] = 'If yes, threads and posts made in this forum will not increase the forum\'s statistics on the number of threads and posts across all forums (eg at the bottom of the forum home, or stats.php).';
 $l['xthreads_cust_wolstr'] = 'Custom WOL Text';
 $l['xthreads_cust_wolstr_desc'] = 'You can have custom text for this forum on the Who\'s Online List.  If you enter text in the following textboxes, it will replace the default WOL language text.  As this replaces language strings, it will accept variables in the same way.  Go to AdminCP -&gt; Configuration -&gt; Languages -&gt; Edit Language Variables (under Options for your selected language) -&gt; edit <em>online.lang.php</em> to see the defaults.';
 $l['xthreads_wol_announcements'] = 'Announcements';

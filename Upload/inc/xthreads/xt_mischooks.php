@@ -76,7 +76,33 @@ function xthreads_search_result_post() {
 	xthreads_search_result($GLOBALS['post'], 'search_results_posts_post');
 }
 function xthreads_search_result_thread() {
-	xthreads_search_result($GLOBALS['thread'], 'search_results_threads_thread');
+	global $thread;
+	xthreads_search_result($thread, 'search_results_threads_thread');
+	
+	// fix for posts per page override
+	$forum =& $GLOBALS['forumcache'][$thread['fid']];
+	if($forum['xthreads_postsperpage'] && $forum['xthreads_postsperpage'] != $GLOBALS['mybb']->settings['postsperpage']) {
+		// urgh, we have to reproduce MyBB code, how yuck
+		global $threadpages, $morelink, $highlight, $templates, $lang;
+		if($thread['posts'] > $forum['xthreads_postsperpage']) {
+			$pagesstop = ceil($thread['posts'] / $forum['xthreads_postsperpage']);
+			if($pagesstop != $thread['pages']) { // small optimisation
+				$thread['pages'] = $pagestop;
+				if($pagestop > 4) {
+					$pagesstop = 4;
+					$page_link = get_thread_link($thread['tid'], $thread['pages']).$highlight;
+					eval('$morelink = "'.$templates->get('forumdisplay_thread_multipage_more').'";');
+				}
+				for($i = 1; $i <= $pagesstop; ++$i) {
+					$page_link = get_thread_link($thread['tid'], $i).$highlight;
+					eval('$threadpages .= "'.$templates->get('forumdisplay_thread_multipage_page').'";');
+				}
+				eval('$thread[\'multipage\'] = "'.$templates->get('forumdisplay_thread_multipage').'";');
+			}
+		}
+		else
+			$thread['multipage'] = $threadpages = $morelink = '';
+	}
 }
 
 

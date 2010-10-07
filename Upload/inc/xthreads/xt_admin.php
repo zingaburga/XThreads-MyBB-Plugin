@@ -587,7 +587,7 @@ function xthreads_admin_forumedit() {
 			'xthreads_wol_attachment',
 			'xthreads_wol_newreply',
 			'xthreads_wol_showthread',
-			'xthreads_wol_xtattachment',
+			//'xthreads_wol_xtattachment',
 		);
 		$wolhtml = '';
 		foreach($wolfields as &$w) {
