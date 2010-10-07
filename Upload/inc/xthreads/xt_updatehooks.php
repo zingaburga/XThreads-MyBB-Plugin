@@ -35,7 +35,7 @@ function xthreads_input_posthandler_validate(&$ph, $update=false) {
 	global $threadfield_cache, $fid, $lang, $forum;
 	
 	// blank message hack
-	if($forum['xthreads_allow_blankmsg'] && my_strlen($ph->data['message']) == 0) {
+	if($forum['xthreads_allow_blankmsg'] && (isset($ph->data['message']) || $ph->method == 'insert') && my_strlen($ph->data['message']) == 0) {
 		// enforce blank message if we got here simply by a quirk in my_strlen
 		$ph->data['message'] = '';
 		// remove errors that MyBB added

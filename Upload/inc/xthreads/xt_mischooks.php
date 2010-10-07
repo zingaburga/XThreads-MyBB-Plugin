@@ -84,7 +84,7 @@ function xthreads_portal() {
 	global $threadfield_cache, $mybb;
 	$threadfield_cache = xthreads_gettfcache();
 	
-	$fids = array_map('intval', explode(',', $mybb->settings['portal_announcementsfid']));
+	$fids = array_flip(array_map('intval', explode(',', $mybb->settings['portal_announcementsfid'])));
 	$fields = '';
 	foreach($threadfield_cache as $k => &$v) {
 		$available = (!$v['forums']);
@@ -106,10 +106,10 @@ function xthreads_portal() {
 		control_object($GLOBALS['db'], '
 			function query($string, $hide_errors=0, $write_query=0) {
 				static $done=false;
-				if(!$done && !$write_query && strpos($string, \'SELECT t.*, t.username AS threadusername, u.username, u.avatar, u.avatardimensions\')) {
+				if(!$done && !$write_query && strpos($string, \'SELECT t.*, t.username AS threadusername, u.username, u.avatar\')) {
 					$done = true;
 					$string = strtr($string, array(
-						\'SELECT t.*, t.username AS threadusername, u.username, u.avatar, u.avatardimensions\' => \'SELECT t.*, t.username AS threadusername, u.username, u.avatar, u.avatardimensions'.$fields.'\',
+						\'SELECT t.*, t.username AS threadusername, u.username, u.avatar\' => \'SELECT t.*, t.username AS threadusername, u.username, u.avatar'.$fields.'\',
 						\'FROM '.TABLE_PREFIX.'threads t\' => \'FROM '.TABLE_PREFIX.'threads t LEFT JOIN '.TABLE_PREFIX.'threadfields_data tfd ON t.tid=tfd.tid\'
 					));
 				}
