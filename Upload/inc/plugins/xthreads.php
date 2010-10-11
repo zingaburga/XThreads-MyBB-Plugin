@@ -307,13 +307,15 @@ function xthreads_handle_uploads() {
 		if($current_page == 'editpost.php') {
 			if($mybb->input['action'] == 'deletepost' && $mybb->request_method == 'post') return;
 			// check if first post
+			$pid = intval($mybb->input['pid']);
 			if(!$thread) {
-				$post = get_post(intval($mybb->input['pid']));
+				$post = get_post($pid);
 				if(!empty($post))
 					$thread = get_thread($post['tid']);
 				if(empty($thread)) return;
+				$pid = $post['pid'];
 			}
-			if($thread['firstpost'] != $post['pid'])
+			if($thread['firstpost'] != $pid)
 				return;
 		} elseif($mybb->input['tid']) { /* ($mybb->input['action'] == 'editdraft' || $mybb->input['action'] == 'savedraft') && */
 			$thread = get_thread(intval($mybb->input['tid']));
