@@ -193,15 +193,16 @@ function xthreads_tplhandler() {
 			// this forum has a custom tpl prefix, hook into templates system
 			control_object($templates, '
 				function cache($templates) {
-					xthreads_tpl_cache($templates, \''.$forum['xthreads_tplprefix'].'\', $this);
+					xthreads_tpl_cache($templates, $this);
 				}
 				
 				function get($title, $eslashes=1, $htmlcomments=1) {
-					xthreads_tpl_get($this, $title, \''.$forum['xthreads_tplprefix'].'\');
+					xthreads_tpl_get($this, $title);
 					return parent::get($title, $eslashes, $htmlcomments);
 				}
 			');
 			$templates->non_existant_templates = array();
+			$templates->xt_tpl_prefix = explode(',', $forum['xthreads_tplprefix']);
 		}
 		if($forum['xthreads_firstpostattop']) {
 			switch($current_page) {
@@ -264,7 +265,7 @@ function xthreads_tplhandler() {
 	}
 }
 
-function xthreads_tpl_cache(&$t, $prefix, &$obj) {
+function xthreads_tpl_cache(&$t, &$obj) {
 	if(!$t) return;
 	global $db, $theme;
 	
@@ -272,7 +273,9 @@ function xthreads_tpl_cache(&$t, $prefix, &$obj) {
 	$ta = explode(',', $t);
 	foreach($ta as &$tpl) {
 		$tpl = trim($tpl);
-		$sql .= ',"'.$tpl.'","'.$prefix.$tpl.'"';
+		$sql .= ',"'.$tpl.'"';
+		foreach($obj->xt_tpl_prefix as &$prefix)
+			$sql .= ',"'.$db->escape_string($prefix.$tpl).'"';
 	}
 	$query = $db->simple_select('templates', 'title,template', 'title IN (""'.$sql.') AND sid IN ("-2","-1","'.$theme['templateset'].'")', array('order_by' => 'sid', 'order_dir' => 'asc'));
 	while($template = $db->fetch_array($query))
@@ -281,16 +284,19 @@ function xthreads_tpl_cache(&$t, $prefix, &$obj) {
 	
 	// now override default templates - this code actually ensures that all requested templates will have an entry in the cache array
 	foreach($ta as &$tpl) {
-		if(isset($obj->cache[$prefix.$tpl]))
-			$obj->cache[$tpl] =& $obj->cache[$prefix.$tpl];
-		elseif(!isset($obj->cache[$tpl])) { // we'll add a possible optimisation thing here that MyBB doesn't do :P
+		foreach($obj->xt_tpl_prefix as &$prefix)
+			if(isset($obj->cache[$prefix.$tpl])) {
+				$obj->cache[$tpl] =& $obj->cache[$prefix.$tpl];
+				break;
+			}
+		if(!isset($obj->cache[$tpl])) { // we'll add a possible optimisation thing here that MyBB doesn't do :P
 			$obj->cache[$tpl] = '';
 			$obj->non_existant_templates[$tpl] = true; // workaround for forumbits and postbit_first template prefixing
 		}
 	}
 	// note: above won't affect portal/search templates, so isset() check does check whether template actually exists
 }
-function xthreads_tpl_get(&$obj, &$t, $prefix) {
+function xthreads_tpl_get(&$obj, &$t) {
 	if(!isset($obj->cache[$t])) {
 		// template not loaded, load it
 		if($GLOBALS['mybb']->debug_mode)

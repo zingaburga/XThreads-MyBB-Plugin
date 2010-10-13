@@ -389,17 +389,22 @@ function xthreads_tpl_forumbits(&$forum) {
 	if(!$done) {
 		$done = true;
 		$templates->cache['__null__forumbit_depth1_cat'] = $templates->cache['__null__forumbit_depth2_cat'] = $templates->cache['__null__forumbit_depth2_forum'] = $templates->cache['__null__forumbit_depth3'] = ' ';
+		function xthreads_tpl_forumbits_tplget(&$obj, &$title) {
+			static $endtpl = array('forumbit_depth1_cat' => 1, 'forumbit_depth2_cat' => 1, 'forumbit_depth2_forum' => 1, 'forumbit_depth3' => 1);
+			if(isset($endtpl[$title]))
+				$forum = array_pop($obj->xthreads_forumbits_curforum);
+			else
+				$forum = end($obj->xthreads_forumbits_curforum);
+			if($forum['xthreads_tplprefix'] === '') return;
+			foreach(explode(',', $forum['xthreads_tplprefix']) as $p)
+				if(isset($obj->cache[$p.$title]) && !isset($obj->non_existant_templates[$p.$title]) && substr($title, 0, 9) == 'forumbit_') {
+					$title = $p.$title;
+					return;
+				}
+		}
 		control_object($templates, '
 			function get($title, $eslashes=1, $htmlcomments=1) {
-				static $endtpl = array(\'forumbit_depth1_cat\'=>1,\'forumbit_depth2_cat\'=>1,\'forumbit_depth2_forum\'=>1,\'forumbit_depth3\'=>1);
-				if(isset($endtpl[$title]))
-					$forum = array_pop($this->xthreads_forumbits_curforum);
-				else
-					$forum = end($this->xthreads_forumbits_curforum);
-				$p =& $forum[\'xthreads_tplprefix\'];
-				if($p && isset($this->cache[$p.$title]) && !isset($this->non_existant_templates[$p.$title]) && substr($title, 0, 9) == \'forumbit_\') {
-					return parent::get($p.$title, $eslashes, $htmlcomments);
-				}
+				xthreads_tpl_forumbits_tplget($this, $title);
 				return parent::get($title, $eslashes, $htmlcomments);
 			}
 		');
@@ -418,11 +423,12 @@ function xthreads_global_forumbits_tpl() {
 	// TODO: perhaps make this smarter??
 	$prefixes = array();
 	foreach($GLOBALS['cache']->read('forums') as $f) {
-		if($f['xthreads_tplprefix'] && !$f['xthreads_hideforum'])
-			$prefixes[$f['xthreads_tplprefix']] = 1;
+		if($f['xthreads_tplprefix'] && !$f['xthreads_hideforum']) {
+			$prefixes = array_merge($prefixes, explode(',', $f['xthreads_tplprefix']));
+		}
 	}
 	if(!empty($prefixes)) {
-		foreach(array_keys($prefixes) as $pre) {
+		foreach($prefixes as $pre) {
 			$templatelist .= ','.
 				$pre.'forumbit_depth1_cat,'.
 				$pre.'forumbit_depth1_cat_subforum,'.

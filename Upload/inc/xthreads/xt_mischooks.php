@@ -35,8 +35,10 @@ function xthreads_search() {
 	$cachelist = '';
 	$forumcache = $cache->read('forums');
 	foreach($forumcache as &$forum) {
-		if($forum['xthreads_tplprefix'])
-			$cachelist .= ($cachelist?',':'').$forum['xthreads_tplprefix'].'search_results_posts_post,'.$forum['xthreads_tplprefix'].'search_results_threads_thread';
+		if($forum['xthreads_tplprefix']) {
+			list($pref) = explode(',', $forum['xthreads_tplprefix']);
+			$cachelist .= ($cachelist?',':'').$pref.'search_results_posts_post,'.$pref.'search_results_threads_thread';
+		}
 	}
 	if($cachelist) $GLOBALS['templates']->cache($cachelist);
 	
@@ -72,7 +74,8 @@ function xthreads_search_result(&$data, $tplname) {
 		}
 	}
 	// template hack
-	xthreads_portalsearch_cache_hack($forumcache[$data['fid']]['xthreads_tplprefix'], $tplname);
+	list($pref) = explode(',', $forumcache[$data['fid']]['xthreads_tplprefix']);
+	xthreads_portalsearch_cache_hack($pref, $tplname);
 }
 function xthreads_search_result_post() {
 	xthreads_search_result($GLOBALS['post'], 'search_results_posts_post');
@@ -160,8 +163,10 @@ function xthreads_portal_announcement() {
 		// cache templates
 		$cachelist = '';
 		foreach($forum as &$f) {
-			if($f['xthreads_tplprefix'])
-				$cachelist .= ($cachelist?',':'').$f['xthreads_tplprefix'].'portal_announcement,'.$f['xthreads_tplprefix'].'portal_announcement_numcomments,'.$f['xthreads_tplprefix'].'portal_announcement_numcomments_no';
+			if($f['xthreads_tplprefix']) {
+				list($pref) = explode(',', $f['xthreads_tplprefix']);
+				$cachelist .= ($cachelist?',':'').$pref.'portal_announcement,'.$pref.'portal_announcement_numcomments,'.$pref.'portal_announcement_numcomments_no';
+			}
 		}
 		if($cachelist) $GLOBALS['templates']->cache($cachelist);
 	}
@@ -189,7 +194,7 @@ function xthreads_portal_announcement() {
 		}
 	}
 	// template hack
-	$tplprefix =& $GLOBALS['forum'][$announcement['fid']]['xthreads_tplprefix'];
+	list($tplprefix) = explode(',', $GLOBALS['forum'][$announcement['fid']]['xthreads_tplprefix']);
 	xthreads_portalsearch_cache_hack($tplprefix, 'portal_announcement');
 	if($tplprefix) {
 		$tplname = $tplprefix.'portal_announcement_numcomments'.($announcement['replies']?'':'_no');
