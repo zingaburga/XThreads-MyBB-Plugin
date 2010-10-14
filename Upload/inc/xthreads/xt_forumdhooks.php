@@ -389,22 +389,22 @@ function xthreads_tpl_forumbits(&$forum) {
 	if(!$done) {
 		$done = true;
 		$templates->cache['__null__forumbit_depth1_cat'] = $templates->cache['__null__forumbit_depth2_cat'] = $templates->cache['__null__forumbit_depth2_forum'] = $templates->cache['__null__forumbit_depth3'] = ' ';
-		function xthreads_tpl_forumbits_tplget(&$obj, &$title) {
-			static $endtpl = array('forumbit_depth1_cat' => 1, 'forumbit_depth2_cat' => 1, 'forumbit_depth2_forum' => 1, 'forumbit_depth3' => 1);
-			if(isset($endtpl[$title]))
-				$forum = array_pop($obj->xthreads_forumbits_curforum);
-			else
-				$forum = end($obj->xthreads_forumbits_curforum);
-			if($forum['xthreads_tplprefix'] === '') return;
-			foreach(explode(',', $forum['xthreads_tplprefix']) as $p)
-				if(isset($obj->cache[$p.$title]) && !isset($obj->non_existant_templates[$p.$title]) && substr($title, 0, 9) == 'forumbit_') {
-					$title = $p.$title;
-					return;
-				}
+		function xthreads_tpl_forumbits_tplget(&$obj, &$forum, $title, $eslashes, $htmlcomments) {
+			if($forum['xthreads_tplprefix'] !== '')
+				foreach(explode(',', $forum['xthreads_tplprefix']) as $p)
+					if(isset($obj->cache[$p.$title]) && !isset($obj->non_existant_templates[$p.$title])) {
+						$title = $p.$title;
+						break;
+					}
+			return 'return "'.$obj->xthreads_tpl_forumbits_get($title, $eslashes, $htmlcomments).'";';
 		}
 		control_object($templates, '
 			function get($title, $eslashes=1, $htmlcomments=1) {
-				xthreads_tpl_forumbits_tplget($this, $title);
+				if(substr($title, 0, 9) != \'forumbit_\')
+					return parent::get($title, $eslashes, $htmlcomments);
+				return \'".eval(xthreads_tpl_forumbits_tplget($templates, $forum, \\\'\'.strtr($title, array(\'\\\\\' => \'\\\\\\\\\', \'\\\'\' => \'\\\\\\\'\')).\'\\\', \'.$eslashes.\', \'.$htmlcomments.\'))."\';
+			}
+			function xthreads_tpl_forumbits_get($title, $eslashes, $htmlcomments){
 				return parent::get($title, $eslashes, $htmlcomments);
 			}
 		');
@@ -428,7 +428,7 @@ function xthreads_global_forumbits_tpl() {
 		}
 	}
 	if(!empty($prefixes)) {
-		foreach($prefixes as $pre) {
+		foreach($prefixes as &$pre) {
 			$templatelist .= ','.
 				$pre.'forumbit_depth1_cat,'.
 				$pre.'forumbit_depth1_cat_subforum,'.
