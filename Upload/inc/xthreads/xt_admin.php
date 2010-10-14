@@ -681,7 +681,7 @@ function xthreads_admin_forumcommit() {
 		$fid = intval($mybb->input['fid']);
 	}
 	$db->update_query('forums', array(
-		'xthreads_tplprefix' => $db->escape_string(trim($mybb->input['xthreads_tplprefix'])),
+		'xthreads_tplprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_tplprefix'])))),
 		'xthreads_grouping' => intval(trim($mybb->input['xthreads_grouping'])),
 		'xthreads_firstpostattop' => intval(trim($mybb->input['xthreads_firstpostattop'])),
 		'xthreads_allow_blankmsg' => intval(trim($mybb->input['xthreads_allow_blankmsg'])),

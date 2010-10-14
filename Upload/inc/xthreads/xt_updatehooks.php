@@ -340,7 +340,20 @@ function xthreads_inputdisp() {
 	}
 	
 	if($mybb->input['previewpost']) {
-		global $threadfields;
+		global $threadfields, $forum;
+		
+		// $forum may not exist for editpost
+		if(empty($forum)) {
+			if(!empty($GLOBALS['thread'])) // should be set
+				$fid = $GLOBALS['thread']['fid'];
+			else {
+				// last ditch resort, grab everything from the post
+				$pid = intval($mybb->input['pid']);
+				$post = get_post($pid);
+				$fid = $post['fid'];
+			}
+			$forum = get_forum($fid);
+		}
 		
 		$threadfields = array();
 		$threadfield_cache = xthreads_gettfcache($fid); // don't use global cache as that will probably have been cleared of uneditable fields
@@ -395,7 +408,7 @@ function xthreads_inputdisp() {
 			}
 			
 			// do first post hack if applicable
-			if($GLOBALS['forum']['xthreads_firstpostattop']) {
+			if($forum['xthreads_firstpostattop']) {
 				//require_once MYBB_ROOT.'inc/xthreads/xt_sthreadhooks.php';
 				// above file should already be included
 				if(function_exists('xthreads_tpl_postbithack'))
@@ -447,7 +460,7 @@ function xthreads_inputdisp() {
 		}
 		
 		// message length hack for newthread
-		if(!$editpost && $GLOBALS['forum']['xthreads_allow_blankmsg'] && my_strlen($mybb->input['message']) == 0) {
+		if(!$editpost && $forum['xthreads_allow_blankmsg'] && my_strlen($mybb->input['message']) == 0) {
 			//$GLOBALS['xthreads_restore_blank_msg'] = true;
 			$mybb->input['message'] = str_repeat('-', max(intval($mybb->settings['minmessagelength']), 1));
 			function xthreads_newthread_prev_blankmsg_hack() {
@@ -878,8 +891,9 @@ function xthreads_upload_attachments() {
 		$mybb->input['action'] = ($GLOBALS['current_page'] == 'newthread.php' ? 'newthread' : 'editpost');
 		
 		// block the preview, since a failed upload can stuff it up
-		$GLOBALS['plugins']->add_hook('newthread_start', 'xthreads_newthread_ulattach_blockpreview');
-		$GLOBALS['plugins']->add_hook('editpost_start', 'xthreads_editthread_ulattach_blockpreview');
+		// lower priority to go before inputdisp function (contention, the function checks for 'previewpost')
+		$GLOBALS['plugins']->add_hook('newthread_start', 'xthreads_newthread_ulattach_blockpreview', 5);
+		$GLOBALS['plugins']->add_hook('editpost_start', 'xthreads_editthread_ulattach_blockpreview', 5);
 	}
 }
 function xthreads_newthread_ulattach_blockpreview() {

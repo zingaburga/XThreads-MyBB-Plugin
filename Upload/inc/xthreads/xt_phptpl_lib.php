@@ -82,7 +82,8 @@ function xthreads_phptpl_is_safe_expression($s)
 	}
 	
 	// remove safe "equal" expressions and closed comments
-	$check = strtr(preg_replace(array($string_preg, '~/\\*.*?\\*/~s'), '', $s), array('>=' => '', '<=' => '', '==' => '', '!=' => '', '===' => '', '!==' => ''));
+	// use '^' character as substitution to try to prevent possible 'some==badfunc()' type exploits
+	$check = strtr(preg_replace(array($string_preg, '~/\\*.*?\\*/~s'), ' ', $s), array('>=' => '^', '<=' => '^', '===' => '^', '!==' => '^', '==' => '^', '!=' => '^'));
 	
 	// block certain characters + operators
 	if(preg_match('~([+\-/]{2}|[`#="\']|/\*|\<{3}|\?\>|\(array\)|\(object\))~i', $check)) return false;
