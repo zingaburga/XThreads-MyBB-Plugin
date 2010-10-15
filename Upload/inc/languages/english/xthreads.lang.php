@@ -18,6 +18,7 @@ $l['xthreads_xtfurlerr_urlopenfailed'] = 'Could not connect to specified URL';
 $l['xthreads_xtfurlerr_headernotfound'] = 'Could not determine response HTTP headers';
 $l['xthreads_xtfurlerr_curl'] = 'cURL error ({1}): {2}';
 $l['xthreads_xtfurlerr_socket'] = 'Socket error ({1}): {2}';
+$l['xthreads_xtfurlerr_badresponse'] = 'Could not fetch specified URL - the server returned <em>{1} {2}</em>';
 
 $l['xthreads_downloading_attachment'] = 'Downloading file <a href="{1}">{2}</a>';
 $l['xthreads_md5hash'] = 'MD5 Hash: {1}';

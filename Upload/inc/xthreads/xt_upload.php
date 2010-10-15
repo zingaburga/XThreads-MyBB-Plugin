@@ -95,6 +95,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		else
 			$magic = array();
 		$attachment = xthreads_fetch_url($attachment, $tf['filemaxsize'], $tf['fileexts'], $magic);
+		db_ping($db);
 		if($attachment['error']) {
 			return array('error' => $attachment['error']);
 		}
@@ -137,6 +138,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 			// perhaps not PHP5
 			$file_md5 = pack('H*', $file_md5);
 		}
+		db_ping($db);
 	}
 	
 	if($update_attachment) {
@@ -457,21 +459,23 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 			}
 		}
 		
-		// check for early termination conditions
-		if($ret['size'] && $max_size && $ret['size'] > $max_size) {
-			$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
-		}
-		elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') {
-			$ret['error'] = $lang->error_attachtype;
-		}
-		// the whole file transferred?
-		elseif($success) {
-			// appears successful...
-			curl_close($ch);
-		}
-		else {
-			$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_curl, curl_errno($ch), curl_error($ch));
-			curl_close($ch);
+		if(!$ret['error']) {
+			// check for early termination conditions
+			if($ret['size'] && $max_size && $ret['size'] > $max_size) {
+				$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
+			}
+			elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') {
+				$ret['error'] = $lang->error_attachtype;
+			}
+			// the whole file transferred?
+			elseif($success) {
+				// appears successful...
+				curl_close($ch);
+			}
+			else {
+				$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_curl, curl_errno($ch), curl_error($ch));
+				curl_close($ch);
+			}
 		}
 	}
  	else if(function_exists('fsockopen')) {
@@ -512,6 +516,10 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 							$res = xthreads_fetch_url_header($header);
 							if($res['size'] && $max_size && $res['size'] > $max_size) {
 								$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
+								break;
+							}
+							if($res['retcode'] && $res['retcode'] != 200) {
+								$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_badresponse, $res['retcode'], $res['retmsg']);
 								break;
 							}
 							if($res['name'])
@@ -629,7 +637,15 @@ function xthreads_fetch_url_validmagic(&$data, &$magic) {
 function xthreads_fetch_url_header($header) {
 	$header = trim($header);
 	$p = strpos($header, ':');
-	if(!$p) return null;
+	if(!$p) {
+		// look for HTTP/1.1 type header
+		if(strtoupper(substr($header, 0, 5)) == 'HTTP/') {
+			if(preg_match('~^HTTP/[0-9.]+ (\d+) (.*)$~i', $header, $match)) {
+				return array('retcode' => intval($match[1]), 'retmsg' => trim($match[2]));
+			}
+		}
+		return null;
+	}
 	$hdata = trim(substr($header, $p+1));
 	switch(strtolower(substr($header, 0, $p))) {
 		case 'content-length':
@@ -662,6 +678,12 @@ function xthreads_fetch_url_header_curl($ch=null, $header) {
 	if($res['size'] && $GLOBALS['xtfurl_max_size'] && $res['size'] > $GLOBALS['xtfurl_max_size']) {
 		//$GLOBALS['xtfurl_ret']['error'] = ;
 		$GLOBALS['xtfurl_ret']['size'] = $res['size'];
+		curl_close($ch);
+		return 0;
+	}
+	if($res['retcode'] && $res['retcode'] != 200) {
+		global $lang;
+		$GLOBALS['xtfurl_ret']['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_badresponse, $res['retcode'], $res['retmsg']);
 		curl_close($ch);
 		return 0;
 	}
@@ -744,6 +766,19 @@ if(!function_exists('ctype_xdigit')) {
 	function ctype_xdigit($s) {
 		return (bool)preg_match('~^[0-9a-fA-F]+$~', $s);
 	}
+}
+
+function db_ping(&$dbobj) {
+	switch($dbobj->type) {
+		case 'sqlite3': case 'sqlite2': case 'sqlite': return true;
+		case 'pgsql': $func = 'pg_ping'; break;
+		default: $func = $dbobj->type.'_ping';
+	}
+	
+	if(!function_exists($func)) return true; // fallback
+	
+	// TODO: handle read/write links better
+	return $func($dbobj->current_link);
 }
 
 ?>

@@ -49,6 +49,7 @@ if($mybb->input['action'] == 'add')
 		'desc' => '',
 		'inputtype' => XTHREADS_INPUT_TEXT,
 		'disporder' => 1,
+		'tabstop' => 1,
 		'hideedit' => 0,
 		'formhtml' => '',
 		
@@ -285,6 +286,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$mybb->input['fieldheight'] = intval($mybb->input['fieldheight']);
 		$mybb->input['vallist'] = trim($mybb->input['vallist']);
 		$mybb->input['disporder'] = intval($mybb->input['disporder']);
+		$mybb->input['tabstop'] = intval($mybb->input['tabstop']);
 		$mybb->input['hideedit'] = intval($mybb->input['hideedit']);
 		$mybb->input['formhtml'] = trim($mybb->input['formhtml']);
 		$mybb->input['allowfilter'] = intval($mybb->input['allowfilter']);
@@ -487,6 +489,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				'field' => $db->escape_string($mybb->input['newfield']),
 				'forums' => $db->escape_string($mybb->input['forums']),
 				'disporder' => $db->escape_string($mybb->input['disporder']),
+				'tabstop' => $db->escape_string($mybb->input['tabstop']),
 				'hideedit' => $db->escape_string($mybb->input['hideedit']),
 				'editable' => $db->escape_string($mybb->input['editable']),
 				'editable_gids' => $db->escape_string($mybb->input['editable_gids']),
@@ -734,6 +737,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	$form_container->output_row($lang->threadfields_sanitize_parser, $lang->threadfields_sanitize_parser_desc, $parser_opts_str, 'sanitize_parser', array(), array('id' => 'parser_opts'));
 	
 	make_form_row('disporder', 'text_box');
+	make_form_row('tabstop', 'yes_no_radio');
 	$form_container->end();
 	unset($GLOBALS['form_container']);
 	

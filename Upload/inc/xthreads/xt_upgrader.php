@@ -12,6 +12,7 @@ global $db, $cache;
 if($info['version'] < 1.1) {
 	// add viewable groups thing to thread fields
 	
+	// don't need to worry about separating these writes as this version only supports MySQL
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
 		`viewable_gids` varchar(255) not null default "",
 		`unviewableval` text not null
@@ -95,6 +96,12 @@ if($info['version'] < 1.32) {
 			$db->write_query($qry_base.$alterfield_base.'text not null');
 		}
 	}
+}
+
+if($info['version'] < 1.33) {
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
+		`tabstop` tinyint(1) not null default 1
+	)');
 	
 	xthreads_buildtfcache();
 }

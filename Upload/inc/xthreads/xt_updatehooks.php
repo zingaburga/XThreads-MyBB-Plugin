@@ -510,7 +510,7 @@ function _xthreads_input_generate(&$data, $fid) {
 }
 
 function xthreads_input_generate(&$data, &$threadfields, $fid) {
-	global $tfinput, $tfinputrow, $extra_threadfields, $lang;
+	global $tfinput, $tfinputrow, $extra_threadfields, $lang, $xthreads_threadin_tabindex_shift;
 	if(!$lang->xthreads_attachfile) $lang->load('xthreads');
 	
 	$tfinput = $tfinputrow = array();
@@ -556,19 +556,26 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 		if(!isset($defvals) && ($tf['inputtype'] != XTHREADS_INPUT_FILE && $tf['inputtype'] != XTHREADS_INPUT_FILE_URL))
 			$defval = htmlspecialchars_uni($defval);
 		
+		$tabindex = '';
+		if($tf['tabstop']) {
+			++$xthreads_threadin_tabindex_shift;
+			$tabindex = ' tabindex="__xt_'.($xthreads_threadin_tabindex_shift+1).'"';
+			xthreads_fix_tabindexes();
+		}
+		
 		$tfinput[$k] = '';
 		switch($tf['inputtype']) {
 			case XTHREADS_INPUT_TEXTAREA:
 				if($tf['fieldheight'])
 					$tf_fh = ' rows="'.intval($tf['fieldheight']).'"';
-				$tfinput[$k] = '<textarea'.$tfname.$maxlen.$tf_fh.$tf_fw_cols.'>'.$defval.'</textarea>';
+				$tfinput[$k] = '<textarea'.$tfname.$maxlen.$tf_fh.$tf_fw_cols.$tabindex.'>'.$defval.'</textarea>';
 				break;
 			case XTHREADS_INPUT_SELECT:
 				if($tf['fieldheight'])
 					$tf_fh = ' size="'.intval($tf['fieldheight']).'"';
 				elseif($tf['multival'])
 					$tf_fh = ' size="5"';
-				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].($tf['multival'] ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.'>';
+				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].($tf['multival'] ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
 				foreach($vals as &$val) {
 					$selected = ((isset($defvals) && in_array($val, $defvals)) || $defval == $val ? ' selected="selected"':'');
 					if(!$val && $tf['editable'] != XTHREADS_EDITABLE_REQ)
@@ -586,9 +593,10 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				foreach($vals as &$val) {
 					$checked = ((isset($defvals) && in_array($val, $defvals)) || $defval == $val ? ' checked="checked"':'');
 					if(!$val && $tf['editable'] != XTHREADS_EDITABLE_REQ)
-						$tfinput[$k] .= '<label style="display: block; font-style: italic;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value=""'.$checked.' />'.$lang->xthreads_val_blank.'</label>';
+						$tfinput[$k] .= '<label style="display: block; font-style: italic;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value=""'.$checked.$tabindex.' />'.$lang->xthreads_val_blank.'</label>';
 					else
-						$tfinput[$k] .= '<label style="display: block;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value="'.$val.'"'.$checked.' />'.unhtmlentities($val).'</label>';
+						$tfinput[$k] .= '<label style="display: block;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value="'.$val.'"'.$checked.$tabindex.' />'.unhtmlentities($val).'</label>';
+					$tabindex = ''; // or maybe make each thing tabbable?
 				}
 				break;
 			case XTHREADS_INPUT_FILE:
@@ -646,7 +654,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 					}
 				}
 				
-				$fileinput = '<input type="file" class="fileupload"'.$tfname.$tf_fw_size.' id="xthreads_'.$tf['field'].'" />';
+				$fileinput = '<input type="file" class="fileupload"'.$tfname.$tf_fw_size.$tabindex.' id="xthreads_'.$tf['field'].'" />';
 				if(XTHREADS_ALLOW_URL_FETCH) {
 					// no =& because we change $input_url potentially
 					$input_url = $GLOBALS['mybb']->input['xtaurl_'.$tf['field']];
@@ -694,7 +702,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			default: // text
 				if($tf['multival'])
 					$defval = str_replace("\n", ', ', $defval);
-				$tfinput[$k] = '<input type="text" class="textbox"'.$tfname.$maxlen.$tf_fw_size.' value="'.$defval.'" />';
+				$tfinput[$k] = '<input type="text" class="textbox"'.$tfname.$maxlen.$tf_fw_size.$tabindex.' value="'.$defval.'" />';
 				break;
 		}
 		
@@ -1001,6 +1009,50 @@ function xthreads_hardlink_file($src, $dest) {
 	return @copy($src, $dest);
 }
 
+
+function xthreads_fix_tabindexes() {
+	static $done = false;
+	if($done) return;
+	$done = true;
+	
+	if($GLOBALS['current_page'] == 'editpost.php') {
+		$find = '<form action="editpost.php?pid={$pid}&amp;processed=1" method="post" enctype="multipart/form-data" name="input">';
+		$tpl =& $GLOBALS['templates']->cache['editpost'];
+	} else {
+		$find = '<form action="newthread.php?fid={$fid}&amp;processed=1" method="post" enctype="multipart/form-data" name="input">';
+		$tpl =& $GLOBALS['templates']->cache['newthread'];
+	}
+	$p = strpos($tpl, $find);
+	if(!$p) return;
+	$p += strlen($find);
+	if(!($p2 = strpos($tpl, '</form>', $p))) return;
+	$tpl = substr($tpl, 0, $p).'<!-- __XTHREADS_FIX_TABINDEXES_START -->'.substr($tpl, $p, $p2-$p).'<!-- __XTHREADS_FIX_TABINDEXES_END -->'.substr($tpl, $p2);
+	
+	function xthreads_fix_tabindexes_out(&$page) {
+		// find boundaries
+		$p = strpos($page, '<!-- __XTHREADS_FIX_TABINDEXES_START -->');
+		$plen = 40; // strlen('<!-- __XTHREADS_FIX_TABINDEXES_START -->')
+		$p2 = strpos($page, '<!-- __XTHREADS_FIX_TABINDEXES_END -->', $p+$plen);
+		$p2len = 38; // strlen('<!-- __XTHREADS_FIX_TABINDEXES_END -->')
+		if(!$p || !$p2) return $page;
+		
+		// fix up tabindexes in them
+		$str = substr($page, $p+$plen, $p2-$p-$plen);
+		$str = preg_replace_callback('~(\<(?:input|select|textarea) [^>]*tabindex=")(__xt_)?(\d+)("[^>]*\>)~i', 'xthreads_fix_tabindexes_out_preg', $str);
+		
+		return substr($page, 0, $p).$str.substr($page, $p2+$p2len);
+	}
+	function xthreads_fix_tabindexes_out_preg($match) {
+		if($match[2]) // xthreads elements
+			return $match[1].$match[3].$match[4];
+		$ti = intval($match[3]);
+		if($ti > 1)
+			return $match[1].($ti+$GLOBALS['xthreads_threadin_tabindex_shift']).$match[4];
+		else // no change (eg subject input)
+			return $match[0];
+	}
+	$GLOBALS['plugins']->add_hook('pre_output_page', 'xthreads_fix_tabindexes_out');
+}
 
 // removes the showthread_noreplies template if being used
 function xthreads_js_remove_noreplies_notice() {

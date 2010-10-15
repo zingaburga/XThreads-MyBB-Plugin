@@ -450,6 +450,7 @@ function xthreads_db_concat_sql($a) {
 	switch($db->type) {
 		case 'sqlite3':
 		case 'sqlite2':
+		case 'sqlite':
 		case 'pgsql':
 			return implode('||', $a);
 		default:

@@ -36,6 +36,13 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array())
 }
 
 
+function xthreads_phptpl_expr_parse_fixstr_simple($match) {
+	return preg_replace('~\$GLOBALS\\[\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\]~', '$GLOBALS[$1]', $match[0]);
+}
+function xthreads_phptpl_expr_parse_fixstr_complex($match) {
+	return preg_replace('~(?<!\{)\$GLOBALS\\[\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\]((-\\>[a-zA-Z_][a-zA-Z_0-9]*|\\[([\'"])?[a-zA-Z_ 0-9]+\\4\\])*)~', '{$0}', $match[0]);
+}
+
 function xthreads_phptpl_expr_parse($str, $fields=array())
 {
 	// unescapes the slashes added by xthreads_sanitize_eval, plus addslashes() (double quote only) during preg_replace()
@@ -44,8 +51,13 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	// globalise all variables; conveniently will filter out stuff like {VALUE$1}
 	$str = preg_replace('~\$([a-zA-Z_][a-zA-Z_0-9]*)~', '$GLOBALS[\'$1\']', $str);
 	// won't pick up double variable syntax, eg $$var, or complex variable syntax, eg ${$var}
-	// may also stuff up double-quote strings, eg "$var"
-	// may also be problematic if PHP enabled?
+	
+	// fix variables in double-quote and heredoc strings
+	$strpreg = '~(")(|\\\\\\\\|.*?([^\\\\]|[^\\\\](\\\\\\\\)+))\\1~s';
+	if(xthreads_allow_php())
+		$str = preg_replace_callback(array($strpreg, "~\<\<\<([a-zA-Z_][a-zA-Z_0-9]*)\r?\n.*?\r?\n\\1;?\r?\n~s"), 'xthreads_phptpl_expr_parse_fixstr_complex', $str);
+	else
+		$str = preg_replace_callback($strpreg, 'xthreads_phptpl_expr_parse_fixstr_simple', $str);
 	
 	// we need to parse {VALUE} tokens here, as they need to be parsed a bit differently, and so that they're checked for safe expressions
 	$do_value_repl = false;
@@ -95,7 +107,7 @@ function xthreads_phptpl_is_safe_expression($s)
 	
 	
 	// check functions (implicitly blocks variable functions and method calls, as well as array index calls and $a{0}() type calls)
-	preg_match_all('~((\$|-\>|\:\:)?[a-zA-Z0-9_\]}]+)\(~', $check, $matches);
+	preg_match_all('~((\$|-\>|\:\:)?[a-zA-Z0-9_]+[\]}]?)\(~', $check, $matches);
 	$allowed_funcs = xthreads_phptpl_get_allowed_funcs();
 	foreach($matches[1] as &$func) {
 		if(!isset($allowed_funcs[$func])) return false;
