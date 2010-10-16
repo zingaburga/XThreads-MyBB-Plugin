@@ -769,12 +769,7 @@ if(!function_exists('ctype_xdigit')) {
 }
 
 function db_ping(&$dbobj) {
-	switch($dbobj->type) {
-		case 'sqlite3': case 'sqlite2': case 'sqlite': return true;
-		case 'pgsql': $func = 'pg_ping'; break;
-		default: $func = $dbobj->type.'_ping';
-	}
-	
+	$func = xthreads_db_type($dbobj->type).'_ping';
 	if(!function_exists($func)) return true; // fallback
 	
 	// TODO: handle read/write links better

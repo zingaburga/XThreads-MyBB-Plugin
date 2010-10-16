@@ -446,10 +446,7 @@ function xthreads_global_forumbits_tpl() {
 
 // MyBB should really have such a function like this...
 function xthreads_db_concat_sql($a) {
-	global $db;
-	switch($db->type) {
-		case 'sqlite3':
-		case 'sqlite2':
+	switch(xthreads_db_type()) {
 		case 'sqlite':
 		case 'pgsql':
 			return implode('||', $a);

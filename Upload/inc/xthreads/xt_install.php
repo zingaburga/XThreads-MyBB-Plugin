@@ -41,27 +41,23 @@ function xthreads_install() {
 	global $db, $cache, $mybb;
 	$create_table_suffix = $db->build_create_table_collation();
 	
-	$is_mysql = $is_pgsql = $is_sqlite = false;
+	$dbtype = xthreads_db_type();
 	
-	if($db->type == 'mysql' || $db->type == 'mysqli') {
+	if($dbtype == 'mysql') {
 		$create_table_suffix = ' TYPE=MyISAM'.$create_table_suffix;
-		$is_mysql = true;
-	} elseif($db->type == 'pgsql')
-		$is_pgsql = true;
-	else
-		$is_sqlite = true;
-	if(!$db->table_exists('threadfields_data')) {
-		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields_data` (
-			`tid` '.xthreads_db_numdef('int').' not null,
-			'.(!$is_sqlite ? 'PRIMARY KEY (`tid`)':'').'
-		)'.$create_table_suffix);
-	}
-	if($is_mysql)
 		$auto_increment = ' auto_increment';
-	elseif($is_sqlite)
+	}
+	elseif($dbtype == 'sqlite')
 		$auto_increment = ' PRIMARY KEY';
 	else
 		$auto_increment = '';
+	
+	if(!$db->table_exists('threadfields_data')) {
+		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields_data` (
+			`tid` '.xthreads_db_numdef('int').' not null,
+			'.($dbtype != 'sqlite' ? 'PRIMARY KEY (`tid`)':'').'
+		)'.$create_table_suffix);
+	}
 	
 	if(!$db->table_exists('xtattachments')) {
 		$db->write_query('CREATE TABLE `'.$db->table_prefix.'xtattachments` (
@@ -83,7 +79,7 @@ function xthreads_install() {
 			
 			`thumbs` text not null
 			
-			'.(!$is_sqlite ? ',
+			'.($dbtype != 'sqlite' ? ',
 				PRIMARY KEY (`aid`),
 				KEY (`tid`),
 				KEY (`tid`,`uid`),
@@ -94,7 +90,7 @@ function xthreads_install() {
 	}
 	if(!$db->table_exists('threadfields')) {
 		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields` (
-			`field` varchar(50)'.($is_sqlite ? ' PRIMARY KEY':'').',
+			`field` varchar(50)'.($dbtype == 'sqlite' ? ' PRIMARY KEY':'').',
 			`title` varchar(100) not null,
 			`forums` varchar(255) not null default "",
 			`editable` '.xthreads_db_numdef('tinyint').' not null default 0,
@@ -128,7 +124,7 @@ function xthreads_install() {
 			`fileimage` varchar(30) not null default "",
 			`fileimgthumbs` varchar(255) not null default ""
 			
-			'.(!$is_sqlite ? ',
+			'.($dbtype != 'sqlite' ? ',
 				PRIMARY KEY (`field`),
 				KEY (`disporder`)
 			':'').'
