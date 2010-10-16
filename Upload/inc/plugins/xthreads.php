@@ -676,6 +676,18 @@ function xthreads_phptpl_iif($condition, $true)
 	return (isset($args[$i-1]) ? $args[$i-1] : '');
 }
 
+function xthreads_db_type($type=null) {
+	if(!isset($type)) $type = $GLOBALS['db']->type;
+	switch($type) {
+		case 'sqlite3': case 'sqlite2': case 'sqlite':
+			return 'sqlite';
+		case 'pgsql':
+			return 'pg';
+		case 'mysql': case 'mysqli':
+			return 'mysql';
+	}
+	return $type;
+}
 
 
 if(!function_exists('control_object')) {
