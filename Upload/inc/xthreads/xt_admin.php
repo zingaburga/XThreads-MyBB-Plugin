@@ -28,23 +28,35 @@ function xthreads_load_install() {
 	global $plugins;
 	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 }
-function xthreads_db_numdef($type, $size=0, $unsigned=null) {
+function xthreads_db_fielddef($type, $size=null, $unsigned=null) {
 	// defaults
 	if(!isset($unsigned)) {
 		$unsigned = ($type != 'tinyint');
 	}
-	if($size===0) {
+	if($type == 'text') $size = 0;
+	if(!isset($size)) {
 		switch($type) {
 			case 'tinyint': $size = 3; break;
 			case 'smallint': $size = 5; break;
 			case 'int': $size = 10; break;
 			case 'bigint': $size = 20; break;
-			default: $size = null;
+			case 'varchar': $size = 255; break;
+			default: $size = 0;
 		}
 		if(isset($size) && !$unsigned) ++$size;
 	}
-	if(isset($size)) $size = '('.$size.')'; else $size = '';
+	if($size !== 0)
+		$size = '('.$size.')';
+	elseif($type == 'varchar') // force length for varchar
+		$size = '(255)';
+	else
+		$size = '';
 	$unsigned = ($unsigned ? ' unsigned':'');
+	if($type == 'varchar' || $type == 'text') {
+		$type .= $size;
+		$size = '';
+		$unsigned = '';
+	}
 	switch(xthreads_db_type()) {
 		case 'sqlite':
 			if($type == 'tinyint') $type = 'smallint';
@@ -55,6 +67,177 @@ function xthreads_db_numdef($type, $size=0, $unsigned=null) {
 		default: // mysql
 			return $type.$size.$unsigned;
 	}
+}
+
+function &xthreads_threadfields_props() {
+	static $props = array(
+		'field' => array(
+			'db_size' => 50,
+			'default' => '',
+		),
+		'title' => array(
+			'db_size' => 100,
+			'default' => '',
+		),
+		'forums' => array(
+			'db_size' => 255,
+			'default' => '',
+			'inputtype' => 'forum_select',
+		),
+		'editable' => array(
+			'db_type' => 'tinyint',
+			'default' => XTHREADS_EDITABLE_ALL,
+			'inputtype' => 'select_box',
+		),
+		'editable_gids' => array(
+			'db_size' => 255,
+			'default' => '',
+			'inputtype' => 'group_select',
+		),
+		'viewable_gids' => array(
+			'db_size' => 255,
+			'default' => '',
+			'inputtype' => 'group_select',
+		),
+		'unviewableval' => array(
+			'db_type' => 'text',
+			'default' => '',
+		),
+		'blankval' => array(
+			'db_type' => 'text',
+			'default' => '',
+		),
+		'dispformat' => array(
+			'db_type' => 'text',
+			'default' => '{VALUE}',
+		),
+		'dispitemformat' => array(
+			'db_type' => 'text',
+			'default' => '{VALUE}',
+		),
+		'formatmap' => array(
+			'db_type' => 'text',
+			'default' => '',
+		),
+		'textmask' => array(
+			'db_size' => 150,
+			'default' => '^.*$',
+		),
+		'maxlen' => array(
+			'default' => 0,
+		),
+		'vallist' => array(
+			'db_type' => 'text',
+			'default' => '',
+		),
+		'multival' => array(
+			'db_size' => 100,
+			'default' => '',
+		),
+		'sanitize' => array(
+			'db_type' => 'smallint',
+			'default' => XTHREADS_SANITIZE_HTML | XTHREADS_SANITIZE_PARSER_NOBADW | XTHREADS_SANITIZE_PARSER_MYCODE | XTHREADS_SANITIZE_PARSER_SMILIES | XTHREADS_SANITIZE_PARSER_VIDEOCODE,
+			'inputtype' => '', // custom
+		),
+		'allowfilter' => array(
+			'default' => false,
+		),
+		
+		'desc' => array(
+			'db_size' => 255,
+			'default' => '',
+		),
+		'inputtype' => array(
+			'db_type' => 'tinyint',
+			'default' => XTHREADS_INPUT_TEXT,
+			'inputtype' => 'select_box',
+		),
+		'disporder' => array(
+			'db_unsigned' => true,
+			'default' => 1,
+		),
+		'tabstop' => array(
+			'default' => true,
+		),
+		'hideedit' => array(
+			'default' => false,
+		),
+		'formhtml' => array(
+			'db_type' => 'text',
+			'default' => '',
+		),
+		'defaultval' => array(
+			'db_size' => 255,
+			'default' => '',
+		),
+		'fieldwidth' => array(
+			'db_type' => 'smallint',
+			'default' => 40,
+		),
+		'fieldheight' => array(
+			'db_type' => 'smallint',
+			'default' => 5,
+		),
+		
+		'filemagic' => array(
+			'db_size' => 255,
+			'default' => '',
+		),
+		'fileexts' => array(
+			'db_size' => 255,
+			'default' => '',
+		),
+		'filemaxsize' => array(
+			'default' => 0,
+		),
+		'fileimage' => array(
+			'db_size' => 30,
+			'default' => '',
+		),
+		'fileimgthumbs' => array(
+			'db_size' => 255,
+			'default' => '',
+		),
+	);
+	
+	static $parsed = false;
+	if(!$parsed) {
+		$parsed = true;
+		foreach($props as $field => &$d) {
+			if(!isset($d['datatype']))
+				$d['datatype'] = gettype($d['default']);
+			if(!isset($d['db_type'])) {
+				switch($d['datatype']) {
+					case 'boolean':
+						$d['datatype'] = 'tinyint';
+						break;
+					case 'integer':
+						$d['datatype'] = 'int';
+						break;
+					case 'string':
+						$d['datatype'] = 'varchar';
+						break;
+					case 'double':
+						$d['datatype'] = 'float';
+						break;
+				}
+			}
+			if(!isset($d['inputtype'])) {
+				switch($d['datatype']) {
+					case 'varchar': case 'tinyint': case 'smallint': case 'int': case 'bigint': case 'float':
+						if($d['datatype'] == 'boolean')
+							$d['inputtype'] = 'yes_no_radio';
+						else
+							$d['inputtype'] = 'text_box';
+						break;
+					case 'text':
+						$d['inputtype'] = 'text_area';
+						break;
+				}
+			}
+		}
+	}
+	return $props;
 }
 
 

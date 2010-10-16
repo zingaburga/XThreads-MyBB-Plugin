@@ -24,6 +24,14 @@ $sub_tabs['threadfields_add'] = array(
 if($mybb->input['action'] == 'add')
 {
 	$plugins->run_hooks('admin_config_threadfields_add');
+	$tf = array();
+	foreach(xthreads_threadfields_props() as $field => $prop) {
+		if($prop['datatype'] == 'boolean')
+			$tf[$field] = ($prop['default'] ? 1:0);
+		else
+			$tf[$field] = $prop['default'];
+	}
+	/*
 	$tf = array(
 		'field' => '',
 		'title' => '',
@@ -60,6 +68,7 @@ if($mybb->input['action'] == 'add')
 		'fileimgthumbs' => '',
 		
 	);
+	*/
 	threadfields_add_edit_handler($tf, false);
 }
 
@@ -270,8 +279,23 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	if($update) $title = $lang->edit_threadfield;
 		else $title = $lang->add_threadfield;
 	
+	$props = xthreads_threadfields_props();
 	if($mybb->request_method == 'post')
 	{
+		foreach($props as $field => &$prop) {
+			if($field == 'field') $field = 'newfield';
+			if($prop['datatype'] == 'string')
+				$mybb->input[$field] = trim($mybb->input[$field]);
+			else
+				$mybb->input[$field] = intval($mybb->input[$field]);
+		}
+		$mybb->input['textmask'] = str_replace("\x0", '', $mybb->input['textmask']);
+		$mybb->input['fileimage_mindim'] = strtolower($mybb->input['fileimage_mindim']);
+		$mybb->input['fileimage_maxdim'] = strtolower($mybb->input['fileimage_maxdim']);
+		
+		$mybb->input['fileimage_mindim'] = strtolower(trim($mybb->input['fileimage_mindim']));
+		$mybb->input['fileimage_maxdim'] = strtolower(trim($mybb->input['fileimage_maxdim']));
+		/*
 		$mybb->input['title'] = trim($mybb->input['title']);
 		$mybb->input['desc'] = trim($mybb->input['desc']);
 		$mybb->input['newfield'] = trim($mybb->input['newfield']);
@@ -295,11 +319,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$mybb->input['fileexts'] = trim($mybb->input['fileexts']);
 		$mybb->input['filemaxsize'] = intval($mybb->input['filemaxsize']);
 		//$mybb->input['fileimage'] = trim($mybb->input['fileimage']);
-		$mybb->input['fileimage_mindim'] = strtolower(trim($mybb->input['fileimage_mindim']));
-		$mybb->input['fileimage_maxdim'] = strtolower(trim($mybb->input['fileimage_maxdim']));
 		$mybb->input['fileimgthumbs'] = trim($mybb->input['fileimgthumbs']);
 		
 		$mybb->input['formatmap'] = trim($mybb->input['formatmap']);
+		*/
 		if($mybb->input['formatmap']) {
 			$fm = array();
 			foreach(explode("\n", str_replace("\r", '', $mybb->input['formatmap'])) as $map) {
@@ -483,6 +506,14 @@ function threadfields_add_edit_handler(&$tf, $update) {
 
 		if(!$errors)
 		{
+			$new_tf = array();
+			foreach(array_keys($props) as $field) {
+				if($field == 'field')
+					$new_tf[$field] = $db->escape_string($mybb->input['newfield']);
+				else
+					$new_tf[$field] = $db->escape_string($mybb->input[$field]);
+			}
+			/*
 			$new_tf = array(
 				'title' => $db->escape_string($mybb->input['title']),
 				'desc' => $db->escape_string($mybb->input['desc']),
@@ -516,7 +547,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				'fileimage' => $db->escape_string($mybb->input['fileimage']),
 				'fileimgthumbs' => $db->escape_string($mybb->input['fileimgthumbs']),
 			);
-
+			*/
+			
 			switch($mybb->input['inputtype']) {
 				case XTHREADS_INPUT_FILE:
 					$fieldtype = 'int(10) unsigned not null default 0';
