@@ -284,6 +284,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	{
 		foreach($props as $field => &$prop) {
 			if($field == 'field') $field = 'newfield';
+			// cause you can't "continue" in a switch statement, lol...
+			if($field == 'forums' || $field == 'editable_gids' || $field == 'viewable_gids') continue;
 			if($prop['datatype'] == 'string')
 				$mybb->input[$field] = trim($mybb->input[$field]);
 			else
@@ -576,14 +578,6 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					} else {
 						$fieldtype = 'text not null';
 					}
-					/*
-					// we assume a 255 char limit
-					$fix_def = (strlen($mybb->input['defaultval']) > 255);
-					if($fix_def)
-						$fieldtype = 'varchar(255) not null default "'.$db->escape_string(substr($mybb->input['defaultval'], 0, 255)).'"';
-					else
-						$fieldtype = 'varchar(255) not null default "'.$new_tf['defaultval'].'"';
-					*/
 			}
 			if($update) {
 				$plugins->run_hooks('admin_config_threadfields_edit_commit');
@@ -639,12 +633,6 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					$db->write_query($qry_base.$fieldtype.$addkey);
 			}
 			
-			/*
-			if($fix_def)
-				// try changing the default value
-				$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields_data` MODIFY `'.$new_tf['field'].'` varchar(255) not null default "'.$new_tf['defaultval'].'"', true);
-			*/
-
 			// Log admin action
 			log_admin_action($new_tf['field'], $mybb->input['title']);
 

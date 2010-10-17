@@ -23,17 +23,25 @@ $plugins->add_hook('admin_forum_management_edit_commit', 'xthreads_admin_forumco
 $plugins->add_hook('admin_tools_recount_rebuild_start', 'xthreads_admin_rebuildthumbs');
 
 $plugins->add_hook('admin_load', 'xthreads_vercheck');
-$plugins->add_hook('admin_config_plugins_begin', 'xthreads_load_install');
-function xthreads_load_install() {
-	global $plugins;
+if($GLOBALS['run_module'] == 'config' && $GLOBALS['action_file'] == 'plugins.php') {
 	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
+} else {
+	// this file might be included in plugin load
+	$plugins->add_hook('admin_config_plugins_begin', 'xthreads_load_install');
+	function xthreads_load_install() {
+		global $plugins;
+		require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
+	}
 }
+
 function xthreads_db_fielddef($type, $size=null, $unsigned=null) {
 	// defaults
 	if(!isset($unsigned)) {
 		$unsigned = ($type != 'tinyint');
 	}
 	if($type == 'text') $size = 0;
+	if($type == 'text' || $type == 'varchar')
+		$unsigned = false;
 	if(!isset($size)) {
 		switch($type) {
 			case 'tinyint': $size = 3; break;
@@ -43,7 +51,7 @@ function xthreads_db_fielddef($type, $size=null, $unsigned=null) {
 			case 'varchar': $size = 255; break;
 			default: $size = 0;
 		}
-		if(isset($size) && !$unsigned) ++$size;
+		if($size && $unsigned) ++$size;
 	}
 	if($size !== 0)
 		$size = '('.$size.')';
@@ -55,7 +63,7 @@ function xthreads_db_fielddef($type, $size=null, $unsigned=null) {
 	if($type == 'varchar' || $type == 'text') {
 		$type .= $size;
 		$size = '';
-		$unsigned = '';
+		//$unsigned = '';
 	}
 	switch(xthreads_db_type()) {
 		case 'sqlite':
@@ -136,7 +144,7 @@ function &xthreads_threadfields_props() {
 		),
 		'sanitize' => array(
 			'db_type' => 'smallint',
-			'default' => XTHREADS_SANITIZE_HTML | XTHREADS_SANITIZE_PARSER_NOBADW | XTHREADS_SANITIZE_PARSER_MYCODE | XTHREADS_SANITIZE_PARSER_SMILIES | XTHREADS_SANITIZE_PARSER_VIDEOCODE,
+			'default' => 0x1A8, //XTHREADS_SANITIZE_HTML | XTHREADS_SANITIZE_PARSER_NOBADW | XTHREADS_SANITIZE_PARSER_MYCODE | XTHREADS_SANITIZE_PARSER_SMILIES | XTHREADS_SANITIZE_PARSER_VIDEOCODE,
 			'inputtype' => '', // custom
 		),
 		'allowfilter' => array(
@@ -209,16 +217,16 @@ function &xthreads_threadfields_props() {
 			if(!isset($d['db_type'])) {
 				switch($d['datatype']) {
 					case 'boolean':
-						$d['datatype'] = 'tinyint';
+						$d['db_type'] = 'tinyint';
 						break;
 					case 'integer':
-						$d['datatype'] = 'int';
+						$d['db_type'] = 'int';
 						break;
 					case 'string':
-						$d['datatype'] = 'varchar';
+						$d['db_type'] = 'varchar';
 						break;
 					case 'double':
-						$d['datatype'] = 'float';
+						$d['db_type'] = 'float';
 						break;
 				}
 			}

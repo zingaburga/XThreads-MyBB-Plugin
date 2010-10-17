@@ -93,11 +93,13 @@ function xthreads_install() {
 		$query =  '';
 		foreach($fieldprops as $field => &$prop) {
 			$query .= ($query?',':'').'`'.$field.'` '.xthreads_db_fielddef($prop['db_type'], $prop['db_size'], $prop['db_unsigned']).' not null';
-			if(isset($prop['default'])) {
+			if(isset($prop['default']) && ($prop['db_type'] != 'text')) {
 				if($prop['datatype'] == 'string')
-					$query .= '"'.$db->escape_string($prop['datatype']).'"';
+					$query .= ' default "'.$db->escape_string($prop['default']).'"';
+				elseif($prop['datatype'] == 'double')
+					$query .= ' default '.floatval($prop['default']);
 				else
-					$query .= $prop['datatype'];
+					$query .= ' default '.intval($prop['default']);
 			}
 			if($field == 'field' && $dbtype == 'sqlite')
 				$query .= ' PRIMARY KEY';
