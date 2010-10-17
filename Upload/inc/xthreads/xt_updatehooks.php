@@ -71,8 +71,6 @@ function xthreads_input_posthandler_validate(&$ph, $update=false) {
 	// language setup
 	$lang->load('xthreads');
 	
-	//xthreads_upload_attachments();
-	
 	$data = array();
 	$errors = xthreads_input_validate($data, $threadfield_cache, $update);
 	foreach($errors as &$error)
@@ -215,8 +213,6 @@ function xthreads_input_posthandler_insert(&$ph) {
 	$db->replace_query('threadfields_data', $updates);
 }
 function xthreads_delete_thread($tid) {
-	//if(function_exists('softdelete_fd_thread')) return; // if Soft Delete plugin is active, don't remove anything
-	
 	global $db;
 	// awesome thing about this is that it will delete threadfields even if the thread was moved to a different forum
 	$db->delete_query('threadfields_data', 'tid='.$tid);
@@ -250,14 +246,6 @@ function xthreads_duplicate_threadfield_data($tid_old, $tid_new) {
 	$tf['tid'] = $tid_new;
 	
 	// copy xtattachments over
-	/* $threadfields = xthreads_gettfcache();
-	foreach($threadfields as $k => &$v) {
-		if($v['inputtype'] == XTHREADS_INPUT_FILE && $tf[$k]) {
-			// we have a file we need to duplicate
-			
-			$tf[$k] = $db->insert_query('xtattachments', '');
-		}
-	} */
 	$query = $db->simple_select('xtattachments', '*', 'tid='.$tid_old);
 	while($xta = $db->fetch_array($query)) {
 		// we have a file we need to duplicate
@@ -312,8 +300,6 @@ function xthreads_inputdisp() {
 	}
 	
 	if($mybb->request_method == 'post') {
-		//xthreads_upload_attachments();
-		
 		$recvfields = array();
 		foreach($mybb->input as $k => &$v)
 			if(substr($k, 0, 9) == 'xthreads_')
@@ -387,24 +373,6 @@ function xthreads_inputdisp() {
 					xthreads_get_xta_cache($v, $tidstr, $posthashstr);
 					xthreads_sanitize_disp($threadfields[$k], $v, $usernamestr);
 				}
-				/*
-				if($thread['tid']) {
-					// just do an extra query to grab the threadfields
-					$threadfields = $db->fetch_array($db->simple_select('threadfields_data', '`'.implode('`,`', array_keys($threadfield_cache)).'`', 'tid='.$thread['tid']));
-					foreach($threadfields as $k => &$v) {
-						xthreads_get_xta_cache($threadfield_cache[$k], $thread['tid']);
-						xthreads_sanitize_disp($v, $threadfield_cache[$k], $thread['username']);
-					}
-				} else {
-					// threadfields from input
-					$nullstr = '';
-					foreach($threadfield_cache as $k => &$v) {
-						xthreads_get_xta_cache($v, $nullstr, $mybb->input['posthash']);
-						$threadfields[$k] = $mybb->input['xthreads_'.$k];
-						xthreads_sanitize_disp($threadfields[$k], $v, $mybb->user['username']);
-					}
-				}
-				*/
 			}
 			
 			// do first post hack if applicable
@@ -416,12 +384,7 @@ function xthreads_inputdisp() {
 			}
 		} else {
 			// block preview if there's errors
-			/* unset($GLOBALS['mybb']->input['previewpost']);
-			$mybb->input['action'] = ($editpost ? 'editpost' : 'newthread');
-			$errorvar = ($editpost ? 'post_errors' : 'thread_errors');
-			if(!$GLOBALS[$errorvar])
-				$GLOBALS[$errorvar] = ' '; */
-			
+			// <removed previously commented out code which blocked preview by unsetting the previewpost input>
 			// we'll block by forcing an error, so we can get a hook in somewhere...
 			if(!$mybb->input['ajax']) { // will not happen, but be pedantic
 				$GLOBALS['xthreads_backup_subject'] = $mybb->input['subject'];
@@ -461,7 +424,6 @@ function xthreads_inputdisp() {
 		
 		// message length hack for newthread
 		if(!$editpost && $forum['xthreads_allow_blankmsg'] && my_strlen($mybb->input['message']) == 0) {
-			//$GLOBALS['xthreads_restore_blank_msg'] = true;
 			$mybb->input['message'] = str_repeat('-', max(intval($mybb->settings['minmessagelength']), 1));
 			function xthreads_newthread_prev_blankmsg_hack() {
 				static $done=false;
@@ -603,8 +565,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				$tfinput[$k] = '';
 				$jsext = '';
 				if($defval) {
-					//if(!is_array($defval))
-					//	$defval = unserialize($defval);
 					if(is_numeric($defval)) {
 						global $xta_cache, $db;
 						if(!isset($xta_cache[$defval])) {
@@ -627,8 +587,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 						$md5title = '';
 						$url = xthreads_get_xta_url($this_xta);
 						if(isset($this_xta['md5hash'])) {
-							//$md5hash = unpack('H*', $this_xta['md5hash']);
-							//$md5hash = reset($md5hash);
 							$md5hash = bin2hex($this_xta['md5hash']);
 							$md5title = 'title="'.$lang->sprintf($lang->xthreads_md5hash, $md5hash).'" ';
 						}
@@ -696,7 +654,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				
 			case XTHREADS_INPUT_CUSTOM:
 				$tfinput[$k] = preg_replace('~\\{\\$([a-zA-Z_0-9]+)((-\\>[a-zA-Z_0-9]+|\\[[\'"]?[a-zA-Z_ 0-9]+[\'"]?\\])*)\\}~e', 'eval("return \\\\$$1".str_replace("\\\\\'", "\'", "$2").";")', $tf['formhtml']);
-				//eval('$tfinput[$k] = "'.strtr($tf['formhtml'], array('\\' => '\\\\', '"' => '\\"')).'";');
 				break;
 				
 			default: // text
@@ -747,27 +704,6 @@ function xthreads_upload_attachments() {
 		$xta_cache = array();
 	
 	// first, run through to see if we have already uploaded some attachments
-	/*
-	$aids = array();
-	foreach($threadfield_cache as $k => &$v) {
-		if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && $mybb->input['xthreads_'.$k] && empty($_FILES['xthreads_'.$k]) && is_numeric($mybb->input['xthreads_'.$k])) {
-			$aid = intval($mybb->input['xthreads_'.$k]);
-			if(!isset($xta_cache[$aid]))
-				$aids[] = $aid;
-		}
-	}
-	if(!empty($aids)) {
-		global $db;
-		if($GLOBALS['thread']['tid'])
-			$attachwhere = 'tid='.intval($GLOBALS['thread']['tid']);
-		else
-			$attachwhere = 'posthash="'.$db->escape_string($mybb->input['posthash']).'"';
-		$query = $db->simple_select('xtattachments', '*', 'aid IN ('.implode(',', $aids).') AND '.$attachwhere);
-		while($attachment = $db->fetch_array($query))
-			$xta_cache[$attachment['aid']] = $attachment;
-		unset($aids);
-	}
-	*/
 	// this code totally relies on the posthash being unique...
 	if($GLOBALS['thread']['tid'])
 		$attachwhere = 'tid='.intval($GLOBALS['thread']['tid']);
@@ -795,25 +731,6 @@ function xthreads_upload_attachments() {
 					$aid = $attach_fields[$k];
 				else
 					$aid = 0;
-				
-				/*
-				$mybb->input['xthreads_'.$k] = intval($mybb->input['xthreads_'.$k]);
-				$aid =& $mybb->input['xthreads_'.$k];
-				
-				// validate passed aid
-				if($aid) {
-					if(!isset($xta_cache[$aid]) || $xta_cache[$aid]['field'] != $k)
-						$aid = 0; // invalid aid supplied
-				}
-				
-				// if the thread already exists, we totally won't trust the supplied aid - use one stored in DB
-				global $threadfields, $thread;
-				if(!empty($threadfields))
-					$aid = $threadfields[$k];
-				elseif(!empty($thread)) {
-					
-				}
-				*/
 			}
 			
 			

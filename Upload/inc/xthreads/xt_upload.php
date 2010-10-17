@@ -15,8 +15,6 @@ function &upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $t
 	if($uid && !$done_flood_check && $attacharray['aid']) {
 		$done_flood_check = true;
 		xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
-		//xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' ORDER BY uploadtime DESC LIMIT 18446744073709551615 OFFSET '.XTHREADS_UPLOAD_FLOOD_NUMBER);
-		// 18446744073709551615 is recommended from http://dev.mysql.com/doc/refman/4.1/en/select.html
 		// we'll do an extra query to get around the issue of delete queries not supporting offsets
 		global $db;
 		$cutoff = $db->fetch_field($db->simple_select('xtattachments', 'uploadtime', 'tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME), array('order_by' => 'uploadtime', 'order_dir' => 'desc', 'limit' => 1, 'limit_start' => XTHREADS_UPLOAD_FLOOD_NUMBER)), 'uploadtime');

@@ -301,14 +301,7 @@ function xthreads_forumdisplay_filter() {
 		$filterargs_html = htmlspecialchars_uni($xthreads_forum_filter_args);
 		$GLOBALS['sorturl'] .= $filterargs_html;
 		
-		// old method for URL injection into multipage
-		/* global $datecut;
-		if($datecut <= 0 || $datecut == 9999) $datecut = 9999.9; // .9 gets around == 9999 check, but gets intval'd anyway - does introduce a side effect in URLs though
-		$datecut .= $xthreads_forum_filter_args;
-		// hack to get URL in page links
-		if(!$mybb->input['datecut']) $mybb->input['datecut'] = 9999; */
-		
-		// new method - template cache hacks
+		// inject URL into multipage - template cache hacks
 		global $templates;
 		$tpls = array('multipage_end', 'multipage_nextpage', 'multipage_page', 'multipage_prevpage', 'multipage_start');
 		foreach($tpls as &$t)

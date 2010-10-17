@@ -406,19 +406,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 				break;
 			}
 		if(!$viewable) {
-			/*
-			if($tfinfo['unviewableval'])
-				$s = eval_str(str_replace('{BLANKVAL}', $tfinfo['blankval'], $tfinfo['unviewableval']));
-			else
-				$s = '';
-			
-			if($tfinfo['inputtype'] == XTHREADS_INPUT_FILE) {
-				$s = array('value' => $s);
-				xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
-			}
-			
-			return;
-			*/
 			$dispfmt = $tfinfo['unviewableval'];
 		}
 	}
@@ -445,8 +432,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		if(!$s['updatetime']) $s['updatetime'] = $s['uploadtime'];
 		$s['filesize_friendly'] = get_friendly_size($s['filesize']);
 		if(isset($s['md5hash'])) {
-			//$s['md5hash'] = unpack('H*', $s['md5hash']);
-			//$s['md5hash'] = reset($s['md5hash']); // dunno why list($s['md5hash']) = unpack(...) doesn't work... - maybe need list($dummy, $s['md5hash']) = unpack() ?
 			$s['md5hash'] = bin2hex($s['md5hash']);
 		}
 		$s['url'] = xthreads_get_xta_url($s);
@@ -465,11 +450,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		
 		$s['value'] = '';
 		if($dispfmt) {
-			/* $tr = array();
-			foreach($s as $k => &$v)
-				if(!is_array($v))
-					$tr['<'.strtoupper($k).'>'] =& $v;
-			$s['value'] = strtr(eval_str($dispfmt), $tr); */
 			$vars = array();
 			foreach($s as $k => &$v)
 				if(!is_array($v))
@@ -485,7 +465,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 			}
 			$s = implode($tfinfo['multival'], $vals);
 			if($dispfmt) {
-				//$s = str_replace('<VALUE>', $s, eval_str($dispfmt));
 				$s = eval_str($dispfmt, array('VALUE' => $s));
 			}
 		}
@@ -531,33 +510,6 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 	}
 	
 	if($dispfmt) {
-		/*
-		$v = strtr(eval_str($dispfmt), array(
-			'<VALUE>' => $v, 
-			'<RAWVALUE>' => $raw_v, 
-		));
-		if($tfinfo['regex_tokens']) {
-			if(preg_match('~'.str_replace('~', '\\~', $tfinfo['textmask']).'~si', $raw_v, $match)) {
-				switch($type & XTHREADS_SANITIZE_MASK) {
-					case XTHREADS_SANITIZE_HTML:
-						$repl = 'htmlspecialchars_uni($match[$1])';
-						break;
-					case XTHREADS_SANITIZE_HTML_NL:
-						$repl = 'nl2br(htmlspecialchars_uni($match[$1]))';
-						break;
-					case XTHREADS_SANITIZE_PARSER:
-						$repl = '$parser->parse_message($match[$1], $parser_opts)';
-						break;
-					default:
-						$repl = '$match[$1]';
-				}
-				$v = preg_replace(array(
-					'~\<VALUE\$(\d+)\>~e',
-					'~\<RAWVALUE\$(\d+)\>~e'
-				), array($repl, '$match[$1]'), $v);
-			}
-		}
-		*/
 		$vars = array(
 			'VALUE' => $v, 
 			'RAWVALUE' => $raw_v, 
@@ -592,13 +544,6 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 }
 
 function eval_str(&$s, $vars=array()) {
-	//if(strpos($s, '{$') === false) // note that this isn't just an optimisation, the pre-sanitiser is designed for this behaviour (so that we don't need to reverse the optimisation for eval)
-	//	return $s;
-	
-	//foreach($vars as &$v)
-	//	$v = strtr($v, array('\\' => '\\\\', '$' => '\\$', '"' => '\\"'));
-	//unset($v);
-	
 	// sanitisation done in cache build - don't need to do it here
 	return eval('return "'.$s.'";');
 }
@@ -648,8 +593,6 @@ function xthreads_get_xta_url(&$xta) {
 	if(isset($xta['md5hash'])) {
 		$md5hash = $xta['md5hash'];
 		if(isset($md5hash{15}) && !isset($md5hash{16})) {
-			//$md5hash = unpack('H*', $md5hash);
-			//$md5hash = reset($md5hash);
 			$md5hash = bin2hex($md5hash);
 		} elseif(!isset($md5hash{31}) || isset($md5hash{32}))
 			$md5hash = '';

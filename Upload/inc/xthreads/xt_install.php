@@ -295,9 +295,6 @@ function xthreads_uninstall() {
 	}
 	if(!$mybb->input['confirm_uninstall']) {
 		$link = 'index.php?confirm_uninstall=1&amp;'.htmlspecialchars($_SERVER['QUERY_STRING']);
-		/* foreach($mybb->input as $k => &$v) {
-			$link .= '&amp;'.htmlspecialchars($k).'='.htmlspecialchars($v);
-		} */
 		
 		$GLOBALS['page']->output_confirm_action($link, $GLOBALS['lang']->xthreads_confirm_uninstall);
 		exit;

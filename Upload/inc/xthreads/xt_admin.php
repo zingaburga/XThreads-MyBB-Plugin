@@ -371,16 +371,6 @@ function xthreads_buildtfcache() {
 		}
 		else {
 			$sanitise_fields =& $sanitise_fields_normal;
-			/*
-			$tf['regex_tokens'] = false;
-			if($tf['inputtype'] != XTHREADS_INPUT_FILE && (
-				($tf['unviewableval']  && preg_match('~\<(?:RAW)?VALUE\$\d+\>~', $tf['unviewableval'])) ||
-				($tf['dispformat']     && preg_match('~\<(?:RAW)?VALUE\$\d+\>~', $tf['dispformat'])) ||
-				($tf['dispitemformat'] && preg_match('~\<(?:RAW)?VALUE\$\d+\>~', $tf['dispitemformat']))
-			)) {
-				$tf['regex_tokens'] = true;
-			}
-			*/
 			$tf['regex_tokens'] = (
 				($tf['unviewableval']  && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['unviewableval'])) ||
 				($tf['dispformat']     && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispformat'])) ||
@@ -436,9 +426,6 @@ function xthreads_sanitize_eval(&$s, &$fields) {
 	}
 	if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '{$vars[\'$1$\'][$2]}', $s);
 	$s = strtr($s, $tr);
-	
-	//if(strpos($s, '{$') === false) // reverse our eval optimisation
-	//	$s = strtr($s, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
 }
 
 

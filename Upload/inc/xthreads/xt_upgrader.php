@@ -17,7 +17,6 @@ if($info['version'] < 1.1) {
 		`viewable_gids` varchar(255) not null default "",
 		`unviewableval` text not null
 	)');
-	//$db->update_query('threadfields', array('unviewableval' => $db->escape_string('{BLANKVAL}')));
 }
 
 if($info['version'] < 1.2) {
