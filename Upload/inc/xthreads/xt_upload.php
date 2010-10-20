@@ -779,8 +779,6 @@ function db_ping(&$dbobj) {
 	
 	$ret = @$func($dbobj->read_link);
 	if($dbobj->write_link !== $dbobj->read_link)
-		$ret = $ret && @$func($dbobj->write_link);
+		$ret = @$func($dbobj->write_link) && $ret;
 	return $ret;
 }
-
-?>

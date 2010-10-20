@@ -978,5 +978,3 @@ function xt_generate_group_select($name, $selected=array(), $options=array())
 	
 	return $select;
 }
-
-?>

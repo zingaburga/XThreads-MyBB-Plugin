@@ -138,4 +138,3 @@ function xthreads_allow_php() {
 	return (XTHREADS_ALLOW_PHP_THREADFIELDS==1 || (XTHREADS_ALLOW_PHP_THREADFIELDS==2 && function_exists('phptpl_evalphp')));
 }
 
-?>
