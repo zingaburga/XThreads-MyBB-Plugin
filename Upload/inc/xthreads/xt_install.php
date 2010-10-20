@@ -160,7 +160,7 @@ function xthreads_install() {
 		'grouping' => xthreads_db_fielddef('int').' not null default 0',
 		'firstpostattop' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'inlinesearch' => xthreads_db_fielddef('tinyint').' not null default 0',
-		'tplprefix' => 'varchar(30) not null default ""',
+		'tplprefix' => 'varchar(255) not null default ""',
 		'allow_blankmsg' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'nostatcount' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'threadsperpage' => xthreads_db_fielddef('smallint').' not null default 0',

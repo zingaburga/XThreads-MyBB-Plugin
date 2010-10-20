@@ -103,6 +103,8 @@ if($info['version'] < 1.33) {
 	)');
 	
 	xthreads_buildtfcache();
+	
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` varchar(255) not null default ""');
 }
 
 return true;

@@ -131,12 +131,15 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	
 	if(!XTHREADS_UPLOAD_LARGEFILE_SIZE || $file_size < XTHREADS_UPLOAD_LARGEFILE_SIZE) {
 		@set_time_limit(30); // as md5_file may take a while
+		$md5_start = time();
 		$file_md5 = @md5_file($attachment['tmp_name'], true);
 		if(strlen($file_md5) == 32) {
 			// perhaps not PHP5
 			$file_md5 = pack('H*', $file_md5);
 		}
-		db_ping($db);
+		if(time() - $md5_start > 2) // ping DB if process took longer than 2 secs
+			db_ping($db);
+		unset($md5_start);
 	}
 	
 	if($update_attachment) {
@@ -767,11 +770,17 @@ if(!function_exists('ctype_xdigit')) {
 }
 
 function db_ping(&$dbobj) {
-	$func = xthreads_db_type($dbobj->type).'_ping';
+	if($dbobj->type == 'mysqli')
+		$func = 'mysqli_ping';
+	else
+		$func = xthreads_db_type($dbobj->type).'_ping';
 	if(!function_exists($func)) return true; // fallback
+	if(is_object(@$dbobj->db)) return true; // sqlite
 	
-	// TODO: handle read/write links better
-	return $func($dbobj->current_link);
+	$ret = @$func($dbobj->read_link);
+	if($dbobj->write_link !== $dbobj->read_link)
+		$ret = $ret && @$func($dbobj->write_link);
+	return $ret;
 }
 
 ?>
