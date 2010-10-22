@@ -4,8 +4,6 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 //define('XTHREADS_THREADFILTER_SQL_STRICT', 1);
-define('XTHREADS_ADMIN_PATHSEP', ($mybb->version_code >= 1500 ? '-':'/'));
-define('XTHREADS_ADMIN_CONFIG_PATH', 'index.php?module=config'.XTHREADS_ADMIN_PATHSEP);
 
 $plugins->add_hook('admin_tools_cache_start', 'xthreads_admin_cachehack');
 $plugins->add_hook('admin_tools_cache_rebuild', 'xthreads_admin_cachehack');
@@ -251,10 +249,131 @@ function &xthreads_threadfields_props() {
 
 function xthreads_write_xtcachefile() {
 	if($fp = @fopen(MYBB_ROOT.'cache/xthreads.php', 'w')) {
-		fwrite($fp, '<?php if(!defined("IN_MYBB")) exit;
+		/* fwrite($fp, '<?php if(!defined("IN_MYBB")) exit;
 return array(
 	"version" => '.XTHREADS_VERSION.'
-);');
+);'); */
+
+		$defines = array();
+		foreach(array(
+			'XTHREADS_ALLOW_URL_FETCH' => true,
+			'XTHREADS_URL_FETCH_DISALLOW_HOSTS' => 'localhost,127.0.0.1',
+			'XTHREADS_URL_FETCH_DISALLOW_PORT' => false,
+			'XTHREADS_UPLOAD_FLOOD_TIME' => 1800,
+			'XTHREADS_UPLOAD_FLOOD_NUMBER' => 50,
+			'XTHREADS_UPLOAD_EXPIRE_TIME' => 3*3600,
+			'XTHREADS_UPLOAD_LARGEFILE_SIZE' => 10*1048576,
+			'XTHREADS_ALLOW_PHP_THREADFIELDS' => 2,
+			
+			'COUNT_DOWNLOADS' => 2,
+			'CACHE_TIME' => 604800,
+			'PROXY_REDIR_HEADER_PREFIX' => '',
+		) as $name => $val) {
+			if(defined($name))
+				$val = constant($name);
+			if(is_string($val))
+				// don't need to escape ' characters as we don't use them here
+				$val = '\''.$val.'\'';
+			elseif(is_bool($val))
+				$val = ($val ? 'true':'false');
+			else
+				$val = strval($val);
+			$defines[$name] = 'define(\''.$name.'\', '.$val.');';
+		}
+		$defines['XTHREADS_INSTALLED_VERSION'] = 'define(\'XTHREADS_INSTALLED_VERSION\', '.XTHREADS_VERSION.')';
+		
+		fwrite($fp, <<<ENDSTR
+<?php
+// XThreads definition file
+// This file contains a number of "internal" settings which you can modify if you wish
+
+/**********  XTHREADS ATTACHMENT URL FETCHING  **********/
+/**
+ * Allows users to upload files through URL fetching
+ */
+$defines[XTHREADS_ALLOW_URL_FETCH]
+/**
+ * Hosts which URLs cannot be fetched from, note that this is based on the supplied URL
+ *  hosts or IPs are not resolved; separate with commas
+ */
+$defines[XTHREADS_URL_FETCH_DISALLOW_HOSTS]
+/** 
+ * Disallow users to specify custom ports in URL, eg http://example.com:1234/ [default=enabled (false)]
+ */
+$defines[XTHREADS_URL_FETCH_DISALLOW_PORT]
+
+/**
+ * Try to stop xtattachment flooding through orphaning (despite MyBB itself being vulnerable to it)
+ *  we'll silently remove orphaned xtattachments that are added within a certain timeframe; note, this does not apply to guests, if you allow them to upload xtattachments...
+ *  by default, we'll start removing old xtattachments made by a user within the last half hour if there's more than 50 orphaned xtattachments
+ */
+$defines[XTHREADS_UPLOAD_FLOOD_TIME] // in seconds
+$defines[XTHREADS_UPLOAD_FLOOD_NUMBER]
+// also, automatically remove xtattachments older than 3 hours when they try to upload something new
+$defines[XTHREADS_UPLOAD_EXPIRE_TIME] // in seconds
+
+/**
+ * The size a file must be above to be considered a "large file"
+ *  large files will have their MD5 calculation deferred to a task
+ *  set to 0 to disable deferred MD5 hashing
+ */
+$defines[XTHREADS_UPLOAD_LARGEFILE_SIZE] // in bytes, default is 10MB
+
+
+
+/**********  XTHREADS ATTACH DOWNLOAD  **********/
+/**
+ * the following controls whether you wish to count downloads
+ *  if 0: is disabled, and the DB won't be queried at all
+ *  if 1: downloads = number of requests made (MyBB style attachment download counting)
+ *  if 2 [default]: will count download only when entire file is sent; in the case of segmented download, will only count if last segment is requested (and completed)
+ * mode 2 is perhaps the most accurate method of counting downloads under normal circumstances
+ */
+$defines[COUNT_DOWNLOADS]
+
+
+/**
+ * the following is just the default cache expiry period for downloads, specified in seconds
+ * as XThreads changes the URL if a file is modified, you can safely use a very long cache expiry time
+ * the default value is 1 week (604800 seconds)
+ */
+$defines[CACHE_TIME]
+
+
+/**
+ * Redirect proxy response; this only applies if you're using a front-end web server to serve static files (eg nginx -> Apache for serving PHP files)
+ * to use this feature, you specify the header, along with the root of the xthreads_ul folder (with trailing slash) as the front-end webserver sees it.  Note that it is up to you to set up the webserver correctly
+ * 
+ * example for nginx
+ *  define('PROXY_REDIR_HEADER_PREFIX', 'X-Accel-Redirect: /forums/uploads/xthreads_ul/');
+ * example for lighttpd / mod_xsendfile
+ *  define('PROXY_REDIR_HEADER_PREFIX', 'X-Sendfile: /forums/uploads/xthreads_ul/');
+ *
+ * defaults to empty string, which tunnels the file through PHP
+ * note that using this option will cause a COUNT_DOWNLOADS setting of 2, to become 1 (can't count downloads after redirect header sent)
+ */
+$defines[PROXY_REDIR_HEADER_PREFIX]
+
+
+
+/**********  OTHER  **********/
+
+/**
+ * Allow PHP in threadfields' display format, unviewable format etc; note that if you change this value after XThreads has been installed, you may need to rebuild your "threadfields" cache
+ * 0=disable, 1=enable, 2=enable only if PHP in Templates plugin is activated (default)
+ */
+$defines[XTHREADS_ALLOW_PHP_THREADFIELDS]
+
+
+
+
+
+// internal version tracker, used to determine whether an upgrade is required and shown in the AdminCP
+// DO NOT MODIFY!
+$defines[XTHREADS_INSTALLED_VERSION]
+
+ENDSTR
+);
 		fclose($fp);
 	}
 }
@@ -439,7 +558,7 @@ function xthreads_admin_cachehack() {
 function xthreads_admin_menu(&$menu) {
 	global $lang;
 	$lang->load('xthreads');
-	$menu['32'] = array('id' => 'threadfields', 'title' => $lang->custom_threadfields, 'link' => XTHREADS_ADMIN_CONFIG_PATH.'threadfields');
+	$menu['32'] = array('id' => 'threadfields', 'title' => $lang->custom_threadfields, 'link' => xthreads_admin_url('config', 'threadfields'));
 }
 function xthreads_admin_action(&$actions) {
 	$actions['threadfields'] = array('active' => 'threadfields', 'file' => 'threadfields.php');
@@ -634,7 +753,7 @@ function xthreads_admin_rebuildthumbs() {
 			$thumbfields = xthreads_admin_getthumbfields();
 			if(empty($thumbfields)) {
 				flash_message($lang->xthreads_rebuildxtathumbs_nofields, 'error');
-				admin_redirect('index.php?module=tools'.XTHREADS_ADMIN_PATHSEP.'recount_rebuild');
+				admin_redirect(xthreads_admin_url('tools', 'recount_rebuild'));
 				return;
 			}
 			$where = 'field IN ("'.implode('","',array_keys($thumbfields)).'")'; //  AND tid!=0
@@ -682,6 +801,9 @@ function xthreads_admin_rebuildthumbs_show() {
 	$form_container->construct_row();
 }
 
+function xthreads_admin_url($cat, $module) {
+	return 'index.php?module='.$cat.($GLOBALS['mybb']->version_code >= 1500 ? '-':'/').$module;
+}
 
 function xthreads_vercheck() {
 	$info = @include(MYBB_ROOT.'cache/xthreads.php');

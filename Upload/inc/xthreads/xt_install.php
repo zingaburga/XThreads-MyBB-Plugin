@@ -290,7 +290,7 @@ function xthreads_uninstall() {
 	global $db, $cache, $mybb;
 	
 	if($mybb->input['no']) {
-		admin_redirect(XTHREADS_ADMIN_CONFIG_PATH.'plugins');
+		admin_redirect(xthreads_admin_url('config', 'plugins'));
 		exit;
 	}
 	if(!$mybb->input['confirm_uninstall']) {

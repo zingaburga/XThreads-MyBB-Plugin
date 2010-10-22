@@ -4,36 +4,7 @@ if(!defined('IN_MYBB'))
 
 
 define('XTHREADS_VERSION', 1.33);
-
-
-// XThreads defines
-// controls some things for remote file fetching
-// allows users to upload files through URL fetching
-define('XTHREADS_ALLOW_URL_FETCH', true);
-// hosts which URLs cannot be fetched from, note that this is based on the supplied URL - hosts or IPs are not resolved; separate with commas
-define('XTHREADS_URL_FETCH_DISALLOW_HOSTS', 'localhost,127.0.0.1');
-// disallow users to specify custom ports in URL, eg http://example.com:1234/ [default=enabled (false)]
-define('XTHREADS_URL_FETCH_DISALLOW_PORT', false);
-
-// try to stop xtattachment flooding through orphaning (despite MyBB itself being vulnerable to it); we'll silently remove orphaned xtattachments that are added within a certain timeframe; note, this does not apply to guests, if you allow them to upload xtattachments...
-// by default, we'll start removing old xtattachments made by a user within the last half hour if there's more than 50 orphaned xtattachments
-define('XTHREADS_UPLOAD_FLOOD_TIME', 1800); // in seconds
-define('XTHREADS_UPLOAD_FLOOD_NUMBER', 50);
-// also, automatically remove xtattachments older than 3 hours when they try to upload something new
-define('XTHREADS_UPLOAD_EXPIRE_TIME', 3*3600); // in seconds
-
-// the size a file must be above to be considered a "large file"; large files will have their MD5 calculation deferred to a task; set to 0 to disable deferred MD5 hashing
-define('XTHREADS_UPLOAD_LARGEFILE_SIZE', 10*1048576); // in bytes, default is 10MB
-
-// allow PHP in threadfields' display format, unviewable format etc; note that if you change this value after XThreads has been installed, you may need to rebuild your "threadfields" cache
-// 0=disable, 1=enable, 2=enable only if PHP in Templates plugin is activated (default)
-define('XTHREADS_ALLOW_PHP_THREADFIELDS', 2);
-
-// some more defines can be found in xthreads_attach.php
-
-
-
-
+@include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
 
 
 $plugins->add_hook('forumdisplay_thread', 'xthreads_format_thread_date');

@@ -5,19 +5,19 @@ if(!defined('IN_MYBB'))
 
 $lang->load('xthreads');
 
-$page->add_breadcrumb_item($lang->custom_threadfields, XTHREADS_ADMIN_CONFIG_PATH.'threadfields');
+$page->add_breadcrumb_item($lang->custom_threadfields, xthreads_admin_url('config', 'threadfields'));
 
 $plugins->run_hooks('admin_config_threadfields_begin');
 
 $sub_tabs['threadfields'] = array(
 	'title' => $lang->custom_threadfields,
 	'description' => $lang->custom_threadfields_desc,
-	'link' => XTHREADS_ADMIN_CONFIG_PATH.'threadfields'
+	'link' => xthreads_admin_url('config', 'threadfields')
 );
 $sub_tabs['threadfields_add'] = array(
 	'title' => $lang->add_threadfield,
 	'description' => $lang->custom_threadfields_desc,
-	'link' => XTHREADS_ADMIN_CONFIG_PATH.'threadfields&amp;action=add'
+	'link' => xthreads_admin_url('config', 'threadfields&amp;action=add')
 );
 
 
@@ -81,7 +81,7 @@ if($mybb->input['action'] == 'edit')
 	$tf = $db->fetch_array($db->simple_select('threadfields', '*', 'field="'.$db->escape_string($mybb->input['field']).'"'));
 	if(!$tf['field']) {
 		flash_message($lang->error_invalid_field, 'error');
-		admin_redirect(XTHREADS_ADMIN_CONFIG_PATH.'threadfields');
+		admin_redirect(xthreads_admin_url('config', 'threadfields'));
 	}
 	
 	threadfields_add_edit_handler($tf, true);
@@ -123,7 +123,7 @@ if($mybb->input['action'] == 'inline')
 	log_admin_action();
 	xthreads_buildtfcache();
 	flash_message($lang->success_threadfield_inline, 'success');
-	admin_redirect(XTHREADS_ADMIN_CONFIG_PATH.'threadfields');
+	admin_redirect(xthreads_admin_url('config', 'threadfields'));
 }
 
 if(!$mybb->input['action'])
@@ -133,7 +133,7 @@ if(!$mybb->input['action'])
 	$page->output_header($lang->custom_threadfields);
 	$page->output_nav_tabs($sub_tabs, 'threadfields');
 
-	$form = new Form(XTHREADS_ADMIN_CONFIG_PATH.'threadfields&amp;action=inline', 'post', 'inline');
+	$form = new Form(xthreads_admin_url('config', 'threadfields&amp;action=inline'), 'post', 'inline');
 	
 	$table = new Table;
 	$table->construct_header($lang->threadfields_title);
@@ -171,7 +171,7 @@ if(!$mybb->input['action'])
 			$table->construct_row();
 		}
 		$tfname = htmlspecialchars_uni($tf['field']);
-		$table->construct_cell('<a href="'.XTHREADS_ADMIN_CONFIG_PATH.'threadfields&amp;action=edit&amp;field='.urlencode($tf['field']).'"><strong>'.htmlspecialchars_uni($tf['title']).'</strong></a>');
+		$table->construct_cell('<a href="'.xthreads_admin_url('config', 'threadfields').'&amp;action=edit&amp;field='.urlencode($tf['field']).'"><strong>'.htmlspecialchars_uni($tf['title']).'</strong></a>');
 		// ... but generate_check_box doesn't have a "style" thing for the options array ... :(
 		$table->construct_cell($tfname);
 		$inputtype_lang = '';
@@ -642,7 +642,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				flash_message($lang->success_updated_threadfield, 'success');
 			else
 				flash_message($lang->success_added_threadfield, 'success');
-			admin_redirect(XTHREADS_ADMIN_CONFIG_PATH.'threadfields');
+			admin_redirect(xthreads_admin_url('config', 'threadfields'));
 		}
 	}
 
@@ -657,9 +657,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$page->output_nav_tabs($sub_tabs, 'threadfields_add');
 	
 	if($update)
-		$form = new Form(XTHREADS_ADMIN_CONFIG_PATH.'threadfields&amp;action=edit&amp;field='.urlencode($tf['field']), 'post');
+		$form = new Form(xthreads_admin_url('config', 'threadfields').'&amp;action=edit&amp;field='.urlencode($tf['field']), 'post');
 	else
-		$form = new Form(XTHREADS_ADMIN_CONFIG_PATH.'threadfields&amp;action=add', 'post');
+		$form = new Form(xthreads_admin_url('config', 'threadfields&amp;action=add'), 'post');
 
 	if($errors) {
 		$page->output_inline_error($errors);

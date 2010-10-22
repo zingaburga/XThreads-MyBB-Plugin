@@ -8,37 +8,6 @@
  * This also has some nice features that MyBB's attachment system can't deliver, including caching, better handling of larger files (ranged requests, less memory usage etc), header only requests,  etc
  */
 
-/**
- * the following controls whether you wish to count downloads
- *  if 0: is disabled, and the DB won't be queried at all
- *  if 1: downloads = number of requests made (MyBB style attachment download counting)
- *  if 2 [default]: will count download only when entire file is sent; in the case of segmented download, will only count if last segment is requested (and completed)
- * mode 2 is perhaps the most accurate method of counting downloads under normal circumstances
- */
-define('COUNT_DOWNLOADS', 2);
-
-
-/**
- * the following is just the default cache expiry period for downloads, specified in seconds
- * as XThreads changes the URL if a file is modified, you can safely use a very long cache expiry time
- * the default value is 1 week (604800 seconds)
- */
-define('CACHE_TIME', 604800);
-
-
-/**
- * Redirect proxy response; this only applies if you're using a front-end web server to serve static files (eg nginx -> Apache for serving PHP files)
- * to use this feature, you specify the header, along with the root of the xthreads_ul folder (with trailing slash) as the front-end webserver sees it.  Note that it is up to you to set up the webserver correctly
- * 
- * example for nginx
- *  define('PROXY_REDIR_HEADER_PREFIX', 'X-Accel-Redirect: /forums/uploads/xthreads_ul/');
- * example for lighttpd / mod_xsendfile
- *  define('PROXY_REDIR_HEADER_PREFIX', 'X-Sendfile: /forums/uploads/xthreads_ul/');
- *
- * defaults to empty string, which tunnels the file through PHP
- * note that using this option will cause a COUNT_DOWNLOADS setting of 2, to become 1 (can't count downloads after redirect header sent)
- */
-define('PROXY_REDIR_HEADER_PREFIX', '');
 
 /**
  * if disabled, MyBB core will not be loaded
@@ -84,7 +53,9 @@ else {
 	
 	
 	define('MYBB_ROOT', dirname(__FILE__).'/');
+	@include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
 }
+
 
 // put everything in function to limit scope (and memory usage by relying on PHP to garbage collect all the unreferenced variables)
 function do_processing() {
@@ -269,6 +240,7 @@ function do_processing() {
 			'htm' => 'text/html',
 			'html' => 'text/html',
 			'css' => 'text/css',
+			'js' => 'text/javascript',
 			'mid' => 'audio/mid',
 			'mp3' => 'audio/mpeg',
 			'flac' => 'audio/flac',
