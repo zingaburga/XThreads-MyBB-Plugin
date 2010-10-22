@@ -806,10 +806,9 @@ function xthreads_admin_url($cat, $module) {
 }
 
 function xthreads_vercheck() {
-	$info = @include(MYBB_ROOT.'cache/xthreads.php');
-	//if(!is_array($info)) return;
-	if(!is_array($info)) $info = array('version' => 0.54); // assumption for earlier versions without this upgrader system
-	if($info['version'] < XTHREADS_VERSION) {
+	if(!defined('XTHREADS_INSTALLED_VERSION'))
+		define('XTHREADS_INSTALLED_VERSION', 0.54); // fallback
+	if(XTHREADS_INSTALLED_VERSION < XTHREADS_VERSION) {
 		global $admin_session, $lang, $mybb;
 		// need to upgrade
 		if(!$lang->xthreads_upgrade_done) $lang->load('xthreads');
@@ -835,7 +834,7 @@ function xthreads_vercheck() {
 				}
 			}
 			
-			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, number_format(XTHREADS_VERSION, 2), number_format($info['version'], 2), $link), 'type' => 'alert');
+			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, number_format(XTHREADS_VERSION, 2), number_format(XTHREADS_INSTALLED_VERSION, 2), $link), 'type' => 'alert');
 		}
 		if($admin_session['data']['flash_message'])
 			$admin_session['data']['flash_message']['message'] .= '</div><br /><div class="'.$msg['type'].'">'.$msg['message'];
