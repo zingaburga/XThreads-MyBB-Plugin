@@ -43,48 +43,53 @@ function xthreads_install() {
 	
 	$dbtype = xthreads_db_type();
 	
-	if($dbtype == 'mysql') {
-		$create_table_suffix = ' TYPE=MyISAM'.$create_table_suffix;
-		$auto_increment = ' auto_increment';
+	switch($dbtype) {
+		case 'mysql':
+			$create_table_suffix = ' TYPE=MyISAM'.$create_table_suffix;
+			$auto_increment = ' auto_increment';
+		break;
+		case 'sqlite':
+			$auto_increment = ' PRIMARY KEY';
+			break;
+		case 'pgsql':
+			$auto_increment = '';
 	}
-	elseif($dbtype == 'sqlite')
-		$auto_increment = ' PRIMARY KEY';
-	else
-		$auto_increment = '';
 	
 	if(!$db->table_exists('threadfields_data')) {
-		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields_data` (
-			`tid` '.xthreads_db_fielddef('int').' not null
-			'.($dbtype != 'sqlite' ? ', PRIMARY KEY (`tid`)':'').'
+		$db->write_query('CREATE TABLE '.$db->table_prefix.'threadfields_data (
+			tid '.xthreads_db_fielddef('int').' not null
+			'.($dbtype != 'sqlite' ? ', PRIMARY KEY (tid)':'').'
 		)'.$create_table_suffix);
 	}
 	
 	if(!$db->table_exists('xtattachments')) {
-		$db->write_query('CREATE TABLE `'.$db->table_prefix.'xtattachments` (
-			`aid` '.xthreads_db_fielddef('int').' not null'.$auto_increment.',
-			`downloads` '.xthreads_db_fielddef('bigint').' not null default 0,
+		$db->write_query('CREATE TABLE '.$db->table_prefix.'xtattachments (
+			aid '.xthreads_db_fielddef('int').' not null'.$auto_increment.',
+			downloads '.xthreads_db_fielddef('bigint').' not null default 0,
 			
-			`tid` '.xthreads_db_fielddef('int').' not null,
-			`uid` '.xthreads_db_fielddef('int').' not null default 0,
-			`field` varchar(50) not null default "",
-			`posthash` varchar(50) not null default "",
-			`filename` varchar(120) not null default "",
-			`uploadmime` varchar(120) not null default "",
-			`filesize` '.xthreads_db_fielddef('bigint').' not null default 0,
-			`attachname` varchar(120) not null default "",
-			`indir` varchar(40) not null default "",
-			`md5hash` binary(16) default null,
-			`uploadtime` '.xthreads_db_fielddef('bigint').' not null default 0,
-			`updatetime` '.xthreads_db_fielddef('bigint').' not null default 0,
+			tid '.xthreads_db_fielddef('int').' not null,
+			uid '.xthreads_db_fielddef('int').' not null default 0,
+			field varchar(50) not null default \'\',
+			posthash varchar(50) not null default \'\',
+			filename varchar(120) not null default \'\',
+			uploadmime varchar(120) not null default \'\',
+			filesize '.xthreads_db_fielddef('bigint').' not null default 0,
+			attachname varchar(120) not null default \'\',
+			indir varchar(40) not null default \'\',
+			md5hash '.xthreads_db_fielddef('binary', 16).' default null,
+			uploadtime '.xthreads_db_fielddef('bigint').' not null default 0,
+			updatetime '.xthreads_db_fielddef('bigint').' not null default 0,
 			
-			`thumbs` text not null
+			thumbs text not null
 			
 			'.($dbtype != 'sqlite' ? ',
-				PRIMARY KEY (`aid`),
-				KEY (`tid`),
-				KEY (`tid`,`uid`),
-				KEY (`posthash`),
-				KEY (`field`)
+				PRIMARY KEY (aid)
+				'.($dbtype != 'pg' ? ',
+					KEY (tid),
+					KEY (tid,uid),
+					KEY (posthash),
+					KEY (field)
+				':'').'
 			':'').'
 		)'.$create_table_suffix);
 	}
@@ -95,7 +100,7 @@ function xthreads_install() {
 			$query .= ($query?',':'').'`'.$field.'` '.xthreads_db_fielddef($prop['db_type'], $prop['db_size'], $prop['db_unsigned']).' not null';
 			if(isset($prop['default']) && ($prop['db_type'] != 'text')) {
 				if($prop['datatype'] == 'string')
-					$query .= ' default "'.$db->escape_string($prop['default']).'"';
+					$query .= ' default \''.$db->escape_string($prop['default']).'\'';
 				elseif($prop['datatype'] == 'double')
 					$query .= ' default '.floatval($prop['default']);
 				else
@@ -104,55 +109,15 @@ function xthreads_install() {
 			if($field == 'field' && $dbtype == 'sqlite')
 				$query .= ' PRIMARY KEY';
 		}
-		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields` (
+		$db->write_query('CREATE TABLE '.$db->table_prefix.'threadfields (
 			'.$query.'
 			'.($dbtype != 'sqlite' ? ',
-				PRIMARY KEY (`field`),
-				KEY (`disporder`)
+				PRIMARY KEY (field)
+				'.($dbtype != 'pg' ? ',
+					KEY (disporder)
+				':'').'
 			':'').'
 		)'.$create_table_suffix);
-		/*
-		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields` (
-			`field` varchar(50)'.($dbtype == 'sqlite' ? ' PRIMARY KEY':'').',
-			`title` varchar(100) not null,
-			`forums` varchar(255) not null default "",
-			`editable` '.xthreads_db_numdef('tinyint').' not null default 0,
-			`editable_gids` varchar(255) not null default "",
-			`viewable_gids` varchar(255) not null default "",
-			`unviewableval` text not null,
-			`blankval` text not null,
-			`dispformat` text not null,
-			`dispitemformat` text not null,
-			`formatmap` text not null,
-			`textmask` varchar(150) not null default "",
-			`maxlen` '.xthreads_db_numdef('int').' not null default 0,
-			`vallist` text not null,
-			`multival` varchar(100) not null default "",
-			`sanitize` '.xthreads_db_numdef('smallint').' not null default 0,
-			`allowfilter` '.xthreads_db_numdef('tinyint').' not null default 0,
-			
-			`desc` varchar(255) not null default "",
-			`inputtype` '.xthreads_db_numdef('tinyint').' not null default 0,
-			`disporder` '.xthreads_db_numdef('int', 0, false).' not null default 1,
-			`tabstop` '.xthreads_db_numdef('tinyint', 1).' not null default 1,
-			`hideedit` '.xthreads_db_numdef('tinyint', 1).' not null default 0,
-			`formhtml` text not null,
-			`defaultval` varchar(255) not null default "",
-			`fieldwidth` '.xthreads_db_numdef('smallint').' not null default 0,
-			`fieldheight` '.xthreads_db_numdef('smallint').' not null default 0,
-			
-			`filemagic` varchar(255) not null default "",
-			`fileexts` varchar(255) not null default "",
-			`filemaxsize` '.xthreads_db_numdef('int').' not null default 0,
-			`fileimage` varchar(30) not null default "",
-			`fileimgthumbs` varchar(255) not null default ""
-			
-			'.($dbtype != 'sqlite' ? ',
-				PRIMARY KEY (`field`),
-				KEY (`disporder`)
-			':'').'
-		)'.$create_table_suffix);
-		*/
 		// `allowsort` '.xthreads_db_numdef('tinyint').' not null default 0,
 	}
 	
@@ -160,23 +125,23 @@ function xthreads_install() {
 		'grouping' => xthreads_db_fielddef('int').' not null default 0',
 		'firstpostattop' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'inlinesearch' => xthreads_db_fielddef('tinyint').' not null default 0',
-		'tplprefix' => 'varchar(255) not null default ""',
+		'tplprefix' => 'varchar(255) not null default \'\'',
 		'allow_blankmsg' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'nostatcount' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'threadsperpage' => xthreads_db_fielddef('smallint').' not null default 0',
 		'postsperpage' => xthreads_db_fielddef('smallint').' not null default 0',
-		'force_postlayout' => 'varchar(15) not null default ""',
+		'force_postlayout' => 'varchar(15) not null default \'\'',
 		'hideforum' => xthreads_db_fielddef('tinyint').' not null default 0',
-		'wol_announcements' => 'varchar(255) not null default ""',
-		'wol_forumdisplay' => 'varchar(255) not null default ""',
-		'wol_newthread' => 'varchar(255) not null default ""',
-		'wol_attachment' => 'varchar(255) not null default ""',
-		'wol_newreply' => 'varchar(255) not null default ""',
-		'wol_showthread' => 'varchar(255) not null default ""',
-		'wol_xtattachment' => 'varchar(255) not null default ""'
+		'wol_announcements' => 'varchar(255) not null default \'\'',
+		'wol_forumdisplay' => 'varchar(255) not null default \'\'',
+		'wol_newthread' => 'varchar(255) not null default \'\'',
+		'wol_attachment' => 'varchar(255) not null default \'\'',
+		'wol_newreply' => 'varchar(255) not null default \'\'',
+		'wol_showthread' => 'varchar(255) not null default \'\'',
+		'wol_xtattachment' => 'varchar(255) not null default \'\''
 	) as $field => $fdef) {
 		if(!$db->field_exists($field, 'forums')) {
-			$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_'.$field.'` '.$fdef);
+			$db->write_query('ALTER TABLE '.$db->table_prefix.'forums ADD COLUMN xthreads_'.$field.' '.$fdef);
 		}
 	}
 	$cache->update_forums();
@@ -310,11 +275,11 @@ function xthreads_uninstall() {
 	$db->free_result($query);
 	
 	if($db->table_exists('threadfields_data'))
-		$db->write_query('DROP TABLE `'.$db->table_prefix.'threadfields_data`');
+		$db->write_query('DROP TABLE '.$db->table_prefix.'threadfields_data');
 	if($db->table_exists('threadfields'))
-		$db->write_query('DROP TABLE `'.$db->table_prefix.'threadfields`');
+		$db->write_query('DROP TABLE '.$db->table_prefix.'threadfields');
 	if($db->table_exists('xtattachments'))
-		$db->write_query('DROP TABLE `'.$db->table_prefix.'xtattachments`');
+		$db->write_query('DROP TABLE '.$db->table_prefix.'xtattachments');
 	
 	$fields = array(
 		'xthreads_grouping',
@@ -347,12 +312,12 @@ function xthreads_uninstall() {
 				break;
 			case 'pgsql':
 				foreach($fields as &$f)
-					$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums`
-						DROP COLUMN `'.$f.'`');
+					$db->write_query('ALTER TABLE '.$db->table_prefix.'forums
+						DROP COLUMN '.$f);
 				break;
 			default:
-				$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums`
-					DROP COLUMN `'.implode('`, DROP COLUMN `', $fields).'`');
+				$db->write_query('ALTER TABLE '.$db->table_prefix.'forums
+					DROP COLUMN '.implode(', DROP COLUMN ', $fields));
 		}
 	}
 	$cache->update_forums();

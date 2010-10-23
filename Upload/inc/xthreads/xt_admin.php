@@ -37,29 +37,36 @@ function xthreads_db_fielddef($type, $size=null, $unsigned=null) {
 	if(!isset($unsigned)) {
 		$unsigned = ($type != 'tinyint');
 	}
-	if($type == 'text') $size = 0;
-	if($type == 'text' || $type == 'varchar')
-		$unsigned = false;
+	$text_type = false;
+	switch($type) {
+		case 'text': case 'blob':
+			$size = 0;
+			// fall through
+		case 'varchar': case 'varbinary': case 'char': case 'binary':
+			$unsigned = false;
+			$text_type = true;
+	}
 	if(!isset($size)) {
 		switch($type) {
 			case 'tinyint': $size = 3; break;
 			case 'smallint': $size = 5; break;
 			case 'int': $size = 10; break;
 			case 'bigint': $size = 20; break;
-			case 'varchar': $size = 255; break;
+			case 'varchar': case 'varbinary': $size = 255; break;
 			default: $size = 0;
 		}
 		if($size && $unsigned) ++$size;
 	}
 	if($size !== 0)
 		$size = '('.$size.')';
-	elseif($type == 'varchar') // force length for varchar
+	elseif($type == 'varchar' || $type == 'varbinary') // force length for varchar if one not defined
 		$size = '(255)';
 	else
 		$size = '';
 	$unsigned = ($unsigned ? ' unsigned':'');
-	if($type == 'varchar' || $type == 'text') {
-		$type .= $size;
+	if($text_type) {
+		if(xthreads_db_type() != 'pg' || $type != 'varbinary')
+			$type .= $size;
 		$size = '';
 		//$unsigned = '';
 	}
@@ -69,6 +76,7 @@ function xthreads_db_fielddef($type, $size=null, $unsigned=null) {
 			return $type.$unsigned;
 		case 'pg':
 			if($type == 'tinyint') $type = 'smallint';
+			if($type == 'binary') $type = 'bytea';
 			return $type;
 		default: // mysql
 			return $type.$size.$unsigned;
@@ -417,7 +425,7 @@ function xthreads_buildtfcache() {
 	$sanitise_fields_file = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
 	$sanitise_fields_none = array();
 	$cd = array();
-	$query = $db->simple_select('threadfields', '*', '', array('order_by' => '`disporder`', 'order_dir' => 'asc'));
+	$query = $db->simple_select('threadfields', '*', '', array('order_by' => 'disporder', 'order_dir' => 'asc'));
 	while($tf = $db->fetch_array($query)) {
 		// remove unnecessary fields
 		if($tf['editable_gids']) $tf['editable'] = 0;
