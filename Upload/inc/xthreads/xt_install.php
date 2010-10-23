@@ -54,8 +54,8 @@ function xthreads_install() {
 	
 	if(!$db->table_exists('threadfields_data')) {
 		$db->write_query('CREATE TABLE `'.$db->table_prefix.'threadfields_data` (
-			`tid` '.xthreads_db_fielddef('int').' not null,
-			'.($dbtype != 'sqlite' ? 'PRIMARY KEY (`tid`)':'').'
+			`tid` '.xthreads_db_fielddef('int').' not null
+			'.($dbtype != 'sqlite' ? ', PRIMARY KEY (`tid`)':'').'
 		)'.$create_table_suffix);
 	}
 	

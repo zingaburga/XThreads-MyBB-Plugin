@@ -276,11 +276,44 @@ return array(
 				$val = '\''.$val.'\'';
 			elseif(is_bool($val))
 				$val = ($val ? 'true':'false');
-			else
-				$val = strval($val);
+			else {
+				// nice formatters
+				switch($name) {
+					// size fields
+					case 'XTHREADS_UPLOAD_LARGEFILE_SIZE':
+						$suf = '';
+						while($val > 1 && !($val % 1024)) {
+							$val /= 1024;
+							$suf .= '*1024';
+						}
+						if($val == 1)
+							$val = ($suf ? substr($suf, 1) : $val);
+						else
+							$val .= $suf;
+						break;
+					
+					// time fields
+					case 'XTHREADS_UPLOAD_FLOOD_TIME': case 'XTHREADS_UPLOAD_EXPIRE_TIME': case 'CACHE_TIME':
+						if(!($val % 3600)) {
+							$val /= 3600;
+							if(!($val % 24))
+								$val = ($val / 24).'*24*3600';
+							else
+								$val = $val.'*3600';
+							break;
+						} elseif(!($val % 60)) {
+							$val = ($val / 60).'*60';
+							break;
+						}
+						
+						// fall through
+					default:
+						$val = strval($val);
+				}
+			}
 			$defines[$name] = 'define(\''.$name.'\', '.$val.');';
 		}
-		$defines['XTHREADS_INSTALLED_VERSION'] = 'define(\'XTHREADS_INSTALLED_VERSION\', '.XTHREADS_VERSION.')';
+		$defines['XTHREADS_INSTALLED_VERSION'] = 'define(\'XTHREADS_INSTALLED_VERSION\', '.XTHREADS_VERSION.');';
 		
 		fwrite($fp, <<<ENDSTR
 <?php
