@@ -847,8 +847,13 @@ function xthreads_admin_url($cat, $module) {
 }
 
 function xthreads_vercheck() {
-	if(!defined('XTHREADS_INSTALLED_VERSION'))
-		define('XTHREADS_INSTALLED_VERSION', 0.54); // fallback
+	if(!defined('XTHREADS_INSTALLED_VERSION')) { // 1.32 or older
+		$info = @include(MYBB_ROOT.'cache/xthreads.php');
+		if(is_array($info))
+			define('XTHREADS_INSTALLED_VERSION', $info['version']);
+		else
+			define('XTHREADS_INSTALLED_VERSION', 0.54); // fallback
+	}
 	if(XTHREADS_INSTALLED_VERSION < XTHREADS_VERSION) {
 		global $admin_session, $lang, $mybb;
 		// need to upgrade

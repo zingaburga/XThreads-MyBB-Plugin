@@ -27,13 +27,6 @@ function xthreads_is_installed() {
 	static $is_installed = null;
 	if(!isset($is_installed))
 		$is_installed = $GLOBALS['db']->table_exists('threadfields');
-	if(!$is_installed && is_object($GLOBALS['table']) && $GLOBALS['installed']) { // do this check in case this _is_installed() function is actually called elsewhere
-		// check if not using MySQL
-		global $db;
-		if($db->title != 'MySQL' && $db->title != 'MySQLi') {
-			// display warning?
-		}
-	}
 	return $is_installed;
 }
 
@@ -54,6 +47,8 @@ function xthreads_install() {
 		case 'pgsql':
 			$auto_increment = '';
 	}
+	
+	if($dbtype != 'mysql') die('XThreads currently does not support database systems other than MySQL/i.');
 	
 	if(!$db->table_exists('threadfields_data')) {
 		$db->write_query('CREATE TABLE '.$db->table_prefix.'threadfields_data (
