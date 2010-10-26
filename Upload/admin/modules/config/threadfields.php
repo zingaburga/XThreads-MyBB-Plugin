@@ -907,6 +907,77 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_unviewableval', e);
 	}).apply($('viewable_gids'));
 	
+	function disableTextmask(d) {
+		$('textmask').readOnly = d;
+		$('textmask').style.background = (d ? "#F0F0F0":"");
+		$('textmask').style.color = (d ? "#808080":"");
+		if(d)
+			$('textmask').onfocus = function() {
+				$('textmask_select').focus();
+			};
+		else
+			$('textmask').onfocus = null;
+	}
+	<?php
+		$textmask_types = array(
+			'anything' => '^.*$',
+			'digit' => '^\\d*$',
+			'url' => '^[a-z0-9]+\\://[^\\r\\n"<>&]+$',
+			'httpurl' => '^https?\\://[^\\r\\n"<>&]+$',
+			'email' => '^[a-z0-9_.\\-]+@[a-z0-9_.\\-]+$',
+			'css' => '^[a-z0-9_\\-]+$',
+			'color' => '^[a-z\\-]+|#?[0-9a-fA-F]{6}$'
+		);
+	?>
+	$('textmask').parentNode.innerHTML =
+			'<select name="textmask_select" id="textmask_select">' +
+<?php
+	foreach($textmask_types as $type => &$mask) {
+		$langvar = 'threadfields_textmask_'.$type;
+		echo '			\'<option value="', $type,'">', $lang->$langvar, '</option>\' +
+';
+	}
+?>
+			'<option value="custom">'+<?php echo "'",$lang->threadfields_textmask_custom,"'"; ?>+'</option>' +
+			'</select> ' + $('textmask').parentNode.innerHTML;
+	var textmaskMapping = {
+<?php
+	$comma = '';
+	foreach($textmask_types as $type => &$mask) {
+		echo $comma, '		', $type, ': "', strtr($mask, array('\\' => '\\\\', '"' => '\\"')), '"';
+		if(!$comma) $comma = ',
+';
+	}
+?>
+
+	};
+	// determine which option to be selected by default
+	(function() {
+		// we can only index by number, and as we're a little lazy, create a name -> index map
+		var textmaskSelectOpts = $('textmask_select').options;
+		var textmaskSelectMap = {};
+		for(i=0; i<textmaskSelectOpts.length; i++) {
+			textmaskSelectMap[textmaskSelectOpts[i].value] = i;
+		}
+		
+		disableTextmask(false);
+		var mask = $('textmask').value;
+		for(var maskName in textmaskMapping) {
+			if(mask == textmaskMapping[maskName]) {
+				$('textmask_select').selectedIndex = textmaskSelectMap[maskName];
+				disableTextmask(true);
+				return;
+			}
+		}
+		$('textmask_select').selectedIndex = textmaskSelectMap["custom"];
+	})();
+	$('textmask_select').onchange = function() {
+		var maskName = this.options[this.selectedIndex].value;
+		if(textmaskMapping[maskName])
+			$('textmask').value = textmaskMapping[maskName];
+		disableTextmask(maskName != "custom");
+	};
+	
 //-->
 </script><?php
 	
