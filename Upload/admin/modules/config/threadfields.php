@@ -882,6 +882,16 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_filemaxsize', pureFileIn);
 		xt_visi('row_filereqimg', pureFileIn);
 		xt_filereqimg();
+		
+		dispfmt_obj = $('dispformat');
+		fileVal = "<a href=\"{URL}\">{FILENAME}</a>";
+		if(pureFileIn) {
+			if(dispfmt_obj.value == "{VALUE}")
+				dispfmt_obj.value = fileVal;
+		} else {
+			if(dispfmt_obj.value == fileVal)
+				dispfmt_obj.value = "{VALUE}";
+		}
 	}).apply($('inputtype'));
 	
 	($('editable').onchange = function() {
