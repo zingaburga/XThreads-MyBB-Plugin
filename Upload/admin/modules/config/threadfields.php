@@ -907,25 +907,18 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_unviewableval', e);
 	}).apply($('viewable_gids'));
 	
-	function disableTextmask(d) {
-		$('textmask').readOnly = d;
-		$('textmask').style.background = (d ? "#F0F0F0":"");
-		$('textmask').style.color = (d ? "#808080":"");
-		if(d)
-			$('textmask').onfocus = function() {
-				$('textmask_select').focus();
-			};
-		else
-			$('textmask').onfocus = null;
-	}
 	<?php
 		$textmask_types = array(
 			'anything' => '^.*$',
-			'digit' => '^\\d*$',
-			'url' => '^[a-z0-9]+\\://[^\\r\\n"<>&]+$',
-			'httpurl' => '^https?\\://[^\\r\\n"<>&]+$',
-			'email' => '^[a-z0-9_.\\-]+@[a-z0-9_.\\-]+$',
-			'css' => '^[a-z0-9_\\-]+$',
+			'digit' => '^\\d+$',
+			'alphadigit' => '^([a-z0-9])+$',
+			'number' => '^-?[0-9]*(?:\\.\\d*)?$',
+			'date' => '^(0?[1-9]|[12]\\d|3[01])/(0?[1-9]|1[012])/((?:19|20)\\d\\d)$',
+			'date_us' => '^(0?[1-9]|1[012])/(0?[1-9]|[12]\\d|3[01])/((?:19|20)\\d\\d)$',
+			'url' => '^([a-z0-9]+)\\://([a-z.\\-_]+)(/[^\\r\\n"<>&]*)?$',
+			'httpurl' => '^(https?)\\://([a-z.\\-_]+)(/[^\\r\\n"<>&]*)?$',
+			'email' => '^([a-z0-9_.\\-]+)@([a-z0-9_.\\-]+)$',
+			'css' => '^[a-z0-9_\\- ]+$',
 			'color' => '^[a-z\\-]+|#?[0-9a-fA-F]{6}$'
 		);
 	?>
@@ -939,7 +932,16 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	}
 ?>
 			'<option value="custom">'+<?php echo "'",$lang->threadfields_textmask_custom,"'"; ?>+'</option>' +
-			'</select> ' + $('textmask').parentNode.innerHTML;
+			'</select> ' + $('textmask').parentNode.innerHTML + '<div id="textmask_select_descriptions" style="font-size: smaller; padding-top: 0.5em;">' +
+<?php
+	foreach($textmask_types as $type => &$mask) {
+		$langvar = 'threadfields_textmask_'.$type.'_desc';
+		if(property_exists($lang, $langvar))
+			echo '			\'<div id="textmask_selector_desc_', $type, '" style="display: none;">', strtr($lang->$langvar, array('\\' => '\\\\', "'" => "\\'")), '</div>\' +
+';
+	}
+?>
+			'</div>';
 	var textmaskMapping = {
 <?php
 	$comma = '';
@@ -960,12 +962,11 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			textmaskSelectMap[textmaskSelectOpts[i].value] = i;
 		}
 		
-		disableTextmask(false);
 		var mask = $('textmask').value;
 		for(var maskName in textmaskMapping) {
 			if(mask == textmaskMapping[maskName]) {
 				$('textmask_select').selectedIndex = textmaskSelectMap[maskName];
-				disableTextmask(true);
+				textmaskSelectUpdated();
 				return;
 			}
 		}
@@ -975,7 +976,26 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		var maskName = this.options[this.selectedIndex].value;
 		if(textmaskMapping[maskName])
 			$('textmask').value = textmaskMapping[maskName];
-		disableTextmask(maskName != "custom");
+		textmaskSelectUpdated();
+	};
+	function textmaskSelectUpdated() {
+		var maskName = $('textmask_select').options[$('textmask_select').selectedIndex].value;
+		var d = (maskName != "custom");
+		$('textmask').readOnly = d;
+		$('textmask').style.background = (d ? "#F0F0F0":"");
+		$('textmask').style.color = (d ? "#808080":"");
+		
+		var o = $('textmask_select_descriptions').childNodes;
+		for(i=0; i<o.length; i++) {
+			if(o[i].id == "textmask_selector_desc_"+maskName)
+				o[i].style.display = "";
+			else
+				o[i].style.display = "none";
+		}
+	}
+	$('textmask').onfocus = function() {
+		if(this.readOnly)
+			$('textmask_select').focus();
 	};
 	
 //-->
