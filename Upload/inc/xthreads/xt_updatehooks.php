@@ -325,7 +325,7 @@ function xthreads_inputdisp() {
 		$plugins->add_hook('editpost_end', 'xthreads_editpost_first_tplhack');
 	}
 	
-	if($mybb->input['previewpost']) {
+	if($mybb->input['previewpost'] || $editpost) {
 		global $threadfields, $forum;
 		
 		// $forum may not exist for editpost
