@@ -160,7 +160,7 @@ function xthreads_tplhandler() {
 	
 	if($fid) {
 		$forum = get_forum($fid);
-		if($forum['xthreads_tplprefix']) {
+		if($forum['xthreads_tplprefix'] !== '') {
 			// this forum has a custom tpl prefix, hook into templates system
 			control_object($templates, '
 				function cache($templates) {
@@ -237,7 +237,7 @@ function xthreads_tplhandler() {
 }
 
 function xthreads_tpl_cache(&$t, &$obj) {
-	if(!$t) return;
+	if(xthreads_empty($t)) return;
 	global $db, $theme;
 	
 	$sql = '';
@@ -335,7 +335,7 @@ function xthreads_xmlhttp_blankpost_hack() {
 			
 			if(!$forum['xthreads_allow_blankmsg'] || $thread['firstpost'] != $post['pid']) return;
 			global $templates;
-			if(!$templates->cache['xmlhttp_inline_post_editor'])
+			if(!isset($templates->cache['xmlhttp_inline_post_editor']))
 				$templates->cache('xmlhttp_inline_post_editor');
 			$templates->cache['xmlhttp_inline_post_editor'] = str_replace(
 				'onclick="Thread.quickEditSave({$post[\'pid\']});"',
@@ -361,7 +361,7 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 }
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 	if($s === '' || $s === null) { // won't catch file inputs, as they are integer type
-		if($tfinfo['blankval']) $s = eval_str($tfinfo['blankval']);
+		if(!xthreads_empty($tfinfo['blankval'])) $s = eval_str($tfinfo['blankval']);
 		return;
 	}
 	
@@ -386,7 +386,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		// attached file
 		if(!$s) {
 			$s = array();
-			if($tfinfo['blankval']) $s['value'] = eval_str($tfinfo['blankval']);
+			if(!xthreads_empty($tfinfo['blankval'])) $s['value'] = eval_str($tfinfo['blankval']);
 			xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 			return;
 		}
@@ -420,7 +420,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 		
 		$s['value'] = '';
-		if($dispfmt) {
+		if(!xthreads_empty($dispfmt)) {
 			$vars = array();
 			foreach($s as $k => &$v)
 				if(!is_array($v))
@@ -429,13 +429,13 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		}
 	}
 	else {
-		if($tfinfo['multival']) {
+		if(!xthreads_empty($tfinfo['multival'])) {
 			$vals = explode("\n", str_replace("\r", '', $s));
 			foreach($vals as &$v) {
 				xthreads_sanitize_disp_field($v, $tfinfo, $tfinfo['dispitemformat'], $mename);
 			}
 			$s = implode($tfinfo['multival'], $vals);
-			if($dispfmt) {
+			if(!xthreads_empty($dispfmt)) {
 				$s = eval_str($dispfmt, array('VALUE' => $s));
 			}
 		}
@@ -480,7 +480,7 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 		}
 	}
 	
-	if($dispfmt) {
+	if(!xthreads_empty($dispfmt)) {
 		$vars = array(
 			'VALUE' => $v, 
 			'RAWVALUE' => $raw_v, 
@@ -588,6 +588,11 @@ function xthreads_phptpl_iif($condition, $true)
 	for($i=1, $c=count($args); $i<$c; $i+=2)
 		if($args[$i-1]) return $args[$i];
 	return (isset($args[$i-1]) ? $args[$i-1] : '');
+}
+
+// it's annoying that '0' is considered "empty" by PHP...
+function xthreads_empty(&$v) {
+	return empty($v) && $v !== '0';
 }
 
 function xthreads_db_type($type=null) {

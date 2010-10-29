@@ -79,7 +79,7 @@ if($mybb->input['action'] == 'edit')
 	$mybb->input['field'] = trim($mybb->input['field']);
 	
 	$tf = $db->fetch_array($db->simple_select('threadfields', '*', 'field="'.$db->escape_string($mybb->input['field']).'"'));
-	if(!$tf['field']) {
+	if(xthreads_empty($tf['field'])) {
 		flash_message($lang->error_invalid_field, 'error');
 		admin_redirect(xthreads_admin_url('config', 'threadfields'));
 	}
@@ -101,7 +101,7 @@ if($mybb->input['action'] == 'inline')
 			if($field['inputtype'] == XTHREADS_INPUT_FILE || $field['inputtype'] == XTHREADS_INPUT_FILE_URL)
 				$delattach[] = $efn;
 		}
-		elseif($mybb->input['threadfields_order_'.$field['field']]) {
+		elseif(!xthreads_empty($mybb->input['threadfields_order_'.$field['field']])) {
 			//$order[$field['field']] = intval($mybb->input['threadfields_order_'.$field['field']]);
 			$db->update_query('threadfields', array('disporder' => intval($mybb->input['threadfields_order_'.$field['field']])), 'field="'.$efn.'"');
 		}
@@ -325,11 +325,11 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		$mybb->input['formatmap'] = trim($mybb->input['formatmap']);
 		*/
-		if($mybb->input['formatmap']) {
+		if(!xthreads_empty($mybb->input['formatmap'])) {
 			$fm = array();
 			foreach(explode("\n", str_replace("\r", '', $mybb->input['formatmap'])) as $map) {
 				$p = strpos($map, '{|}');
-				if(!$p) continue; // can't be zero index either
+				if(!$p) continue; // can't be zero index either - blank display format used for that
 				$fmkey = substr($map, 0, $p);
 				if(isset($fm[$fmkey])) {
 					$errors[] = $lang->sprintf($lang->error_dup_formatmap, htmlspecialchars_uni($fmkey));
@@ -398,10 +398,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		//}
 		$mybb->input['inputtype'] = min_max(intval($mybb->input['inputtype']), XTHREADS_INPUT_TEXT, XTHREADS_INPUT_CUSTOM);
 		
-		if(!$mybb->input['title'])		$errors[] = $lang->error_missing_title;
-		if(!$mybb->input['newfield'])	$errors[] = $lang->error_missing_field;
+		if(xthreads_empty($mybb->input['title']))		$errors[] = $lang->error_missing_title;
+		if(xthreads_empty($mybb->input['newfield']))	$errors[] = $lang->error_missing_field;
 		
-		if($mybb->input['textmask']) {
+		if(!xthreads_empty($mybb->input['textmask'])) {
 			// test for bad regex
 			if(function_exists('error_get_last')) {
 				@preg_match('~'.str_replace('~', '\\~', $mybb->input['textmask']).'~si', 'testvalue');
@@ -429,7 +429,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$mybb->input['textmask'] = '';
 				
 				// must have value defined
-				if(!$mybb->input['vallist'])
+				if(xthreads_empty($mybb->input['vallist']))
 					$errors[] = $lang->error_require_valllist;
 				break;
 			
@@ -444,7 +444,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		}
 		
 		if($mybb->input['multival_enable'] || $mybb->input['inputtype'] == XTHREADS_INPUT_CHECKBOX) {
-			if(!$mybb->input['multival'])
+			if(xthreads_empty($mybb->input['multival']))
 				$errors[] = $lang->error_require_multival_delimiter;
 		} else
 			$mybb->input['multival'] = '';
@@ -489,7 +489,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			}
 		}
 		
-		if($mybb->input['newfield']) {
+		if(!xthreads_empty($mybb->input['newfield'])) {
 			if($mybb->input['newfield'] == 'tid') {
 				$errors[] = $lang->error_field_name_tid;
 			}
@@ -502,7 +502,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			// field name in use?
 			elseif(!$update || $mybb->input['field'] != $mybb->input['newfield']) {
 				$ftest = $db->fetch_field($db->simple_select('threadfields', 'field', 'field="'.$db->escape_string($mybb->input['newfield']).'"'), 'field');
-				if($ftest) $errors[] = $lang->error_field_name_in_use;
+				if(!xthreads_empty($ftest)) $errors[] = $lang->error_field_name_in_use;
 			}
 		}
 

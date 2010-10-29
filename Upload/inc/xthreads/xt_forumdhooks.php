@@ -174,7 +174,7 @@ function xthreads_forumdisplay() {
 // Quick Thread integration function
 function xthreads_forumdisplay_quickthread() {
 	$tpl =& $GLOBALS['templates']->cache['forumdisplay_quick_thread'];
-	if(!$tpl) return;
+	if(xthreads_empty($tpl)) return;
 	
 	// grab fields
 	$edit_fields = $GLOBALS['threadfield_cache']; // will be set
@@ -203,7 +203,7 @@ function xthreads_forumdisplay_filter() {
 	if($foruminfo['xthreads_inlinesearch']) {
 		global $templates, $lang, $gobutton, $fid, $sortby, $sortordernow, $datecut, $xthreads_forum_filter_form;
 		$searchval = '';
-		if($mybb->input['search']) {
+		if(!xthreads_empty($mybb->input['search'])) {
 			$qstr = 'subject LIKE "%'.$db->escape_string_like($mybb->input['search']).'%"';
 			$visibleonly .= ' AND '.$qstr;
 			$q .= ' AND t.'.$qstr;
@@ -218,7 +218,7 @@ function xthreads_forumdisplay_filter() {
 			// $threadfield_cache is guaranteed to be set here
 			if(is_array($val) && count($val) > 1) {
 				if(!empty($val)) {
-					if($threadfield_cache[$field]['multival']) {
+					if(!xthreads_empty($threadfield_cache[$field]['multival'])) {
 						// ugly, but no other way to really do this...
 						$qstr = '(';
 						$qor = '';
@@ -239,7 +239,7 @@ function xthreads_forumdisplay_filter() {
 					$val2 = reset($val);
 				else
 					$val2 =& $val;
-				if($threadfield_cache[$field]['multival'])
+				if(!xthreads_empty($threadfield_cache[$field]['multival']))
 					$qstr = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\"")).' LIKE "%'."\n".$db->escape_string_like($val2)."\n".'%"';
 				else
 					$qstr = 'tfd.`'.$db->escape_string($field).'` = "'.$db->escape_string($val2).'"';
@@ -332,7 +332,7 @@ function xthreads_forumdisplay_thread() {
 		xthreads_get_xta_cache($v, $GLOBALS['tids']);
 		
 		$threadfields[$k] =& $thread['xthreads_'.$k];
-		xthreads_sanitize_disp($threadfields[$k], $v, ($thread['username'] ? $thread['username'] : $thread['threadusername']));
+		xthreads_sanitize_disp($threadfields[$k], $v, (!xthreads_empty($thread['username']) ? $thread['username'] : $thread['threadusername']));
 	}
 	// evaluate group separator
 	if($foruminfo['xthreads_grouping']) {
@@ -416,7 +416,7 @@ function xthreads_global_forumbits_tpl() {
 	// TODO: perhaps make this smarter??
 	$prefixes = array();
 	foreach($GLOBALS['cache']->read('forums') as $f) {
-		if($f['xthreads_tplprefix'] && !$f['xthreads_hideforum']) {
+		if($f['xthreads_tplprefix'] !== '' && !$f['xthreads_hideforum']) {
 			$prefixes = array_merge($prefixes, explode(',', $f['xthreads_tplprefix']));
 		}
 	}

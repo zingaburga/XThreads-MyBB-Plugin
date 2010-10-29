@@ -35,12 +35,12 @@ function xthreads_search() {
 	$cachelist = '';
 	$forumcache = $cache->read('forums');
 	foreach($forumcache as &$forum) {
-		if($forum['xthreads_tplprefix']) {
+		if($forum['xthreads_tplprefix'] !== '') {
 			list($pref) = explode(',', $forum['xthreads_tplprefix']);
 			$cachelist .= ($cachelist?',':'').$pref.'search_results_posts_post,'.$pref.'search_results_threads_thread';
 		}
 	}
-	if($cachelist) $GLOBALS['templates']->cache($cachelist);
+	if($cachelist !== '') $GLOBALS['templates']->cache($cachelist);
 	
 	$plugins->add_hook('search_results_post', 'xthreads_search_result_post');
 	$plugins->add_hook('search_results_thread', 'xthreads_search_result_thread');
@@ -70,7 +70,7 @@ function xthreads_search_result(&$data, $tplname) {
 			xthreads_get_xta_cache($v, $tidlist);
 			
 			$threadfields[$k] =& $data['xthreads_'.$k];
-			xthreads_sanitize_disp($threadfields[$k], $v, ($data['username'] ? $data['username'] : $data['userusername']));
+			xthreads_sanitize_disp($threadfields[$k], $v, ($data['username'] !== '' ? $data['username'] : $data['userusername']));
 		}
 	}
 	// template hack
@@ -163,12 +163,12 @@ function xthreads_portal_announcement() {
 		// cache templates
 		$cachelist = '';
 		foreach($forum as &$f) {
-			if($f['xthreads_tplprefix']) {
+			if($f['xthreads_tplprefix'] !== '') {
 				list($pref) = explode(',', $f['xthreads_tplprefix']);
 				$cachelist .= ($cachelist?',':'').$pref.'portal_announcement,'.$pref.'portal_announcement_numcomments,'.$pref.'portal_announcement_numcomments_no';
 			}
 		}
-		if($cachelist) $GLOBALS['templates']->cache($cachelist);
+		if($cachelist !== '') $GLOBALS['templates']->cache($cachelist);
 	}
 	
 	
@@ -190,15 +190,15 @@ function xthreads_portal_announcement() {
 			xthreads_get_xta_cache($v, $tids);
 			
 			$threadfields[$k] =& $announcement['xthreads_'.$k];
-			xthreads_sanitize_disp($threadfields[$k], $v, ($announcement['username'] ? $announcement['username'] : $announcement['threadusername']));
+			xthreads_sanitize_disp($threadfields[$k], $v, ($announcement['username'] !== '' ? $announcement['username'] : $announcement['threadusername']));
 		}
 	}
 	// template hack
 	list($tplprefix) = explode(',', $GLOBALS['forum'][$announcement['fid']]['xthreads_tplprefix']);
 	xthreads_portalsearch_cache_hack($tplprefix, 'portal_announcement');
-	if($tplprefix) {
+	if(!xthreads_empty($tplprefix)) {
 		$tplname = $tplprefix.'portal_announcement_numcomments'.($announcement['replies']?'':'_no');
-		if($GLOBALS['templates']->cache[$tplname]) {
+		if(!xthreads_empty($GLOBALS['templates']->cache[$tplname])) {
 			global $lang, $mybb;
 			// re-evaluate comments template
 			eval('$GLOBALS[\'numcomments\'] = "'.$GLOBALS['templates']->get($tplname).'";');
@@ -208,7 +208,7 @@ function xthreads_portal_announcement() {
 
 function xthreads_portalsearch_cache_hack($tplpref, $tplname) {
 	$tplcache =& $GLOBALS['templates']->cache;
-	if($tplpref && isset($tplcache[$tplpref.$tplname])) {
+	if($tplpref !== '' && isset($tplcache[$tplpref.$tplname])) {
 		if(!isset($tplcache['backup_'.$tplname.'_backup__']))
 			$tplcache['backup_'.$tplname.'_backup__'] = $tplcache[$tplname];
 		$tplcache[$tplname] =& $tplcache[$tplpref.$tplname];
@@ -264,7 +264,7 @@ function xthreads_wol_patch(&$a) {
 	global $forumcache;
 	if(!is_array($forumcache)) $forumcache = $GLOBALS['cache']->read('forums');
 	$wolstr =& $forumcache[$fid]['xthreads_wol_'.$user_activity['activity']];
-	if($wolstr) {
+	if(!xthreads_empty($wolstr)) {
 		if(empty($langargs))
 			$a['location_name'] = $wolstr;
 		else {
@@ -331,7 +331,7 @@ function xthreads_wol_patch_init(&$ua) {
 				$db->xthreads_db_wol_hook = false;
 			}
 			break;
-		case 'unknown':
+		/* case 'unknown':
 			// TODO: the following URL isn't guaranteed as query strings may be used
 			if(($p = strpos($ua['location'], '/xthreads_attach.php/')) !== false) {
 				// check if really is xtattach page
@@ -341,6 +341,7 @@ function xthreads_wol_patch_init(&$ua) {
 				}
 			}
 			break;
+		*/
 	}
 }
 

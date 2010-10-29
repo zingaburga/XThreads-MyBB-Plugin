@@ -82,7 +82,7 @@ function do_processing() {
 	}
 
 	// parse input filename
-	if(isset($_REQUEST['file']) && $_REQUEST['file']) { // using query string
+	if(isset($_REQUEST['file']) && $_REQUEST['file'] !== '') { // using query string
 		$_SERVER['PATH_INFO'] = '/'.$_REQUEST['file'];
 		//if(get_magic_quotes_gpc())
 		//	$_SERVER['PATH_INFO'] = stripslashes($_SERVER['PATH_INFO']);

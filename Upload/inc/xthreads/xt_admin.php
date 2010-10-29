@@ -467,7 +467,7 @@ function xthreads_buildtfcache() {
 				unset($tf['textmask'], $tf['maxlen']);
 				
 				// fix multival here; we don't want it to be an array for textual inputs
-				if($tf['multival']) {
+				if(!xthreads_empty($tf['multival'])) {
 					$tf['defaultval'] = explode("\n", str_replace("\r", '', $tf['defaultval']));
 				}
 		}
@@ -490,7 +490,7 @@ function xthreads_buildtfcache() {
 				);
 		}
 		
-		if(!$tf['multival'])
+		if(xthreads_empty($tf['multival']))
 			unset($tf['dispitemformat']);
 		
 		
@@ -500,7 +500,7 @@ function xthreads_buildtfcache() {
 		else
 			$tf['formatmap'] = null;
 		
-		if($tf['vallist']) {
+		if(!xthreads_empty($tf['vallist'])) {
 			$tf['vallist'] = array_unique(array_map('trim', explode("\n", str_replace("\r", '', $tf['vallist']))));
 		}
 		// TODO: explode forums, fileexts?
@@ -513,7 +513,7 @@ function xthreads_buildtfcache() {
 		if($tf['fileimgthumbs']) {
 			$tf['fileimgthumbs'] = array_unique(explode('|', $tf['fileimgthumbs']));
 		}
-		if($tf['filemagic']) {
+		if(!xthreads_empty($tf['filemagic'])) {
 			$tf['filemagic'] = array_map('urldecode', array_unique(explode('|', $tf['filemagic'])));
 		}
 		// santize -> separate mycode stuff?

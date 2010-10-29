@@ -52,7 +52,7 @@ function xthreads_input_posthandler_validate(&$ph, $update=false) {
 		}
 	}
 	
-	$fid = $ph->data['fid']; // TODO: will this ever be NOT set?
+	$fid = $ph->data['fid'];
 	if(!$fid) {
 		global $thread, $post, $foruminfo;
 		if($GLOBALS['fid']) $fid = $GLOBALS['fid'];
@@ -104,7 +104,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 					$mybb->input['xthreads_'.$k] = explode(($v['inputtype'] == XTHREADS_INPUT_TEXTAREA ? "\n":','), str_replace("\r", '', $mybb->input['xthreads_'.$k]));
 				$inval = array_unique(array_map('trim', $mybb->input['xthreads_'.$k]));
 				foreach($inval as $valkey => &$val)
-					if(!$val) unset($inval[$valkey]);
+					if(xthreads_empty($val)) unset($inval[$valkey]);
 			}
 			else
 				$inval = trim($mybb->input['xthreads_'.$k]);
@@ -114,7 +114,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 			if($update) continue;
 		}
 		
-		if($v['editable'] == XTHREADS_EDITABLE_REQ && (!isset($inval) || empty($inval))) {
+		if($v['editable'] == XTHREADS_EDITABLE_REQ && (!isset($inval) || xthreads_empty($inval))) {
 			$errors[] = array('threadfield_required', htmlspecialchars_uni($v['title']));
 		}
 		elseif(isset($inval)) {
@@ -129,7 +129,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				else
 					$inval_list = array($inval); // &$inval generates recursion for some odd reason at times
 				foreach($inval_list as &$val) {
-					if(!$val) continue; // means that if the field wasn't set and isn't a necessary field, ignore it
+					if(xthreads_empty($val)) continue; // means that if the field wasn't set and isn't a necessary field, ignore it
 					if($v['maxlen'] && my_strlen($val) > $v['maxlen']) {
 						$errors[] = array('threadfield_toolong', array(htmlspecialchars_uni($v['title']), $v['maxlen']));
 						break;
@@ -321,7 +321,7 @@ function xthreads_inputdisp() {
 	}
 	
 	// editpost_first template hack
-	if($editpost && $GLOBALS['templates']->cache['editpost_first']) {
+	if($editpost && !xthreads_empty($GLOBALS['templates']->cache['editpost_first'])) {
 		$plugins->add_hook('editpost_end', 'xthreads_editpost_first_tplhack');
 	}
 	
@@ -504,7 +504,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			case XTHREADS_INPUT_RADIO:
 			case XTHREADS_INPUT_CHECKBOX:
 				$vals = array_map('htmlspecialchars_uni', $tf['vallist']);
-				if($tf['multival']) {
+				if(!xthreads_empty($tf['multival'])) {
 					if(is_array($defval))
 						$defvals =& $defval;
 					else
@@ -535,12 +535,12 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			case XTHREADS_INPUT_SELECT:
 				if($tf['fieldheight'])
 					$tf_fh = ' size="'.intval($tf['fieldheight']).'"';
-				elseif($tf['multival'])
+				elseif(!xthreads_empty($tf['multival']))
 					$tf_fh = ' size="5"';
-				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].($tf['multival'] ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
+				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].(!xthreads_empty($tf['multival']) ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
 				foreach($vals as &$val) {
-					$selected = ((isset($defvals) && in_array($val, $defvals)) || $defval == $val ? ' selected="selected"':'');
-					if(!$val && $tf['editable'] != XTHREADS_EDITABLE_REQ)
+					$selected = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' selected="selected"':'');
+					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
 						$tfinput[$k] .= '<option value="" style="font-style: italic;"'.$selected.'>'.$lang->xthreads_val_blank.'</option>';
 					else
 						$tfinput[$k] .= '<option value="'.$val.'"'.$selected.'>'.$val.'</option>';
@@ -553,8 +553,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			case XTHREADS_INPUT_RADIO:
 				$tftype = ($tf['inputtype'] == XTHREADS_INPUT_RADIO ? 'radio':'checkbox');
 				foreach($vals as &$val) {
-					$checked = ((isset($defvals) && in_array($val, $defvals)) || $defval == $val ? ' checked="checked"':'');
-					if(!$val && $tf['editable'] != XTHREADS_EDITABLE_REQ)
+					$checked = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' checked="checked"':'');
+					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
 						$tfinput[$k] .= '<label style="display: block; font-style: italic;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value=""'.$checked.$tabindex.' />'.$lang->xthreads_val_blank.'</label>';
 					else
 						$tfinput[$k] .= '<label style="display: block;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value="'.$val.'"'.$checked.$tabindex.' />'.unhtmlentities($val).'</label>';
@@ -616,7 +616,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				if(XTHREADS_ALLOW_URL_FETCH) {
 					// no =& because we change $input_url potentially
 					$input_url = $GLOBALS['mybb']->input['xtaurl_'.$tf['field']];
-					if(!$input_url) $input_url = 'http://';
+					if(xthreads_empty($input_url)) $input_url = 'http://';
 					if($input_url != 'http://' || $GLOBALS['mybb']->input['xtasel_'.$tf['field']] == 'url') {
 						$check_file = '';
 						$check_url = ' checked="checked"';
@@ -657,7 +657,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				break;
 				
 			default: // text
-				if($tf['multival'])
+				if(!xthreads_empty($tf['multival']))
 					$defval = str_replace("\n", ', ', $defval);
 				$tfinput[$k] = '<input type="text" class="textbox"'.$tfname.$maxlen.$tf_fw_size.$tabindex.' value="'.$defval.'" />';
 				break;
@@ -737,12 +737,12 @@ function xthreads_upload_attachments() {
 			
 			// handle file upload
 			$ul = null;
-			if(!empty($_FILES['xthreads_'.$k]) && !empty($_FILES['xthreads_'.$k]['name'])) {
+			if(!empty($_FILES['xthreads_'.$k]) && !xthreads_empty($_FILES['xthreads_'.$k]['name'])) {
 				$ul =& $_FILES['xthreads_'.$k];
 				if($mybb->input['xtaurl_'.$k])
 					unset($mybb->input['xtaurl_'.$k]);
 			}
-			elseif($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && $mybb->input['xtaurl_'.$k]) {
+			elseif($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && !xthreads_empty($mybb->input['xtaurl_'.$k])) {
 				// the preg_match is just a basic prelim check - the real URL checking is done later; we need this prelim check to stop it erroring out on the defalt "http://" string
 				if(preg_match('~^[a-z0-9\\-]+\\://[a-z0-9_\\-@:.]+(?:/.*)?$~', $mybb->input['xtaurl_'.$k]))
 					$ul = $mybb->input['xtaurl_'.$k];
@@ -835,6 +835,7 @@ function xthreads_editthread_ulattach_blockpreview() {
 
 
 function xthreads_get_attach_path(&$xta) {
+	static $path=null;
 	if(!isset($path)) {
 		$path = $GLOBALS['mybb']->settings['uploadspath'].'/xthreads_ul/';
 		if(defined('IN_ADMINCP')) {

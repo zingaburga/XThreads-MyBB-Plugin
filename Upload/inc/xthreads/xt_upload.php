@@ -64,7 +64,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		// admin file move
 		$filename = strtr(substr($attachment, 7), array('/' => '', DIRECTORY_SEPARATOR => '', "\0" => ''));
 		$file = $path.'admindrop/'.$filename;
-		if(!$filename || !file_exists($file)) {
+		if(xthreads_empty($filename) || !file_exists($file)) {
 			return array('error' => $lang->sprintf($lang->xthreads_xtaerr_admindrop_not_found, htmlspecialchars_uni($filename), htmlspecialchars_uni($file)));
 		}
 		if(!is_writable($file)) {
@@ -99,7 +99,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		}
 		$file_size = $attachment['size'];
 		
-		if(empty($attachment['name']) || $file_size < 1)
+		if(xthreads_empty($attachment['name']) || $file_size < 1)
 			return array('error' => $lang->error_uploadfailed);
 		
 		$attachment['name'] = strtr($attachment['name'], array('/' => '', "\x0" => ''));
@@ -290,7 +290,7 @@ function xthreads_validate_attachment(&$attachment, &$tf) {
 			$startbuf = fread($fp, 255); // since it's impossible to exceed this amount in the field (yes, it's dirty, lol)
 			fclose($fp);
 			foreach($tf['filemagic'] as &$magic) {
-				if(!$magic) continue;
+				if(xthreads_empty($magic)) continue;
 				if(substr($startbuf, 0, strlen($magic)) == $magic) {
 					$validmagic = true;
 					break;
@@ -335,6 +335,7 @@ function &xthreads_build_thumbnail($thumbdims, $aid, $filename, $path, $month_di
 				}
 			}
 			else { // image is small (hopefully), just copy it over
+				// TODO: maybe use hardlink instead?
 				@copy($filename, $path.$month_dir.$destname);
 				$update_thumbs[$dims] = array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2], 'file' => $month_dir.$destname);
 			}
@@ -356,7 +357,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 	if(!$lang->xthreads_xtfurlerr_invalidurl) $lang->load('xthreads');
 	$url = str_replace("\x0", '', $url);
 	$purl = @parse_url($url);
-	if(!$purl['host']) return array('error' => $lang->xthreads_xtfurlerr_invalidurl);
+	if(xthreads_empty($purl['host'])) return array('error' => $lang->xthreads_xtfurlerr_invalidurl);
 	
 	// attempt to decode special IP tricks, eg 0x7F.0.0.0 or even 127.000.0.0
 	if(substr_count($purl['host'], '.') == 3 && preg_match('~^[0-9a-fA-FxX.]+$~', $purl['host'])) {
@@ -364,7 +365,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		$modify = true;
 		foreach($parts as &$part) {
 			if($part === '') return array('error' => $lang->xthreads_xtfurlerr_invalidurl);
-			if($part{0} == '0' && isset($part{1})) {
+			if($part{0} === '0' && isset($part{1})) {
 				if($part{1} == 'x' || $part{1} == 'X') {
 					// check hex digit
 					$hexpart = substr($part, 2);
@@ -392,7 +393,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		if($modify) $purl['host'] = implode('.', $parts);
 	}
 	
-	if(XTHREADS_URL_FETCH_DISALLOW_HOSTS && in_array($purl['host'], explode(',', XTHREADS_URL_FETCH_DISALLOW_HOSTS)))
+	if(XTHREADS_URL_FETCH_DISALLOW_HOSTS && in_array($purl['host'], array_map('trim', explode(',', XTHREADS_URL_FETCH_DISALLOW_HOSTS))))
 		return array('error' => $lang->xthreads_xtfurlerr_badhost);
 	
 	$portmap = array(
@@ -414,13 +415,13 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		'size' => 0,
 	);
 	@unlink($ret['tmp_name']);
-	if(!$ret['name']) $ret['name'] = 'index.html';
+	if(xthreads_empty($ret['name'])) $ret['name'] = 'index.html';
 	$fp = @fopen($ret['tmp_name'], 'wb');
 	if(!$fp) return array('error' => $lang->xthreads_xtfurlerr_cantwrite);
 	
 	xthreads_fetch_url_register_tmp($ret['tmp_name']);
 	
-	$referrer = $purl['scheme'].'://'.$purl['hostname'].'/';
+	$referrer = $purl['scheme'].'://'.$purl['host'].'/';
 	
 	@set_time_limit(0);
 	if(function_exists('curl_init')) {
@@ -480,7 +481,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		}
 	}
  	else if(function_exists('fsockopen')) {
-		if(!$purl['path'])
+		if(xthreads_empty($purl['path']))
 			$purl['path'] = '/';
 		if($purl['query'])
 			$purl['path'] .= '?'.$purl['query'];
@@ -523,9 +524,9 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 								$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_badresponse, $res['retcode'], $res['retmsg']);
 								break;
 							}
-							if($res['name'])
+							if(!xthreads_empty($res['name']))
 								$ret['name'] = $res['name'];
-							if($res['type'])
+							if(!xthreads_empty($res['type']))
 								$ret['type'] = $res['type'];
 						}
 						if($ret['error']) break;
@@ -651,7 +652,7 @@ function xthreads_fetch_url_header($header) {
 	switch(strtolower(substr($header, 0, $p))) {
 		case 'content-length':
 			$size = intval($hdata);
-			if($size) {
+			if($size) { // TODO: so if size is 0, it doesn't return?
 				return array('size' => $size);
 			}
 		break;
@@ -660,7 +661,7 @@ function xthreads_fetch_url_header($header) {
 				$disp = trim($disp);
 				if(strtolower(substr($disp, 0, 9)) == 'filename=') {
 					$tmp = substr($disp, 9);
-					if($tmp) {
+					if(!xthreads_empty($tmp)) {
 						if($tmp{0} == '"' && $tmp{strlen($tmp)-1} == '"')
 							$tmp = substr($tmp, 1, -1);
 						return array('name' => trim(str_replace("\x0", '', $tmp)));
@@ -688,10 +689,10 @@ function xthreads_fetch_url_header_curl($ch=null, $header) {
 		curl_close($ch);
 		return 0;
 	}
-	if($res['name']) {
+	if(!xthreads_empty($res['name'])) {
 		$GLOBALS['xtfurl_ret']['name'] = $res['name'];
 	}
-	if($res['type'])
+	if(!xthreads_empty($res['type']))
 		$GLOBALS['xtfurl_ret']['type'] = $res['type'];
 	return strlen($header);
 }
