@@ -614,6 +614,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				
 				$fileinput = '<input type="file" class="fileupload"'.$tfname.$tf_fw_size.$tabindex.' id="xthreads_'.$tf['field'].'" />';
 				if(XTHREADS_ALLOW_URL_FETCH) {
+					// TODO: test if this environment can really fetch URLs
 					// no =& because we change $input_url potentially
 					$input_url = $GLOBALS['mybb']->input['xtaurl_'.$tf['field']];
 					if(xthreads_empty($input_url)) $input_url = 'http://';

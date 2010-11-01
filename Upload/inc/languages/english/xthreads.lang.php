@@ -8,6 +8,7 @@ $l['xthreads_xtaerr_admindrop_not_found'] = 'The specified file &quot;{1}&quot; 
 $l['xthreads_xtaerr_admindrop_file_unwritable'] = 'The specified file &quot;{1}&quot; is not writable.  You will probably need to CHMOD the file to something like 0666 for this function to work properly.';
 $l['xthreads_xtaerr_admindrop_index_error'] = 'Sorry, you cannot move index.html (or the various capitalised variants).  Please rename the file and try again.';
 
+$l['xthreads_xtfurlerr_nofetcher'] = 'No means to fetch remote URL found';
 $l['xthreads_xtfurlerr_invalidurl'] = 'Invalid URL supplied';
 $l['xthreads_xtfurlerr_badhost'] = 'Fetching from this host has been disallowed';
 $l['xthreads_xtfurlerr_badport'] = 'Specifying custom ports has been disallowed';
@@ -16,8 +17,7 @@ $l['xthreads_xtfurlerr_cantwrite'] = 'Could not open file for writing';
 $l['xthreads_xtfurlerr_cantwritesocket'] = 'Could not write to socket';
 $l['xthreads_xtfurlerr_urlopenfailed'] = 'Could not connect to specified URL';
 $l['xthreads_xtfurlerr_headernotfound'] = 'Could not determine response HTTP headers';
-$l['xthreads_xtfurlerr_curl'] = 'cURL error ({1}): {2}';
-$l['xthreads_xtfurlerr_socket'] = 'Socket error ({1}): {2}';
+$l['xthreads_xtfurlerr_errcode'] = '{1} error ({2}): {3}';
 $l['xthreads_xtfurlerr_badresponse'] = 'Could not fetch specified URL - the server returned <em>{1} {2}</em>';
 
 $l['xthreads_downloading_attachment'] = 'Downloading file <a href="{1}">{2}</a>';

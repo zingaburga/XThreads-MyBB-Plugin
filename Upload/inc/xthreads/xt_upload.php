@@ -400,6 +400,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		'http' => 80,
 		'https' => 443,
 		'ftp' => 21,
+		'ftps' => 990,
 	);
 	$scheme = strtolower($purl['scheme']);
 	
@@ -416,196 +417,67 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 	);
 	@unlink($ret['tmp_name']);
 	if(xthreads_empty($ret['name'])) $ret['name'] = 'index.html';
+	
+	require_once MYBB_ROOT.'inc/xthreads/xt_urlfetcher.php';
+	$fetcher = getXTUrlFetcher();
+	if(!isset($fetcher)) {
+		return array('error' => $lang->xthreads_xtfurlerr_nofetcher);
+	}
+	
 	$fp = @fopen($ret['tmp_name'], 'wb');
 	if(!$fp) return array('error' => $lang->xthreads_xtfurlerr_cantwrite);
 	
 	xthreads_fetch_url_register_tmp($ret['tmp_name']);
-	
-	$referrer = $purl['scheme'].'://'.$purl['host'].'/';
-	
 	@set_time_limit(0);
-	if(function_exists('curl_init')) {
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_HEADER, false);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-		curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-		curl_setopt($ch, CURLOPT_REFERER, $referrer);
-		//curl_setopt($ch, CURLOPT_USERAGENT, '');
-		curl_setopt($ch, CURLOPT_ENCODING, '');
-		// PHP safe mode may restrict the following
-		@curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-		
-		$GLOBALS['xtfurl_ret'] =& $ret;
-		$GLOBALS['xtfurl_max_size'] = $max_size;
-		curl_setopt($ch, CURLOPT_HEADERFUNCTION, 'xthreads_fetch_url_header_curl');
-		$GLOBALS['xtfurl_datalen'] = 0;
-		$GLOBALS['xtfurl_magicchecked'] = false;
-		$GLOBALS['xtfurl_validmagic'] =& $valid_magic;
-		$GLOBALS['xtfurl_databuf'] = '';
-		$GLOBALS['xtfurl_exts'] =& $valid_ext;
-		$GLOBALS['xtfurl_fp'] =& $fp;
-		curl_setopt($ch, CURLOPT_WRITEFUNCTION, 'xthreads_fetch_url_curl_write');
-		
-		//curl_setopt($ch, CURLOPT_FILE, $fp);
-		$success = @curl_exec($ch);
-		
-		
-		// check magic if not done
-		if($success && !$GLOBALS['xtfurl_magicchecked'] && !empty($valid_magic)) {
-			if(!xthreads_fetch_url_validmagic($GLOBALS['xtfurl_databuf'], $valid_magic)) {
-				$GLOBALS['xtfurl_magicchecked'] = 'invalid';
-				curl_close($ch);
-			}
-		}
-		
-		if(!$ret['error']) {
-			// check for early termination conditions
-			if($ret['size'] && $max_size && $ret['size'] > $max_size) {
-				$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
-			}
-			elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') {
-				$ret['error'] = $lang->error_attachtype;
-			}
-			// the whole file transferred?
-			elseif($success) {
-				// appears successful...
-				curl_close($ch);
-			}
-			else {
-				$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_curl, curl_errno($ch), curl_error($ch));
-				curl_close($ch);
-			}
+	
+	
+	$fetcher->url = $url;
+	$fetcher->setRefererFromUrl();
+	
+	$fetcher->charset = $lang->settings['charset'];
+	$fetcher->lang = $lang->settings['htmllang'];
+	
+	$GLOBALS['xtfurl_ret'] =& $ret;
+	$GLOBALS['xtfurl_max_size'] = $max_size;
+	$fetcher->meta_function = 'xthreads_fetch_url_meta';
+	$GLOBALS['xtfurl_datalen'] = 0;
+	$GLOBALS['xtfurl_magicchecked'] = false;
+	$GLOBALS['xtfurl_validmagic'] =& $valid_magic;
+	$GLOBALS['xtfurl_databuf'] = '';
+	$GLOBALS['xtfurl_exts'] =& $valid_ext;
+	$GLOBALS['xtfurl_fp'] =& $fp;
+	$fetcher->body_function = 'xthreads_fetch_url_write';
+	
+	$result = $fetcher->fetch();
+	// TODO: fix the following
+	if($result === false) {
+		$error = $fetcher->getError($errcode);
+		$langvar = 'xthreads_xtfurlerr_'.$error;
+		if(isset($lang->$langvar))
+			return array('error' => $lang->$langvar);
+		else
+			return array('error' => $lang->sprintf($lang->xthreads_xtfurlerr_errcode, $fetcher->name, $errcode, htmlspecialchars_uni($error)));
+	}
+	
+	$fetcher->close();
+	
+	// check magic if not done
+	if($result && !$GLOBALS['xtfurl_magicchecked'] && !empty($valid_magic)) {
+		if(!xthreads_fetch_url_validmagic($GLOBALS['xtfurl_databuf'], $valid_magic)) {
+			$GLOBALS['xtfurl_magicchecked'] = 'invalid';
+			$result = null;
 		}
 	}
- 	else if(function_exists('fsockopen')) {
-		if(xthreads_empty($purl['path']))
-			$purl['path'] = '/';
-		if($purl['query'])
-			$purl['path'] .= '?'.$purl['query'];
-		if($fr = @fsockopen($purl['host'], $purl['port'], $error_no, $error, 10)) {
-			@stream_set_timeout($fr, 10);
-			$headers = array(
-				'GET '.$purl['path'].' HTTP/1.1',
-				'Host: '.$purl['host'],
-				'Connection: close',
-				'Accept: */*',
-				'Accept-Charset: '.$lang->settings['charset'].';q=0.5, *;q=0.2',
-				'Accept-Language: '.$lang->settings['htmllang'].';q=0.5, *;q=0.3', // will be the user's lang preference first
-				'Referrer: '.$referrer,
-				"\r\n",
-			);
-			
-			if(@fwrite($fr, implode("\r\n", $headers))) {
-				$datalen = 0;
-				$databuf = '';
-				$magicchecked = false;
-				$doneheaders = false;
-				while(!feof($fr)) {
-					$data = fill_fread($fr, 16384);
-					$len = strlen($data);
-					// TODO: remove partial fill handling code below
-					if(!$doneheaders) {
-						$p = strpos($data, "\r\n\r\n");
-						if(!$p || $p > 12288) { // should be no reason to have >12KB headers
-							$ret['error'] = $lang->xthreads_xtfurlerr_headernotfound;
-							break;
-						}
-						// parse headers
-						foreach(explode("\r\n", substr($data, 0, $p)) as $header) {
-							$res = xthreads_fetch_url_header($header);
-							if($res['size'] && $max_size && $res['size'] > $max_size) {
-								$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
-								break;
-							}
-							if($res['retcode'] && $res['retcode'] != 200) {
-								$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_badresponse, $res['retcode'], $res['retmsg']);
-								break;
-							}
-							if(!xthreads_empty($res['name']))
-								$ret['name'] = $res['name'];
-							if(!xthreads_empty($res['type']))
-								$ret['type'] = $res['type'];
-						}
-						if($ret['error']) break;
-						
-						// check extension
-						if(!xthreads_fetch_url_validext($ret['name'], $valid_ext)) {
-							$ret['error'] = $lang->error_attachtype;
-							break;
-						}
-						
-						$p += 4;
-						$data = substr($data, $p);
-						$len -= $p;
-						$doneheaders = true;
-					}
-					if($len) {
-						if($datalen + $len > 255) {
-							if(!$magicchecked) {
-								$databuf .= substr($data, 0, min(255, $datalen+$len)-$datalen);
-								if(!xthreads_fetch_url_validmagic($databuf, $valid_magic)) {
-									$ret['error'] = $lang->error_attachtype;
-									break;
-								}
-								$magicchecked = true;
-							}
-						} else {
-							$databuf .= $data;
-						}
-						$datalen += $len;
-						if($max_size && $datalen > $max_size) {
-							$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
-							break;
-						}
-						fwrite($fp, $data);
-					}
-				}
-				if(!$magicchecked) {
-					if(!xthreads_fetch_url_validmagic($databuf, $valid_magic)) {
-						$ret['error'] = $lang->error_attachtype;
-					}
-				}
-				fclose($fr);
-			}
-			else {
-				$ret['error'] = $lang->xthreads_xtfurlerr_cantwritesocket;
-				fclose($fr);
-			}
-		} else
-			$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_socket, $error_no, $error);
-	}
-	else {
-		if(xthreads_fetch_url_validext($ret['name'], $valid_ext)) {
-			$fr = @fopen($url, 'rb');
-			if($fr) {
-				$datalen = 0;
-				while(!feof($fr)) {
-					$data = fill_fread($fr, 16384);
-					$len += strlen($data);
-					
-					if(!$datalen) {
-						if(!xthreads_fetch_url_validmagic($data, $valid_magic)) {
-							$ret['error'] = $lang->error_attachtype;
-							break;
-						}
-					}
-					
-					$datalen += $len;
-					if($max_size && $datalen > $max_size) {
-						$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
-						break;
-					}
-					fwrite($fp, $data);
-				}
-				fclose($fr);
-			} else
-				$ret['error'] = $lang->xthreads_xtfurlerr_urlopenfailed;
-		} else
+	if($result === null) {
+		// aborted - most likely from early termination
+		if($ret['size'] && $max_size && $ret['size'] > $max_size) {
+			$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
+		}
+		elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') { // this also covers extension check
 			$ret['error'] = $lang->error_attachtype;
+		}
 	}
+	
 	fclose($fp);
 	if($ret['error'])
 		@unlink($ret['tmp_name']);
@@ -636,67 +508,29 @@ function xthreads_fetch_url_validmagic(&$data, &$magic) {
 	}
 	return false;
 }
-function xthreads_fetch_url_header($header) {
-	$header = trim($header);
-	$p = strpos($header, ':');
-	if(!$p) {
-		// look for HTTP/1.1 type header
-		if(strtoupper(substr($header, 0, 5)) == 'HTTP/') {
-			if(preg_match('~^HTTP/[0-9.]+ (\d+) (.*)$~i', $header, $match)) {
-				return array('retcode' => intval($match[1]), 'retmsg' => trim($match[2]));
+
+function xthreads_fetch_url_meta(&$fetcher, &$name, &$val) {
+	global $xtfurl_ret;
+	switch($name) {
+		case 'retcode':
+			if($val[0] != 200) {
+				global $lang;
+				$GLOBALS['xtfurl_ret']['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_badresponse, $val[0], $val[1]);
+				return false;
 			}
-		}
-		return null;
+			return true;
+		
+		case 'size':
+		case 'name':
+		case 'type':
+			if(!xthreads_empty($val))
+				$xtfurl_ret[$name] = $val;
+			if($name == 'size' && $GLOBALS['xtfurl_max_size'] && $val > $GLOBALS['xtfurl_max_size'])
+				return false;
 	}
-	$hdata = trim(substr($header, $p+1));
-	switch(strtolower(substr($header, 0, $p))) {
-		case 'content-length':
-			$size = intval($hdata);
-			if($size) { // TODO: so if size is 0, it doesn't return?
-				return array('size' => $size);
-			}
-		break;
-		case 'content-disposition':
-			foreach(explode(';', $hdata) as $disp) {
-				$disp = trim($disp);
-				if(strtolower(substr($disp, 0, 9)) == 'filename=') {
-					$tmp = substr($disp, 9);
-					if(!xthreads_empty($tmp)) {
-						if($tmp{0} == '"' && $tmp{strlen($tmp)-1} == '"')
-							$tmp = substr($tmp, 1, -1);
-						return array('name' => trim(str_replace("\x0", '', $tmp)));
-					}
-				}
-			}
-		break;
-		case 'content-type':
-			return array('type' => $hdata);
-		break;
-	}
-	return null;
+	return true;
 }
-function xthreads_fetch_url_header_curl($ch=null, $header) {
-	$res = xthreads_fetch_url_header($header);
-	if($res['size'] && $GLOBALS['xtfurl_max_size'] && $res['size'] > $GLOBALS['xtfurl_max_size']) {
-		//$GLOBALS['xtfurl_ret']['error'] = ;
-		$GLOBALS['xtfurl_ret']['size'] = $res['size'];
-		curl_close($ch);
-		return 0;
-	}
-	if($res['retcode'] && $res['retcode'] != 200) {
-		global $lang;
-		$GLOBALS['xtfurl_ret']['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_badresponse, $res['retcode'], $res['retmsg']);
-		curl_close($ch);
-		return 0;
-	}
-	if(!xthreads_empty($res['name'])) {
-		$GLOBALS['xtfurl_ret']['name'] = $res['name'];
-	}
-	if(!xthreads_empty($res['type']))
-		$GLOBALS['xtfurl_ret']['type'] = $res['type'];
-	return strlen($header);
-}
-function xthreads_fetch_url_curl_write($ch, $data) {
+function xthreads_fetch_url_write(&$fetcher, &$data) {
 	$len = strlen($data);
 	global $xtfurl_datalen, $xtfurl_magicchecked;
 	
@@ -704,16 +538,14 @@ function xthreads_fetch_url_curl_write($ch, $data) {
 	if(!$xtfurl_datalen) {
 		if(!xthreads_fetch_url_validext($GLOBALS['xtfurl_ret']['name'], $GLOBALS['xtfurl_exts'])) {
 			$xtfurl_magicchecked = 'invalid'; // dirty, but works...
-			curl_close($ch);
-			return 0;
+			return false;
 		}
 	}
 	
 	$xtfurl_datalen += $len;
 	if($GLOBALS['xtfurl_max_size'] && $xtfurl_datalen > $GLOBALS['xtfurl_max_size']) {
 		$GLOBALS['xtfurl_ret']['size'] = $xtfurl_datalen;
-		curl_close($ch);
-		return 0;
+		return false;
 	}
 	if(!$xtfurl_magicchecked && !empty($GLOBALS['xtfurl_validmagic'])) {
 		global $xtfurl_databuf;
@@ -722,8 +554,7 @@ function xthreads_fetch_url_curl_write($ch, $data) {
 			$xtfurl_databuf .= substr($data, 0, min(255, $xtfurl_datalen)-$xtfurl_datalen+$len);
 			if(!xthreads_fetch_url_validmagic($xtfurl_databuf, $GLOBALS['xtfurl_validmagic'])) {
 				$xtfurl_magicchecked = 'invalid';
-				curl_close($ch);
-				return 0;
+				return false;
 			}
 			$xtfurl_magicchecked = true;
 		} else {
@@ -731,21 +562,9 @@ function xthreads_fetch_url_curl_write($ch, $data) {
 		}
 	}
 	fwrite($GLOBALS['xtfurl_fp'], $data);
-	return $len;
+	return true;
 }
 
-
-// since fread'ing won't necessarily fill the requested buffer size...
-function &fill_fread(&$fp, $len) {
-	$fill = 0;
-	$ret = '';
-	while(!feof($fp) && $len > 0) {
-		$data = fread($fp, $len);
-		$len -= strlen($data);
-		$ret .= $data;
-	}
-	return $ret;
-}
 
 // these functions ensure that temp files are cleaned up if the user aborts the connection
 function xthreads_fetch_url_register_tmp($name) {
