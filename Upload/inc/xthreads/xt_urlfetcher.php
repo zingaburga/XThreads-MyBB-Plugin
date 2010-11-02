@@ -30,7 +30,7 @@ if(!defined('IN_MYBB'))
 	var $user_agent=null;
 	
 	/**
-	 * Callback function to send meta information to
+	 * Callback function to send meta information to; not guaranteed to be called, and values received shouldn't be completely trusted
 	 * Should accept 3 arguments: this object, meta name and value
 	 * Meta names can be:
 	 *  - retcode: HTTP response code, sent as an array, eg array(404, 'Not Found')

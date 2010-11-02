@@ -106,6 +106,16 @@ if($info['version'] < 1.33) {
 	
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` varchar(255) not null default ""');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_addfiltenable` varchar(200) not null default ""');
+	
+	// replace default comment in showthread_noreplies template
+	$query = $db->simple_select('templates', 'tid,template', 'title="showthread_noreplies"');
+	while($template = $db->fetch_array($query)) {
+		$newtemplate = str_replace('<!-- template to be used if there are no replies to a thread - only evaulated if first post at top option is enabled. For this to work with quick reply properly, you should uncomment and use the following -->', '<!-- template to be used if there are no replies to a thread. For this to work with quick reply properly, you should uncomment and use the following -->', $template['template']);
+		if($newtemplate != $template['template']) {
+			$db->update_query('templates', array('template' => $db->escape_string($newtemplate)), 'tid='.$template['tid']);
+		}
+	}
+	$db->free_result($query);
 }
 
 return true;

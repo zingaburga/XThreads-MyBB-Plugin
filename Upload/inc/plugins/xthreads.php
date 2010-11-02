@@ -159,6 +159,7 @@ function xthreads_tplhandler() {
 	$fid = intval($fid);
 	
 	if($fid) {
+		global $forum;
 		$forum = get_forum($fid);
 		if($forum['xthreads_tplprefix'] !== '') {
 			// this forum has a custom tpl prefix, hook into templates system
@@ -175,14 +176,14 @@ function xthreads_tplhandler() {
 			$templates->non_existant_templates = array();
 			$templates->xt_tpl_prefix = explode(',', $forum['xthreads_tplprefix']);
 		}
-		if($forum['xthreads_firstpostattop']) {
+		//if($forum['xthreads_firstpostattop']) {
 			switch($current_page) {
 				case 'showthread.php':
 					require_once MYBB_ROOT.'inc/xthreads/xt_sthreadhooks.php';
 					xthreads_showthread_firstpost();
 					break;
 				case 'newthread.php':
-				case 'editpost.php': // preload regardless of it being the first post or not
+				case 'editpost.php':
 					if($mybb->input['previewpost']) {
 						$do_preload = true;
 						if($current_page == 'editpost.php') {
@@ -200,7 +201,7 @@ function xthreads_tplhandler() {
 						break;
 					}
 			}
-		}
+		//}
 		// settings overrides
 		if($forum['xthreads_force_postlayout'])
 			$mybb->settings['postlayout'] = $forum['xthreads_force_postlayout'];

@@ -416,7 +416,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		'size' => 0,
 	);
 	@unlink($ret['tmp_name']);
-	if(xthreads_empty($ret['name'])) $ret['name'] = 'index.html';
+	if(substr($purl['path'], -1) == '/' || xthreads_empty($ret['name'])) $ret['name'] = 'index.html';
 	
 	require_once MYBB_ROOT.'inc/xthreads/xt_urlfetcher.php';
 	$fetcher = getXTUrlFetcher();

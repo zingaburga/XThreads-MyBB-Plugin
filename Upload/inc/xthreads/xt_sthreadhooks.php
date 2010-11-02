@@ -30,77 +30,83 @@ function xthreads_showthread_firstpost() {
 		$threaded = ($mybb->user['threadmode'] == 'threaded');
 	else
 		$threaded = ($mybb->settings['threadusenetstyle'] == 1);
+	if($threaded) return;
 	
-	if(!$threaded) {
-		global $db, $templates;
-		xthreads_firstpost_tpl_preload();
-		$templatelist .= ',showthread_noreplies';
-		
-		function xthreads_tpl_firstpost_moveout() {
-			global $posts;
-			static $done = false;
-			if($done) return;
-			$done = true;
-			$GLOBALS['first_post'] = $posts;
-			$posts = '';
-			$GLOBALS['plugins']->remove_hook('showthread_start', 'xthreads_tpl_postbithack');
+	global $db;
+	xthreads_firstpost_tpl_preload();
+	$templatelist .= ',showthread_noreplies';
+	
+	function xthreads_tpl_firstpost_moveout() {
+		global $posts;
+		static $done = false;
+		if($done) return;
+		$done = true;
+		$GLOBALS['first_post'] = $posts;
+		$posts = '';
+		// uh... what's this next line here for again?
+		//$GLOBALS['plugins']->remove_hook('showthread_start', 'xthreads_showthread_firstpost_hack');
+	}
+	function xthreads_tpl_firstpost_noreplies() {
+		global $posts;
+		// execute this in case there's only one post in the thread
+		xthreads_tpl_firstpost_moveout();
+		if(!$posts) {
+			eval('$posts = "'.$GLOBALS['templates']->get('showthread_noreplies').'";');
 		}
-		function xthreads_tpl_firstpost_noreplies() {
-			global $posts;
-			// execute this in case there's only one post in the thread
-			xthreads_tpl_firstpost_moveout();
-			if(!$posts) {
-				eval('$posts = "'.$GLOBALS['templates']->get('showthread_noreplies').'";');
+	}
+	function xthreads_tpl_postbitrestore() {
+		global $templates, $xthreads_postbit_templates, $page;
+		foreach($xthreads_postbit_templates as &$t) {
+			$pbname = substr($t, 7);
+			if(!$pbname) $pbname = '';
+			if(isset($templates->cache['postbit_first'.$pbname]) && !isset($templates->non_existant_templates['postbit_first'.$pbname])) {
+				$templates->cache[$t] = $templates->cache['backup_postbit'.$pbname.'_backup__'];
 			}
 		}
-		function xthreads_tpl_postbitrestore() {
-			global $templates, $xthreads_postbit_templates, $page;
-			foreach($xthreads_postbit_templates as &$t) {
-				$pbname = substr($t, 7);
-				if(!$pbname) $pbname = '';
-				if(isset($templates->cache['postbit_first'.$pbname]) && !isset($templates->non_existant_templates['postbit_first'.$pbname])) {
-					$templates->cache[$t] = $templates->cache['backup_postbit'.$pbname.'_backup__'];
+		// whilst we're here, add the necessary plugin hook
+		$GLOBALS['plugins']->add_hook('postbit', 'xthreads_tpl_firstpost_moveout');
+		$GLOBALS['plugins']->add_hook('showthread_linear', 'xthreads_tpl_firstpost_noreplies');
+		
+		// don't forget to fix the postcounter too!
+		if($page > 1) {
+			global $mybb;
+			if(!$mybb->settings['postsperpage'])
+				$mybb->settings['postsperpage'] = 20;
+			$GLOBALS['postcounter'] = $mybb->settings['postsperpage']*($page-1);
+		}
+	}
+	
+	function xthreads_showthread_firstpost_hack() {
+		if(xthreads_tpl_postbithack()) {
+			// *sigh* no other way to do this other than to hack the templates object again... >_>
+			control_object($GLOBALS['templates'], '
+				function get($title, $eslashes=1, $htmlcomments=1) {
+					static $done=false;
+					if(!$done && ($title == \'postbit\' || $title == \'postbit_classic\')) {
+						$done = true;
+						$r = parent::get($title, $eslashes, $htmlcomments);
+						xthreads_tpl_postbitrestore();
+						//return str_replace(\'{$post_extra_style}\', \'border-top-width: 0;\', $r);
+						return \'".($post_extra_style="border-top-width: 0;"?"":"")."\'.$r;
+					} else
+						return parent::get($title, $eslashes, $htmlcomments);
 				}
-			}
-			// whilst we're here, add the necessary plugin hook
-			$GLOBALS['plugins']->add_hook('postbit', 'xthreads_tpl_firstpost_moveout');
-			$GLOBALS['plugins']->add_hook('showthread_linear', 'xthreads_tpl_firstpost_noreplies');
-			
-			// don't forget to fix the postcounter too!
-			if($page > 1) {
-				global $mybb;
-				if(!$mybb->settings['postsperpage'])
-					$mybb->settings['postsperpage'] = 20;
-				$GLOBALS['postcounter'] = $mybb->settings['postsperpage']*($page-1);
-			}
+			');
 		}
-		$GLOBALS['plugins']->add_hook('showthread_start', 'xthreads_tpl_postbithack');
+	}
+	//$GLOBALS['plugins']->add_hook('showthread_start', 'xthreads_showthread_firstpost_hack');
+	
+	
+	// and now actually do the hack to display the first post on each page
+	if($GLOBALS['forum']['xthreads_firstpostattop']) { // would be great if we had a reliable way to determine if we're on the first page here
+		$db->xthreads_firstpost_hack = false;
 		
-		// *sigh* no other way to do this other than to hack the templates object again... >_>
-		control_object($templates, '
-			function get($title, $eslashes=1, $htmlcomments=1) {
-				static $done=false;
-				if(!$done && ($title == \'postbit\' || $title == \'postbit_classic\')) {
-					$done = true;
-					$r = parent::get($title, $eslashes, $htmlcomments);
-					xthreads_tpl_postbitrestore();
-					//return str_replace(\'{$post_extra_style}\', \'border-top-width: 0;\', $r);
-					return \'".($post_extra_style="border-top-width: 0;"?"":"")."\'.$r;
-				} else
-					return parent::get($title, $eslashes, $htmlcomments);
-			}
-		');
+		// this is a dirty hack we probably shouldn't be relying on (but eh, it works)
+		// basically '-0' evaluates to true, effectively skipping the check in build_postbit()
+		// but when incremented, becomes 1
+		$GLOBALS['postcounter'] = '-0';
 		
-		// and now actually do the hack to display the first post on each page
-		control_object($db, '
-			function simple_select($table, $fields=\'*\', $conditions=\'\', $options=array()) {
-				static $done=false;
-				if(!$done && $table == \'posts p\' && $fields == \'p.pid\' && $options[\'order_by\'] == \'p.dateline\') {
-					$done = true;
-					if($options[\'limit_start\']) $this->xthreads_firstpost_hack = true;
-				}
-				return parent::simple_select($table, $fields, $conditions, $options);
-			}
+		$extra_code = '
 			function fetch_array($query) {
 				if($this->xthreads_firstpost_hack) {
 					$this->xthreads_firstpost_hack = false;
@@ -108,14 +114,24 @@ function xthreads_showthread_firstpost() {
 				}
 				return parent::fetch_array($query);
 			}
-		');
-		$db->xthreads_firstpost_hack = false;
-		
-		// this is a dirty hack we probably shouldn't be relying on (but eh, it works)
-		// basically '-0' evaluates to true, effectively skipping the check in build_postbit()
-		// but when incremented, becomes 1
-		$GLOBALS['postcounter'] = '-0';
+		';
+		$firstpost_hack_code = 'if($options[\'limit_start\']) $this->xthreads_firstpost_hack = true;';
+	} else {
+		$extra_code = '';
+		$firstpost_hack_code = 'if(!$options[\'limit_start\'])';
 	}
+	control_object($db, '
+		function simple_select($table, $fields=\'*\', $conditions=\'\', $options=array()) {
+			static $done=false;
+			if(!$done && $table == \'posts p\' && $fields == \'p.pid\' && $options[\'order_by\'] == \'p.dateline\') {
+				$done = true;
+				'.$firstpost_hack_code.'
+					xthreads_showthread_firstpost_hack();
+			}
+			return parent::simple_select($table, $fields, $conditions, $options);
+		}
+		'.$extra_code.'
+	');
 }
 
 
@@ -126,8 +142,10 @@ function xthreads_firstpost_tpl_preload() {
 		$templatelist .= ',postbit_first'.substr($t, 7);
 	}
 }
+// returns true if postbit_first used at all
 function xthreads_tpl_postbithack() {
 	global $templates, $xthreads_postbit_templates;
+	$modified = false;
 	if(!isset($templates->cache['postbit']))
 		$templates->cache(implode(',', $xthreads_postbit_templates));
 	foreach($xthreads_postbit_templates as &$t) {
@@ -136,6 +154,8 @@ function xthreads_tpl_postbithack() {
 		if(isset($templates->cache['postbit_first'.$pbname]) && !isset($templates->non_existant_templates['postbit_first'.$pbname])) {
 			$templates->cache['backup_postbit'.$pbname.'_backup__'] = $templates->cache[$t];
 			$templates->cache[$t] =& $templates->cache['postbit_first'.$pbname];
+			$modified = true;
 		}
 	}
+	return $modified;
 }

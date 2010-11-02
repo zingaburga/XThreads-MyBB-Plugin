@@ -150,7 +150,7 @@ function xthreads_install() {
 		'editpost_first' => '<!-- this template allows you to have something different from the editpost template for when editing the first post of a thread; by default, will just display the editpost template -->'."\n".'{$editpost}',
 		'forumdisplay_group_sep' => '<!-- stick your thread group separator template here -->',
 		'forumdisplay_thread_null' => '<!-- stick your null thread template here -->',
-		'showthread_noreplies' => '<!-- template to be used if there are no replies to a thread - only evaulated if first post at top option is enabled. For this to work with quick reply properly, you should uncomment and use the following -->
+		'showthread_noreplies' => '<!-- template to be used if there are no replies to a thread. For this to work with quick reply properly, you should uncomment and use the following -->
 <!--
 <div id="xthreads_noreplies">
 Put your stuff here

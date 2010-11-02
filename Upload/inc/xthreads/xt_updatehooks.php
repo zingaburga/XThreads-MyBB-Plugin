@@ -376,12 +376,12 @@ function xthreads_inputdisp() {
 			}
 			
 			// do first post hack if applicable
-			if($forum['xthreads_firstpostattop']) {
+			//if($forum['xthreads_firstpostattop']) {
 				//require_once MYBB_ROOT.'inc/xthreads/xt_sthreadhooks.php';
 				// above file should already be included
 				if(function_exists('xthreads_tpl_postbithack'))
 					xthreads_tpl_postbithack();
-			}
+			//}
 		} else {
 			// block preview if there's errors
 			// <removed previously commented out code which blocked preview by unsetting the previewpost input>
