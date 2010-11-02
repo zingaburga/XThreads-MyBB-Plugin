@@ -5,24 +5,39 @@ if(!defined('IN_MYBB'))
 /**
  * Abstract class/interface to handle URL fetching
  */
-class XTUrlFetcher {
+/*abstract*/ class XTUrlFetcher {
 	/**
 	 * URL to fetch
 	 */
 	var $url;
 	/**
-	 * Timeout
+	 * Timeout in seconds
 	 */
 	var $timeout = 10;
 	
+	/**
+	 * Number of redirects (Location header) to follow.  0 to disable.
+	 * Not guaranteed to be respected
+	 */
 	var $follow_redir = 5;
+	/**
+	 * Contents of Referrer HTTP header
+	 */
 	var $referer=null;
+	/**
+	 * Contents of User-Agent HTTP header
+	 */
 	var $user_agent=null;
 	
 	/**
 	 * Callback function to send meta information to
 	 * Should accept 3 arguments: this object, meta name and value
-	 * Should return true if everything is well, false to abort
+	 * Meta names can be:
+	 *  - retcode: HTTP response code, sent as an array, eg array(404, 'Not Found')
+	 *  - size: size of file in bytes (HTTP Content-Length header)
+	 *  - name: custom filename (HTTP Content-Disposition header)
+	 *  - type: sent MIME type (HTTP Content-Type header)
+	 * Should return true if everything is well, false to abort the transfer
 	 */
 	var $meta_function=null;
 	/**
@@ -35,10 +50,9 @@ class XTUrlFetcher {
 	
 	/**
 	 * Error number and string
-	 * @access protected
 	 */
-	var $_errno=null;
-	var $_errstr=null;
+	/*protected*/ var $_errno=null;
+	/*protected*/ var $_errstr=null;
 	
 	/**
 	 * Whether or not connection was aborted by calling app
@@ -63,6 +77,7 @@ class XTUrlFetcher {
 	/**
 	 * Fetch $url
 	 * @return true if successful, false if not, and null if aborted
+	 *         if body_function not supplied, will return fetched data
 	 */
 	//abstract function fetch();
 	
@@ -76,9 +91,8 @@ class XTUrlFetcher {
 	
 	/**
 	 * Generate an array of headers; does not include Host or GET header
-	 * @access protected
 	 */
-	function &_generateHeaders() {
+	/*protected*/ function &_generateHeaders() {
 		$headers = array(
 			'Connection: close',
 			'Accept: */*',
@@ -99,10 +113,9 @@ class XTUrlFetcher {
 	
 	/**
 	 * Processes a HTTP header, and calls the meta function if necessary
-	 * @access protected
 	 * @return false to abort, true otherwise
 	 */
-	function _processHttpHeader($header) {
+	/*protected*/ function _processHttpHeader($header) {
 		if(!isset($this->meta_function)) return true;
 		
 		$result = self::_processHttpHeader_parse($header);
@@ -118,10 +131,9 @@ class XTUrlFetcher {
 	}
 	/**
 	 * Parse info from HTTP header
-	 * @access private
 	 * @return array of info retrieved, or null if nothing retrieved
 	 */
-	static function _processHttpHeader_parse(&$header) {
+	/*private*/ static function _processHttpHeader_parse(&$header) {
 		$header = trim($header);
 		$p = strpos($header, ':');
 		if(!$p) {
@@ -162,7 +174,7 @@ class XTUrlFetcher {
 	}
 	
 	// since fread'ing won't necessarily fill the requested buffer size...
-	static function &fill_fread(&$fp, $len) {
+	/*protected*/ static function &fill_fread(&$fp, $len) {
 		$fill = 0;
 		$ret = '';
 		while(!feof($fp) && $len > 0) {
@@ -173,6 +185,12 @@ class XTUrlFetcher {
 		return $ret;
 	}
 	
+	/**
+	 * Get error code/message
+	 * @param [out] variable to receive error code
+	 * @return error message
+	 *         special messages are 'cantwritesocket', 'headernotfound' and 'urlopenfailed'
+	 */
 	function getError(&$code=null) {
 		$code = $this->errno;
 		return $this->errstr;
@@ -185,11 +203,10 @@ class XTUrlFetcher {
 class XTUrlFetcher_Curl extends XTUrlFetcher {
 	/**
 	 * Internal cURL resource handle
-	 * @access private
 	 */
-	var $_ch;
+	/*private*/ var $_ch;
 	
-	var $name = 'cURL';
+	/*const*/ var $name = 'cURL';
 	
 	static function available() {
 		return function_exists('curl_init');
@@ -278,7 +295,7 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 	 */
 	var $lang;
 	
-	var $name = 'Sockets';
+	/*const*/ var $name = 'Sockets';
 	
 	static function available() {
 		return function_exists('fsockopen');
@@ -453,4 +470,4 @@ function getXTUrlFetcher($scheme='') {
 }
 
 
-// TODO add: support for data:// stream, sockets don't try FTP, improve handling of fopen
+// TODO add: support for data:// stream, FTP in cURL/fsockopen?
