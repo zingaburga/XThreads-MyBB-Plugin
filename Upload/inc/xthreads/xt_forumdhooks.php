@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 function xthreads_forumdisplay() {
-	global $db, $threadfield_cache, $fid, $mybb, $tf_filters, $filters_set, $xthreads_forum_filter_form, $xthreads_forum_filter_args;
+	global $db, $threadfield_cache, $fid, $mybb, $tf_filters, $xt_filters, $filters_set, $xthreads_forum_filter_form, $xthreads_forum_filter_args;
 	// the position of the "forumdisplay_start" hook is kinda REALLY annoying...
 	$fid = intval($mybb->input['fid']);
 	if($fid < 1 || !($forum = get_forum($fid))) return;
@@ -64,6 +64,9 @@ function xthreads_forumdisplay() {
 					unset($tf_filters[$n]);
 					continue;
 				}
+				
+				xthreads_forumdisplay_filter_input('filtertf_'.$n, $tf_filters[$n], $filters_set[$n]);
+				/*
 				if(is_array($tf_filters[$n])) {
 					$filters_set[$n] = array(
 						'value' => '',
@@ -110,24 +113,36 @@ function xthreads_forumdisplay() {
 						'visiblecss' => '',
 					);
 				}
-			}
-			if($xthreads_forum_filter_args) {
-				$filters_set['__all']['urlarg'] = htmlspecialchars_uni(substr($xthreads_forum_filter_args, 1));
-				$filters_set['__all']['urlarga'] = '&amp;'.$filters_set['__all']['urlarg'];
-				$filters_set['__all']['urlargq'] = '?'.$filters_set['__all']['urlarg'];
-				$filters_set['__all']['forminput'] = $xthreads_forum_filter_form;
-				$filters_set['__all']['hiddencss'] = 'display: none;';
-				$filters_set['__all']['visiblecss'] = '';
-				unset($filters_set['__all']['nullselected'], $filters_set['__all']['nullchecked'], $filters_set['__all']['nullactive']);
+				*/
 			}
 			//if($mybb->input['sortby'] == 'tf_'.$n)
 			//	$tf_sort = $n;
 		}
-		
 		// Quick Thread integration
 		if(function_exists('quickthread_run'))
 			xthreads_forumdisplay_quickthread();
 	}
+	$xt_filters = array();
+	$enabled_xtf = explode(',', $forum['xthreads_addfiltenable']);
+	if(!empty($enabled_xtf)) foreach($enabled_xtf as &$xtf) {
+		$filters_set['__xt_'.$xtf] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
+		if(isset($mybb->input['filterxt_'.$xtf])) {
+			$xt_filters[$xtf] = $mybb->input['filterxt_'.$xtf];
+			xthreads_forumdisplay_filter_input('filterxt_'.$xtf, $xt_filters[$xtf], $filters_set['__xt_'.$xtf]);
+		}
+	}
+	unset($enabled_xtf);
+	
+	if($xthreads_forum_filter_args) {
+		$filters_set['__all']['urlarg'] = htmlspecialchars_uni(substr($xthreads_forum_filter_args, 1));
+		$filters_set['__all']['urlarga'] = '&amp;'.$filters_set['__all']['urlarg'];
+		$filters_set['__all']['urlargq'] = '?'.$filters_set['__all']['urlarg'];
+		$filters_set['__all']['forminput'] = $xthreads_forum_filter_form;
+		$filters_set['__all']['hiddencss'] = 'display: none;';
+		$filters_set['__all']['visiblecss'] = '';
+		unset($filters_set['__all']['nullselected'], $filters_set['__all']['nullchecked'], $filters_set['__all']['nullactive']);
+	}
+	
 	if($forum['xthreads_inlinesearch'] && isset($mybb->input['search']) && $mybb->input['search'] !== '') {
 		$urlarg = 'search='.rawurlencode($mybb->input['search']);
 		$xthreads_forum_filter_args .= '&'.$urlarg;
@@ -145,7 +160,7 @@ function xthreads_forumdisplay() {
 		unset($filters_set['__search']['nullselected'], $filters_set['__search']['nullchecked'], $filters_set['__search']['nullactive']);
 	}
 	
-	if($forum['xthreads_inlinesearch'] || !empty($tf_filters)) {
+	if($forum['xthreads_inlinesearch'] || !empty($tf_filters) || !empty($xt_filters)) {
 		// only nice way to do all of this is to gain control of $templates, so let's do it
 		control_object($GLOBALS['templates'], '
 			function get($title, $eslashes=1, $htmlcomments=1) {
@@ -193,8 +208,58 @@ function xthreads_forumdisplay_quickthread() {
 	$tpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1'.strtr($GLOBALS['extra_threadfields'], array('$' => '\\$')).'$2', $tpl, 1);
 }
 
+function xthreads_forumdisplay_filter_input($arg, &$tffilter, &$filter_set) {
+	global $xthreads_forum_filter_form, $xthreads_forum_filter_args;
+	if(is_array($tffilter)) {
+		$filter_set = array(
+			'value' => '',
+			'urlarg' => '',
+			'urlarga' => '&',
+			'urlargq' => '?',
+			'forminput' => '',
+			'selected' => array(),
+			'checked' => array(),
+			'active' => array(),
+			'hiddencss' => 'display: none;',
+			'visiblecss' => '',
+		);
+		$filterurl = '';
+		foreach($tffilter as &$val) {
+			$filter_set['forminput'] .= '<input type="hidden" name="'.htmlspecialchars($arg).'[]" value="'.htmlspecialchars_uni($val).'" />';
+			$filterurl .= ($filterurl ? '&':'').rawurlencode($arg).'[]='.rawurlencode($val);
+			
+			$filter_set['value'] .= ($filter_set['value'] ? ', ':'').htmlspecialchars_uni($val);
+			$filter_set['selected'][$val] = ' selected="selected"';
+			$filter_set['checked'][$val] = ' checked="checked"';
+			$filter_set['active'][$val] = 'filtertf_active';
+		}
+		$filter_set['urlarg'] = htmlspecialchars_uni($filterurl);
+		$filter_set['urlarga'] = '&amp;'.$filter_set['urlarg'];
+		$filter_set['urlargq'] = '?'.$filter_set['urlarg'];
+		$xthreads_forum_filter_form .= $filter_set['forminput'];
+		$xthreads_forum_filter_args .= '&'.$filterurl;
+	} else {
+		$formarg = '<input type="hidden" name="'.htmlspecialchars($arg).'" value="'.htmlspecialchars_uni($tffilter).'" />';
+		$xthreads_forum_filter_form .= $formarg;
+		$urlarg = rawurlencode($arg).'='.rawurlencode($tffilter);
+		$xthreads_forum_filter_args .= '&'.$urlarg;
+		$filter_set = array(
+			'value' => htmlspecialchars_uni($tffilter),
+			'urlarg' => htmlspecialchars_uni($urlarg),
+			'urlarga' => '&amp;'.htmlspecialchars_uni($urlarg),
+			'urlargq' => '?'.htmlspecialchars_uni($urlarg),
+			'forminput' => $formarg,
+			'selected' => array($tffilter => ' selected="selected"'),
+			'checked' => array($tffilter => ' checked="checked"'),
+			'active' => array($tffilter => 'filtertf_active'),
+			'hiddencss' => 'display: none;',
+			'visiblecss' => '',
+		);
+	}
+}
+
 function xthreads_forumdisplay_filter() {
-	global $mybb, $foruminfo, $tf_filters, $threadfield_cache;
+	global $mybb, $foruminfo, $tf_filters, $xt_filters, $threadfield_cache;
 	global $visibleonly, $tvisibleonly, $db;
 	
 	$q = '';
@@ -217,22 +282,20 @@ function xthreads_forumdisplay_filter() {
 		foreach($tf_filters as $field => &$val) {
 			// $threadfield_cache is guaranteed to be set here
 			if(is_array($val) && count($val) > 1) {
-				if(!empty($val)) {
-					if(!xthreads_empty($threadfield_cache[$field]['multival'])) {
-						// ugly, but no other way to really do this...
-						$qstr = '(';
-						$qor = '';
-						$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\""));
-						foreach($val as &$v) {
-							$qstr .= $qor.$cfield.' LIKE "%'."\n".$db->escape_string_like($v)."\n".'%"';
-							if(!$qor) $qor = ' OR ';
-						}
-						$qstr .= ')';
-						
+				if(!xthreads_empty($threadfield_cache[$field]['multival'])) {
+					// ugly, but no other way to really do this...
+					$qstr = '(';
+					$qor = '';
+					$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\""));
+					foreach($val as &$v) {
+						$qstr .= $qor.$cfield.' LIKE "%'."\n".$db->escape_string_like($v)."\n".'%"';
+						if(!$qor) $qor = ' OR ';
 					}
-					else
-						$qstr = 'tfd.`'.$db->escape_string($field).'` IN ("'.implode('","', array_map(array($db, 'escape_string'), $val)).'")';
+					$qstr .= ')';
+					
 				}
+				else
+					$qstr = 'tfd.`'.$db->escape_string($field).'` IN ("'.implode('","', array_map(array($db, 'escape_string'), $val)).'")';
 			}
 			else {
 				if(is_array($val)) // single element
@@ -246,6 +309,26 @@ function xthreads_forumdisplay_filter() {
 			}
 			$q .= ' AND '.$qstr;
 			$tvisibleonly .= ' AND '.$qstr;
+		}
+	}
+	if(!empty($xt_filters)) {
+		foreach($xt_filters as $field => &$val) {
+			if(is_array($val) && count($val) > 1) {
+				$qstr = '`'.$db->escape_string($field).'` IN ('.implode(',', array_map('intval', $val)).')';
+			}
+			else {
+				if(is_array($val)) // single element
+					$val2 = reset($val);
+				else
+					$val2 =& $val;
+				
+				// if the user entered a completely blank filter, we'll gracefully ignore it
+				if($val2 === '') continue;
+				$qstr = '`'.$db->escape_string($field).'` = '.intval($val2);
+			}
+			$q .= ' AND t.'.$qstr;
+			$tvisibleonly .= ' AND t.'.$qstr;
+			$visibleonly .= ' AND '.$qstr;
 		}
 	}
 	if($q) {

@@ -127,6 +127,7 @@ function xthreads_install() {
 		'postsperpage' => xthreads_db_fielddef('smallint').' not null default 0',
 		'force_postlayout' => 'varchar(15) not null default \'\'',
 		'hideforum' => xthreads_db_fielddef('tinyint').' not null default 0',
+		'addfiltenable' => 'varchar(200) not null default \'\'',
 		'wol_announcements' => 'varchar(255) not null default \'\'',
 		'wol_forumdisplay' => 'varchar(255) not null default \'\'',
 		'wol_newthread' => 'varchar(255) not null default \'\'',
@@ -276,6 +277,11 @@ function xthreads_uninstall() {
 	if($db->table_exists('xtattachments'))
 		$db->write_query('DROP TABLE '.$db->table_prefix.'xtattachments');
 	
+	// remove any indexes added on the threads table
+	if($db->field_exists('xthreads_addfiltenable', 'forums')) {
+		// TODO:
+	}
+	
 	$fields = array(
 		'xthreads_grouping',
 		'xthreads_firstpostattop',
@@ -287,6 +293,7 @@ function xthreads_uninstall() {
 		'xthreads_postsperpage',
 		'xthreads_force_postlayout',
 		'xthreads_hideforum',
+		'xthreads_addfiltenable',
 		//'xthreads_pull_firstpost',
 		'xthreads_wol_announcements',
 		'xthreads_wol_forumdisplay',

@@ -642,8 +642,14 @@ function xthreads_admin_forumedit() {
 		if(!$lang->xthreads_tplprefix) $lang->load('xthreads');
 		$form_container = new FormContainer($lang->xthreads_opts);
 		
-		if(isset($forum_data['xthreads_tplprefix'])) // editing (or adding with submitted errors)
+		if(isset($forum_data['xthreads_tplprefix'])) { // editing (or adding with submitted errors)
 			$data =& $forum_data;
+			// additional filter enable needs to be split up
+			if(!isset($data['xthreads_afe_uid']) && isset($data['xthreads_addfiltenable'])) {
+				foreach(explode(',', $data['xthreads_addfiltenable']) as $afe)
+					$data['xthreads_afe_'.$afe] = 1;
+			}
+		}
 		else // adding
 			$data = array(
 				'xthreads_tplprefix' => '',
@@ -654,6 +660,10 @@ function xthreads_admin_forumedit() {
 				'xthreads_postsperpage' => 0,
 				'xthreads_force_postlayout' => '',
 				'xthreads_hideforum' => 0,
+				'xthreads_afe_uid' => 0,
+				'xthreads_afe_lastposteruid' => 0,
+				'xthreads_afe_prefix' => 0,
+				'xthreads_afe_icon' => 0,
 				'xthreads_allow_blankmsg' => 0,
 				'xthreads_nostatcount' => 0,
 				'xthreads_wol_announcements' => '',
@@ -698,6 +708,20 @@ function xthreads_admin_forumedit() {
 			$form_container->output_row($lang->$name, $lang->$langdesc, $html);
 		}
 		
+		$afefields = array(
+			'uid',
+			'lastposteruid',
+			'prefix',
+			'icon',
+		);
+		$afehtml = '';
+		foreach($afefields as &$field) {
+			if(!$GLOBALS['db']->field_exists($field, 'threads')) continue;
+			$afe = 'xthreads_afe_'.$field;
+			$afehtml .= '<tr><td width="15%" style="border: 0; padding: 1px; vertical-align: top; white-space: nowrap;">'.$form->generate_check_box($afe, 1, $field, array('checked' => $data[$afe])).'</td><td style="border: 0; padding: 1px; vertical-align: top;">&nbsp;('.$lang->$afe.')</td></tr>';
+		}
+		$form_container->output_row($lang->xthreads_addfiltenable, $lang->xthreads_addfiltenable_desc, '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$afehtml.'</table>');
+		
 		$wolfields = array(
 			'xthreads_wol_announcements',
 			'xthreads_wol_forumdisplay',
@@ -739,6 +763,21 @@ function xthreads_admin_forumcommit() {
 		// bad MyPlaza Turbo! (or any other plugin which does the same thing)
 		$fid = intval($mybb->input['fid']);
 	}
+	
+	// handle additional filters
+	$afefields = array(
+		'uid',
+		'lastposteruid',
+		'prefix',
+		'icon',
+	);
+	$addfiltenable = '';
+	foreach($afefields as &$afe)
+		if($db->field_exists($afe, 'threads') && $mybb->input['xthreads_afe_'.$afe])
+			$addfiltenable .= ($addfiltenable?',':'').$afe;
+	// TODO: add indexes for filtering
+	
+	
 	$db->update_query('forums', array(
 		'xthreads_tplprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_tplprefix'])))),
 		'xthreads_grouping' => intval(trim($mybb->input['xthreads_grouping'])),
@@ -750,6 +789,7 @@ function xthreads_admin_forumcommit() {
 		'xthreads_postsperpage' => intval(trim($mybb->input['xthreads_postsperpage'])),
 		'xthreads_force_postlayout' => trim($mybb->input['xthreads_force_postlayout']),
 		'xthreads_hideforum' => intval($mybb->input['xthreads_hideforum']),
+		'xthreads_addfiltenable' => $db->escape_string($addfiltenable),
 //		'xthreads_deffilter' => $db->escape_string($deffilter),
 		'xthreads_wol_announcements' => $db->escape_string(trim($mybb->input['xthreads_wol_announcements'])),
 		'xthreads_wol_forumdisplay' => $db->escape_string(trim($mybb->input['xthreads_wol_forumdisplay'])),
