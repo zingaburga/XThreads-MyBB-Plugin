@@ -773,9 +773,29 @@ function xthreads_admin_forumcommit() {
 	);
 	$addfiltenable = '';
 	foreach($afefields as &$afe)
-		if($db->field_exists($afe, 'threads') && $mybb->input['xthreads_afe_'.$afe])
+		if($db->field_exists($afe, 'threads') && $mybb->input['xthreads_afe_'.$afe]) {
 			$addfiltenable .= ($addfiltenable?',':'').$afe;
-	// TODO: add indexes for filtering
+			if($afe != 'uid') {
+				// try to add key - if it already exists, MySQL will fail for us :P
+				$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` ADD KEY `xthreads_'.$afe.'` (`'.$afe.'`)', true);
+			}
+		} elseif($afe != 'uid') {
+			// check if any other forum is using this field
+			if(!isset($afe_usage_cache)) {
+				$afe_usage_cache = array();
+				$query = $db->simple_select('forums', 'DISTINCT xthreads_addfiltenable', 'xthreads_addfiltenable != "" AND fid != '.$fid);
+				while($fafelist = $db->fetch_field($query, 'xthreads_addfiltenable')) {
+					foreach(explode(',', $fafelist) as $fafe)
+						$afe_usage_cache[$fafe] = 1;
+				}
+				$db->free_result($query);
+				unset($fafelist, $fafe);
+			}
+			if(!$afe_usage_cache[$afe]) {
+				// this filter isn't being used anywhere - try to drop the key
+				$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` DROP KEY `xthreads_'.$afe.'`', true);
+			}
+		}
 	
 	
 	$db->update_query('forums', array(

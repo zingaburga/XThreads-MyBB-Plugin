@@ -170,7 +170,6 @@ Put your stuff here
 <td class="{$altbg}">{$inputfield}<small style="display: block;">{$tf[\'desc\']}</small></td>
 </tr>'
 	));
-	// TODO: perhaps modify existing forumdisplay_threadlist template to include the inline search with the listboxes
 	
 	
 	
@@ -279,7 +278,15 @@ function xthreads_uninstall() {
 	
 	// remove any indexes added on the threads table
 	if($db->field_exists('xthreads_addfiltenable', 'forums')) {
-		// TODO:
+		foreach(array(
+			'uid',
+			'lastposteruid',
+			'prefix',
+			'icon',
+		) as $afe) {
+			if($afe == 'uid') continue; // we won't remove this from the above array
+			$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` DROP KEY `xthreads_'.$afe.'`', true);
+		}
 	}
 	
 	$fields = array(
