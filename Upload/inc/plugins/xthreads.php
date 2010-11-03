@@ -122,19 +122,32 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 function xthreads_tplhandler() {
 	global $current_page, $mybb, $templatelist, $templates;
 	switch($current_page) {
+		case 'misc.php':
+			if($mybb->input['action'] != 'rules') break;
 		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
-			$fid = $mybb->input['fid'];
+			$fid = intval($mybb->input['fid']);
 			if($fid) break;
 			
-		case 'showthread.php': case 'newreply.php': case 'ratethread.php': case 'polls.php': case 'sendthread.php': case 'printthread.php':
-			if($tid = intval($mybb->input['tid'])) {
+		case 'polls.php':
+			switch($mybb->input['action']) {
+				case 'editpoll':
+				case 'do_editpoll':
+				case 'showresults':
+				case 'vote':
+				case 'do_undovote':
+					// no cached poll getting function, dupe a query then...
+					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.intval($mybb->input['pid'])), 'tid');
+			}
+			// fall through
+		case 'showthread.php': case 'newreply.php': case 'ratethread.php': case 'sendthread.php': case 'printthread.php':
+			if(isset($tid) || $tid = intval($mybb->input['tid'])) {
 				$thread = get_thread($tid);
 				if($thread['fid']) {
 					$fid = $thread['fid'];
 					xthreads_set_threadforum_urlvars('thread', $thread['tid']); // since it's convenient...
 				}
 			}
-			if($fid) break;
+			if($fid || $current_page == 'polls.php') break;
 			
 		case 'editpost.php':
 			if($pid = intval($mybb->input['pid'])) {
@@ -149,6 +162,15 @@ function xthreads_tplhandler() {
 			}
 			break;
 		
+		case 'announcements.php':
+			if($aid = intval($mybb->input['aid'])) {
+				// unfortunately MyBB doesn't have a cache for announcements
+				// so we can have fun and double query!
+				$fid = $db->fetch_field($db->simple_select('announcements', 'fid', 'aid='.$aid), 'fid');
+				// note, $fid can be 0, for invalid aid, or announcement applying to all forums
+			}
+			break;
+			
 		case 'index.php':
 			// we're only here for the forumbit fix
 			$fid = 0;

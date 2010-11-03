@@ -982,6 +982,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		var maskName = $('textmask_select').options[$('textmask_select').selectedIndex].value;
 		var d = (maskName != "custom");
 		$('textmask').readOnly = d;
+		$('textmask').tabIndex = (d?'-1':''); // note, this is non-standard
 		$('textmask').style.background = (d ? "#F0F0F0":"");
 		$('textmask').style.color = (d ? "#808080":"");
 		
