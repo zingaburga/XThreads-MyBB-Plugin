@@ -15,7 +15,8 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array())
 		'#\<func (htmlspecialchars|htmlspecialchars_uni|intval|floatval|urlencode|rawurlencode|addslashes|stripslashes|trim|crc32|ltrim|rtrim|chop|md5|nl2br|sha1|strrev|strtoupper|strtolower|my_strtoupper|my_strtolower|alt_trow|get_friendly_size|filesize|strlen|my_strlen|my_wordwrap|random_str|unicode_chr|bin2hex|str_rot13|str_shuffle|strip_tags|ucfirst|ucwords|basename|dirname|unhtmlentities)\>#i',
 		'#\</func\>#i',
 		//'#\<template\s+([a-z0-9_ \-+!(),.]+)(\s*/)?\>#i',
-		'#\<\?=(.*?)\?\>#sie'
+		'#\<\?=(.*?)\?\>#sie',
+		'#\<setvar\s+([a-z0-9_\-+!(),.]+)\>(.*?)\</setvar\>#ie',
 	);
 	$repl = array(
 		'\'".xthreads_phptpl_iif(\'.xthreads_phptpl_expr_parse(\'$1\', $fields).\',"\'',
@@ -25,7 +26,8 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array())
 		'".$1("',
 		'")."',
 		//'".eval("return \"".$GLOBALS[\'templates\']->get(\'$1\')."\";")."',
-		'\'".strval(\'.xthreads_phptpl_expr_parse(\'$1\', $fields).\')."\''
+		'\'".strval(\'.xthreads_phptpl_expr_parse(\'$1\', $fields).\')."\'',
+		'\'".(($GLOBALS["tplvars"]["$1"] = (\'.xthreads_phptpl_expr_parse(\'$2\', $fields).\'))?"":"")."\'',
 	);
 	
 	if(xthreads_allow_php()) {
