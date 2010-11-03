@@ -31,7 +31,6 @@ if($info['version'] < 1.2) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN (
 		`xthreads_hideforum` tinyint(3) not null default 0
 	)');
-	$cache->update_forums();
 	
 	/*
 	// try to find orphaned xtattachments
@@ -105,7 +104,9 @@ if($info['version'] < 1.33) {
 	xthreads_buildtfcache();
 	
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` varchar(255) not null default ""');
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_hidebreadcrumb` tinyint(3) not null default 0');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_addfiltenable` varchar(200) not null default ""');
+	$cache->update_forums();
 	
 	// replace default comment in showthread_noreplies template
 	$query = $db->simple_select('templates', 'tid,template', 'title="showthread_noreplies"');

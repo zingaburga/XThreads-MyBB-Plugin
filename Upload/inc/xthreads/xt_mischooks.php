@@ -397,3 +397,61 @@ function xthreads_fix_stats_usercp() {
 	if(!$GLOBALS['mybb']->input['action'])
 		xthreads_fix_stats();
 }
+
+
+
+// modified version of xthreads_breadcrumb_hack()
+// because printthread.php just has to do things differently...
+function xthreads_breadcrumb_hack_printthread() {
+	global $pforumcache;
+	//if(!is_array($pforumcache)) {
+	// need to override because we want the 'xthreads_hidebreadcrumb' field
+		global $forum, $db, $fid;
+		$parlist = build_parent_list($fid, 'fid', 'OR', $forum['parentlist']);
+		$query = $db->simple_select('forums', 'name, fid, pid, xthreads_hidebreadcrumb', $parlist, array('order_by' => 'pid, disporder'));
+		while($forumnav = $db->fetch_array($query)) {
+			$pforumcache[$forumnav['pid']][$forumnav['fid']] = $forumnav;
+		}
+		unset($forumnav, $forum, $fid); // unsetting the global references
+	//}
+	if(!is_array($pforumcache[0])) return;
+	
+	// do the same as xthreads_breadcrumb_hack() but in reverse
+	foreach($pforumcache[0] as &$pforum) { // will only ever loop once
+		if($pforum['pid']) continue; // paranoia
+		
+		// firstly, skip any hidden top-level parents
+		$prevforum =& $pforum;
+		while($prevforum && $prevforum['xthreads_hidebreadcrumb'])
+			$prevforum =& xthreads_get_array_first($pforumcache[$prevforum['fid']]);
+		
+		if($prevforum) {
+			if($prevforum['pid']) {
+				$prevforum['pid'] = 0;
+				$pforum = $prevforum;
+			}
+			
+			$forum = null;
+			if($pforumcache[$prevforum['fid']])
+				$forum =& xthreads_get_array_first($pforumcache[$prevforum['fid']]);
+			while($forum) {
+				if(!$forum['xthreads_hidebreadcrumb']) {
+					// rewrite parent fid (won't actually change if there's no hidden breadcrumbs in-between)
+					$forum['pid'] = $prevforum['fid'];
+					$pforumcache[$forum['pid']] = array($forum['fid'] => $forum);
+					$prevforum =& $forum;
+				}
+				if(!$pforumcache[$forum['fid']]) {
+					// we always display the active breadcrumb, so set this if hidden
+					if($forum['xthreads_hidebreadcrumb']) {
+						$forum['pid'] = $prevforum['fid'];
+						$pforumcache[$forum['pid']] = array($forum['fid'] => $forum);
+					}
+					break;
+				}
+				$forum =& xthreads_get_array_first($pforumcache[$forum['fid']]);
+			}
+		}
+	}
+}
+

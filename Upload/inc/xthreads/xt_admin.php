@@ -660,6 +660,7 @@ function xthreads_admin_forumedit() {
 				'xthreads_postsperpage' => 0,
 				'xthreads_force_postlayout' => '',
 				'xthreads_hideforum' => 0,
+				'xthreads_hidebreadcrumb' => 0,
 				'xthreads_afe_uid' => 0,
 				'xthreads_afe_lastposteruid' => 0,
 				'xthreads_afe_prefix' => 0,
@@ -685,6 +686,7 @@ function xthreads_admin_forumedit() {
 			'postsperpage' => 'text_box',
 			'force_postlayout' => array('' => 'none', 'horizontal' => 'horizontal', 'classic' => 'classic'),
 			'hideforum' => 'yes_no_radio',
+			'hidebreadcrumb' => 'yes_no_radio',
 			'allow_blankmsg' => 'yes_no_radio',
 			'nostatcount' => 'yes_no_radio',
 		);
@@ -809,6 +811,7 @@ function xthreads_admin_forumcommit() {
 		'xthreads_postsperpage' => intval(trim($mybb->input['xthreads_postsperpage'])),
 		'xthreads_force_postlayout' => trim($mybb->input['xthreads_force_postlayout']),
 		'xthreads_hideforum' => intval($mybb->input['xthreads_hideforum']),
+		'xthreads_hidebreadcrumb' => intval($mybb->input['xthreads_hidebreadcrumb']),
 		'xthreads_addfiltenable' => $db->escape_string($addfiltenable),
 //		'xthreads_deffilter' => $db->escape_string($deffilter),
 		'xthreads_wol_announcements' => $db->escape_string(trim($mybb->input['xthreads_wol_announcements'])),

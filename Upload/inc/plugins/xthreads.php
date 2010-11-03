@@ -10,6 +10,7 @@ define('XTHREADS_VERSION', 1.33);
 $plugins->add_hook('forumdisplay_thread', 'xthreads_format_thread_date');
 $plugins->add_hook('showthread_start', 'xthreads_format_thread_date');
 $plugins->add_hook('global_start', 'xthreads_tplhandler');
+$plugins->add_hook('archive_start', 'xthreads_archive_breadcrumb');
 
 //$plugins->add_hook('global_end', 'xthreads_fix_stats');
 $plugins->add_hook('global_end', 'xthreads_handle_uploads');
@@ -248,6 +249,14 @@ function xthreads_tplhandler() {
 			break;
 		}
 		
+		// hide breadcrumb business
+		if($current_page != 'printthread.php') {
+			xthreads_breadcrumb_hack($fid);
+		} else {
+			// printthread needs some whacky attention
+			$GLOBALS['plugins']->add_hook('printthread_start', 'xthreads_breadcrumb_hack_printthread', 10, MYBB_ROOT.'inc/xthreads/xt_mischooks.php');
+		}
+		
 		xthreads_set_threadforum_urlvars('forum', $forum['fid']);
 	}
 	if($current_page == 'index.php' || $current_page == 'forumdisplay.php') {
@@ -299,6 +308,47 @@ function xthreads_tpl_get(&$obj, &$t) {
 	}
 }
 
+function xthreads_archive_breadcrumb() {
+	if($GLOBALS['action'] == 'thread' || $GLOBALS['action'] == 'forum')
+		xthreads_breadcrumb_hack($GLOBALS[$GLOBALS['action']]['fid']);
+}
+
+function xthreads_breadcrumb_hack($fid) {
+	global $pforumcache, $forum_cache;
+	if(!$pforumcache) {
+		if(!is_array($forum_cache))
+			cache_forums();
+		foreach($forum_cache as $key => &$val) {
+			// MyBB does this very weirdly... I mean, like
+			// ...the second dimension of the array is useless, since fid
+			// is pulling a unique $val already...
+			$pforumcache[$val['fid']][$val['pid']] = $val;
+		}
+	}
+	if(!is_array($pforumcache[$fid])) return;
+	
+	// our strategy works by rewriting parents of forums below hidden forums
+	foreach($pforumcache[$fid] as &$pforum) { // will only ever loop once
+		if($pforum['fid'] != $fid) continue; // paranoia
+		
+		// we can't really hide the active breadcrumb, so ignore current forum...
+		// (actually, it might be possible if we rewrite forum ids)
+		if($pforum['pid']) {
+			$prevforum =& $pforum;
+			$forum =& xthreads_get_array_first($pforumcache[$pforum['pid']]);
+			while($forum) {
+				if(!$forum['xthreads_hidebreadcrumb']) {
+					// rewrite parent fid (won't actually change if there's no hidden breadcrumbs in-between)
+					$prevforum['pid'] = $forum['fid'];
+					$prevforum =& $forum;
+				}
+				if(!$forum['pid']) break;
+				$forum =& xthreads_get_array_first($pforumcache[$forum['pid']]);
+			}
+			$prevforum['pid'] = 0;
+		}
+	}
+}
 
 function xthreads_handle_uploads() {
 	global $mybb, $current_page;
@@ -616,6 +666,13 @@ function xthreads_phptpl_iif($condition, $true)
 // it's annoying that '0' is considered "empty" by PHP...
 function xthreads_empty(&$v) {
 	return empty($v) && $v !== '0';
+}
+// PHP doesn't seem to give an easy way to get a reference to the first element
+function &xthreads_get_array_first(&$a) {
+	foreach($a as &$e)
+		return $e;
+	$null = null;
+	return $null;
 }
 
 function xthreads_db_type($type=null) {
