@@ -419,7 +419,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 	if(substr($purl['path'], -1) == '/' || xthreads_empty($ret['name'])) $ret['name'] = 'index.html';
 	
 	require_once MYBB_ROOT.'inc/xthreads/xt_urlfetcher.php';
-	$fetcher = getXTUrlFetcher();
+	$fetcher = getXTUrlFetcher($url);
 	if(!isset($fetcher)) {
 		return array('error' => $lang->xthreads_xtfurlerr_nofetcher);
 	}
@@ -454,27 +454,29 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		$error = $fetcher->getError($errcode);
 		$langvar = 'xthreads_xtfurlerr_'.$error;
 		if(isset($lang->$langvar))
-			return array('error' => $lang->$langvar);
+			$ret['error'] = $lang->$langvar;
 		else
-			return array('error' => $lang->sprintf($lang->xthreads_xtfurlerr_errcode, $fetcher->name, $errcode, htmlspecialchars_uni($error)));
+			$ret['error'] = $lang->sprintf($lang->xthreads_xtfurlerr_errcode, $fetcher->name, $errcode, htmlspecialchars_uni($error));
 	}
 	
 	$fetcher->close();
 	
-	// check magic if not done
-	if($result && !$GLOBALS['xtfurl_magicchecked'] && !empty($valid_magic)) {
-		if(!xthreads_fetch_url_validmagic($GLOBALS['xtfurl_databuf'], $valid_magic)) {
-			$GLOBALS['xtfurl_magicchecked'] = 'invalid';
-			$result = null;
+	if(!$ret['error']) {
+		// check magic if not done
+		if($result && !$GLOBALS['xtfurl_magicchecked'] && !empty($valid_magic)) {
+			if(!xthreads_fetch_url_validmagic($GLOBALS['xtfurl_databuf'], $valid_magic)) {
+				$GLOBALS['xtfurl_magicchecked'] = 'invalid';
+				$result = null;
+			}
 		}
-	}
-	if($result === null) {
-		// aborted - most likely from early termination
-		if($ret['size'] && $max_size && $ret['size'] > $max_size) {
-			$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
-		}
-		elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') { // this also covers extension check
-			$ret['error'] = $lang->error_attachtype;
+		if($result === null) {
+			// aborted - most likely from early termination
+			if($ret['size'] && $max_size && $ret['size'] > $max_size) {
+				$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
+			}
+			elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') { // this also covers extension check
+				$ret['error'] = $lang->error_attachtype;
+			}
 		}
 	}
 	
@@ -551,7 +553,7 @@ function xthreads_fetch_url_write(&$fetcher, &$data) {
 		global $xtfurl_databuf;
 		if($xtfurl_datalen >= 255) {
 			// check magic
-			$xtfurl_databuf .= substr($data, 0, min(255, $xtfurl_datalen)-$xtfurl_datalen+$len);
+			$xtfurl_databuf .= substr($data, 0, 255-$xtfurl_datalen+$len);
 			if(!xthreads_fetch_url_validmagic($xtfurl_databuf, $GLOBALS['xtfurl_validmagic'])) {
 				$xtfurl_magicchecked = 'invalid';
 				return false;

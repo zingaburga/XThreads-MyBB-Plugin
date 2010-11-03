@@ -27,7 +27,7 @@ $l['threadfields_file_name_info'] = 'Variables are referenced with <code>{$GLOBA
 	<li><em>upload_time</em> - time when file was initially uploaded</li>
 	<li><em>upload_date</em> - date when file was initially uploaded</li>
 	<li><em>update_time</em> - time when file was last updated (will be upload_time if never updated)</li>
-	<li><em>update_date</em> - date when file was last updated (will be date_time if never updated)</li>
+	<li><em>update_date</em> - date when file was last updated (will be upload_date if never updated)</li>
 	<li><em>icon</em> - MyBB\'s attachment file type icon</li>
 	<li><em>value</em> - if no file is uploaded, will be Blank Value (see below), otherwise, will be Display Format</li>
 	<li><em>dims</em> - an array containing width/height of uploaded image if the option to require image uploads is chosen.  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'dims\'][\'w\']}</code> would get the width of the uploaded image.</li>
@@ -56,7 +56,7 @@ $l['threadfields_sanitize_parser_desc'] = 'These options only apply if you have 
 $l['threadfields_disporder'] = 'Display Order';
 $l['threadfields_disporder_desc'] = 'The order in which this field is displayed on newthread/editthread.';
 $l['threadfields_tabstop'] = 'Capture Tab Key';
-$l['threadfields_tabstop_desc'] = 'If Yes, this field will intercept and respond to the user pressing the Tab key, when cycling through form elements.  Tab index will depend on the order specified above; it will always be placed between the subject and message field\'s tab index.';
+$l['threadfields_tabstop_desc'] = 'If Yes, this field will intercept and respond to the user pressing the Tab key, when cycling through form elements.  Tab index will depend on the order specified above; it will always be placed between the subject and message field\'s tab index.  Note that setting this to No won\'t stop this field from responding to the Tab key - it simply won\'t set a <code>tabindex</code> property for this field.';
 $l['threadfields_hideedit'] = 'Hide Input Field';
 $l['threadfields_hideedit_desc'] = 'If yes, will not display the input field on newthread/editpost pages through the <code>{$extra_threadfields}</code> variable.  This is useful if you want to customise the HTML for this input field or place it in a different location.  You can still use the default HTML by using <code>{$tfinputrow[\'<em>key</em>\']}</code>';
 $l['threadfields_allowfilter'] = 'Allow Filtering';
@@ -189,7 +189,7 @@ $l['commit_changes'] = 'Commit Changes';
 $l['xthreads_opts'] = 'XThreads Options <span style="font-size: smaller;">(note that these settings do not cascade down into child forums)</span>';
 $l['xthreads_tplprefix'] = 'Template Prefix';
 $l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.  Multiple prefixes can be defined, separated by commas - XThreads will attempt to find a template using one of the prefixes in the order defined
-<br />This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* and <em>portal_announcement</em>* templates.  Note that, for these special cases (excluding <em>forumbit_</em> templates), multiple template prefixes will not be searched - only the first prefix will be used.';
+<br />This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* and <em>portal_announcement</em>* templates.  Note that, for these special cases (excluding <em>forumbit_*</em> templates), multiple template prefixes will not be searched - only the first prefix will be used.';
 $l['xthreads_grouping'] = 'Thread Grouping';
 $l['xthreads_grouping_desc'] = 'How many threads to group together.  A value of 0 disables grouping.  If grouping is enabled, the <em>forumdisplay_group_sep</em> template is inserted every <em>X</em> threads on the forumdisplay.  This is mainly useful if you wish to display multiple threads in a single table row.  If the number of threads does not fully fill a group, the template <em>forumdisplay_thread_null</em> is appended as many times needed to completely fill the thread group.  Internal counter is reset between sticky/normal thread separators.';
 $l['xthreads_firstpostattop'] = 'Show first post on every showthread page';

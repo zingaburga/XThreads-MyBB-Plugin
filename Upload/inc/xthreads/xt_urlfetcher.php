@@ -307,9 +307,10 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 			$purl['path'] = '/';
 		if(@$purl['query'])
 			$purl['path'] .= '?'.@$purl['query'];
-		if(!($fr = @fsockopen($purl['host'], $purl['port'], $this->errno, $this->errstr, $this->timeout))) {
-			//$this->errno = 0;
-			//$this->errstr = 'Can\'t write to socket.';
+		if(!$purl['port']) $purl['port'] = 80;
+		if(!($fr = @fsockopen($purl['host'], $purl['port'], $errno, $errstr, $this->timeout))) {
+			$this->errno = $errno;
+			$this->errstr = $errstr;
 			return false;
 		}
 		@stream_set_timeout($fr, $this->timeout);
@@ -457,10 +458,13 @@ class XTUrlFetcher_Fopen extends XTUrlFetcher {
  */
 function getXTUrlFetcher($scheme='') {
 	$scheme = strtolower($scheme);
+	if($p = strpos($scheme, ':'))
+		$scheme = substr($scheme, 0, $p);
 	if(!$scheme || $scheme != 'data') {
 		if(XTUrlFetcher_Curl::available())
 			return new XTUrlFetcher_Curl;
-		if((!$scheme || substr($scheme, 0, 4) == 'http') && XTUrlFetcher_Socket::available())
+		// don't think our socket fetcher can do HTTPS...
+		if((!$scheme || $scheme == 'http') && XTUrlFetcher_Socket::available())
 			return new XTUrlFetcher_Socket;
 	}
 	if(XTUrlFetcher_Fopen::available())

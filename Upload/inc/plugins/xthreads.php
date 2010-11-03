@@ -137,6 +137,7 @@ function xthreads_tplhandler() {
 				case 'vote':
 				case 'do_undovote':
 					// no cached poll getting function, dupe a query then...
+					global $db;
 					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.intval($mybb->input['pid'])), 'tid');
 			}
 			// fall through
@@ -167,6 +168,7 @@ function xthreads_tplhandler() {
 			if($aid = intval($mybb->input['aid'])) {
 				// unfortunately MyBB doesn't have a cache for announcements
 				// so we can have fun and double query!
+				global $db;
 				$fid = $db->fetch_field($db->simple_select('announcements', 'fid', 'aid='.$aid), 'fid');
 				// note, $fid can be 0, for invalid aid, or announcement applying to all forums
 			}
