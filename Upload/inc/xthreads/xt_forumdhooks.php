@@ -124,11 +124,55 @@ function xthreads_forumdisplay() {
 	}
 	$xt_filters = array();
 	$enabled_xtf = explode(',', $forum['xthreads_addfiltenable']);
-	if(!empty($enabled_xtf)) foreach($enabled_xtf as &$xtf) {
-		$filters_set['__xt_'.$xtf] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
-		if(isset($mybb->input['filterxt_'.$xtf])) {
-			$xt_filters[$xtf] = $mybb->input['filterxt_'.$xtf];
-			xthreads_forumdisplay_filter_input('filterxt_'.$xtf, $xt_filters[$xtf], $filters_set['__xt_'.$xtf]);
+	if(!empty($enabled_xtf)) {
+		foreach($enabled_xtf as &$xtf) {
+			$filters_set['__xt_'.$xtf] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
+			if(isset($mybb->input['filterxt_'.$xtf]) && $mybb->input['filterxt_'.$xtf] !== '') {
+				// sanitise input here as we may need to grab extra info
+				if(!is_array($mybb->input['filterxt_'.$xtf]))
+					$xt_filters[$xtf] = intval($mybb->input['filterxt_'.$xtf]);
+				elseif(count($mybb->input['filterxt_'.$xtf]) < 2)
+					$xt_filters[$xtf] = intval(reset($mybb->input['filterxt_'.$xtf]));
+				else
+					$xt_filters[$xtf] = array_map('intval', $mybb->input['filterxt_'.$xtf]);
+				
+				xthreads_forumdisplay_filter_input('filterxt_'.$xtf, $xt_filters[$xtf], $filters_set['__xt_'.$xtf]);
+				
+				if(is_array($xt_filters[$xtf]))
+					$ids = implode(',', $xt_filters[$xtf]);
+				else
+					$ids = $xt_filters[$xtf];
+				
+				// grab extra info for $filter_set array
+				switch($xtf) {
+					case 'uid': case 'lastposteruid':
+						// perhaps might be nice if we could merge these two together...
+						$info = xthreads_forumdisplay_xtfilter_extrainfo('users', array('username'), 'uid', $ids);
+						$filters_set['__xt_'.$xtf]['name'] = $info['username'];
+						break;
+					case 'prefix':
+						// displaystyles?
+						$info = xthreads_forumdisplay_xtfilter_extrainfo('threadprefixes', array('prefix', 'displaystyle'), 'pid', $ids);
+						$filters_set['__xt_'.$xtf]['name'] = $info['prefix'];
+						$filters_set['__xt_'.$xtf]['displayname'] = $info['displaystyle'];
+						break;
+					case 'icon':
+						// we'll retrieve icons from the cache rather than query the DB
+						$icons = $GLOBALS['cache']->read('posticons');
+						if(is_array($xt_filters[$xtf]))
+							$ids =& $xt_filters[$xtf];
+						else
+							$ids = array($ids);
+						
+						$filters_set['__xt_'.$xtf]['name'] = '';
+						$iconstr =& $filters_set['__xt_'.$xtf]['name'];
+						foreach($ids as $id) {
+							$iconstr .= ($iconstr?', ':'') . htmlspecialchars_uni($icons[$id]['name']);
+						}
+						unset($icons);
+						break;
+				}
+			}
 		}
 	}
 	unset($enabled_xtf);
@@ -258,6 +302,19 @@ function xthreads_forumdisplay_filter_input($arg, &$tffilter, &$filter_set) {
 	}
 }
 
+function &xthreads_forumdisplay_xtfilter_extrainfo($table, $fields, $idfield, &$ids) {
+	global $db;
+	$ret = array();
+	$query = $db->simple_select($table, implode(',',$fields), $idfield.' IN ('.$ids.')');
+	while($thing = $db->fetch_array($query)) {
+		foreach($fields as $f) {
+			$ret[$f] .= ($ret[$f]?', ':'') . htmlspecialchars_uni($thing[$f]);
+		}
+	}
+	$db->free_result($query);
+	return $ret;
+}
+
 function xthreads_forumdisplay_filter() {
 	global $mybb, $foruminfo, $tf_filters, $xt_filters, $threadfield_cache;
 	global $visibleonly, $tvisibleonly, $db;
@@ -317,14 +374,7 @@ function xthreads_forumdisplay_filter() {
 				$qstr = '`'.$db->escape_string($field).'` IN ('.implode(',', array_map('intval', $val)).')';
 			}
 			else {
-				if(is_array($val)) // single element
-					$val2 = reset($val);
-				else
-					$val2 =& $val;
-				
-				// if the user entered a completely blank filter, we'll gracefully ignore it
-				if($val2 === '') continue;
-				$qstr = '`'.$db->escape_string($field).'` = '.intval($val2);
+				$qstr = '`'.$db->escape_string($field).'` = '.intval($val);
 			}
 			$q .= ' AND t.'.$qstr;
 			$tvisibleonly .= ' AND t.'.$qstr;
