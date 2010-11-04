@@ -125,6 +125,7 @@ function xthreads_forumdisplay() {
 	$xt_filters = array();
 	$enabled_xtf = explode(',', $forum['xthreads_addfiltenable']);
 	if(!empty($enabled_xtf)) {
+		global $lang;
 		foreach($enabled_xtf as &$xtf) {
 			$filters_set['__xt_'.$xtf] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
 			if(isset($mybb->input['filterxt_'.$xtf]) && $mybb->input['filterxt_'.$xtf] !== '') {
@@ -147,12 +148,13 @@ function xthreads_forumdisplay() {
 				switch($xtf) {
 					case 'uid': case 'lastposteruid':
 						// perhaps might be nice if we could merge these two together...
-						$info = xthreads_forumdisplay_xtfilter_extrainfo('users', array('username'), 'uid', $ids);
+						$info = xthreads_forumdisplay_xtfilter_extrainfo('users', array('username'), 'uid', $ids, 'guest');
 						$filters_set['__xt_'.$xtf]['name'] = $info['username'];
 						break;
 					case 'prefix':
 						// displaystyles?
-						$info = xthreads_forumdisplay_xtfilter_extrainfo('threadprefixes', array('prefix', 'displaystyle'), 'pid', $ids);
+						if(!$lang->xthreads_no_prefix) $lang->load('xthreads');
+						$info = xthreads_forumdisplay_xtfilter_extrainfo('threadprefixes', array('prefix', 'displaystyle'), 'pid', $ids, 'xthreads_no_prefix');
 						$filters_set['__xt_'.$xtf]['name'] = $info['prefix'];
 						$filters_set['__xt_'.$xtf]['displayname'] = $info['displaystyle'];
 						break;
@@ -167,7 +169,12 @@ function xthreads_forumdisplay() {
 						$filters_set['__xt_'.$xtf]['name'] = '';
 						$iconstr =& $filters_set['__xt_'.$xtf]['name'];
 						foreach($ids as $id) {
-							$iconstr .= ($iconstr?', ':'') . htmlspecialchars_uni($icons[$id]['name']);
+							if($id && $icons[$id])
+								$iconstr .= ($iconstr?', ':'') . htmlspecialchars_uni($icons[$id]['name']);
+							elseif(!$id) {
+								if(!$lang->xthreads_no_icon) $lang->load('xthreads');
+								$iconstr .= ($iconstr?', ':'') . '<em>'.$lang->xthreads_no_icon.'</em>';
+							}
 						}
 						unset($icons);
 						break;
@@ -302,8 +309,8 @@ function xthreads_forumdisplay_filter_input($arg, &$tffilter, &$filter_set) {
 	}
 }
 
-function &xthreads_forumdisplay_xtfilter_extrainfo($table, $fields, $idfield, &$ids) {
-	global $db;
+function &xthreads_forumdisplay_xtfilter_extrainfo($table, $fields, $idfield, &$ids, $blanklang) {
+	global $db, $lang;
 	$ret = array();
 	$query = $db->simple_select($table, implode(',',$fields), $idfield.' IN ('.$ids.')');
 	while($thing = $db->fetch_array($query)) {
@@ -312,6 +319,9 @@ function &xthreads_forumdisplay_xtfilter_extrainfo($table, $fields, $idfield, &$
 		}
 	}
 	$db->free_result($query);
+	if(strpos(','.$ids.',', ',0,') !== false)
+		foreach($fields as &$f)
+			$ret[$f] .= ($ret[$f]?', ':'') . '<em>'.$lang->$blanklang.'</em>';
 	return $ret;
 }
 

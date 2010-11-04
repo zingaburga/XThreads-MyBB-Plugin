@@ -28,6 +28,8 @@ $l['xthreads_attachfile'] = 'File';
 $l['xthreads_attachurl'] = 'URL';
 
 $l['xthreads_val_blank'] = '(Not set)';
+$l['xthreads_no_prefix'] = 'No Prefix';
+$l['xthreads_no_icon'] = 'No Icon';
 
 $l['task_xtaorphan_run_cleaned'] = 'The XThreads Orphaned Attachment Cleanup task successfully ran, and removed {1} orphaned file(s).';
 $l['task_xtaorphan_run_done'] = 'The XThreads Orphaned Attachment Cleanup task successfully ran, but nothing was cleaned.';
