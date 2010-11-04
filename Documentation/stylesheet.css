@@ -1,0 +1,42 @@
+body		{font-family: tahoma, sans-serif; font-size: 0.8em; cursor: default; margin: 20px;}
+table	{font-family: tahoma, sans-serif; font-size: 0.9em; border: 0; width: 95%; margin-top: 2}
+td.header	{color: #FFFFFF; background: #000000}
+td		{padding-left: 5; padding-right: 5; padding-top:2; padding-bottom: 2}
+h2		{font-family: tahoma, sans-serif; font-size: 1.3em; font-weight: bold; color: #88AAFF; background: #DDEEFF;
+	 padding-left: 15; margin: 15 -10 5 -10}
+h1		{font-family: tahoma, sans-serif; font-size: 16pt; font-weight: bold; margin-bottom: 5px}
+h3		{font-family: tahoma, sans-serif; font-weight: bold; font-style: italic; font-size: 1em; margin-bottom: 0px; margin-top: 10px; }
+a		{text-decoration: none}
+a:link	{color: #3388FF}
+a:hover	{color: #FF8833; }
+a:active	{color: #FF0000}
+/*a:visited	{color: 6633AA}*/
+ol		{margin-top: 5px; margin-bottom: 5px}
+li		{margin-top: 1px; margin-bottom: 1px}
+div.CITE		{border-style: ridge; border-width: 2px; border-color: #880000; background: #EEF8EE; margin: 5 5 5 5; padding: 10 10 10 10; font-size: 0.9em}
+table.codecontainer { border: 1px solid #CCE5FE; max-height: 100px; overflow: auto; }
+td.codeline	{ font-family: courier new, monospaced; width: 50px; font-size: 10pt; white-space: no-wrap; background: #FFFFF0; text-align: right; line-height: 1.2em; }
+td.code	{ background: #ECF2F8; font-family: courier new, monospaced; font-size: 10pt; cursor: text; white-space: no-wrap; overflow: auto; width: 100%; padding-left: 5px; line-height: 1.2em; }
+pre		{ margin: 0px;}
+div.code	{ background: #ECF2F8; font-family: courier new, monospaced; font-size: 10pt; cursor: text; white-space: no-wrap; overflow: auto; width: 100%; border: 1px solid #CCE5FE; margin: 3px; padding: 2px; }
+
+span.key	{ font-weight: bold; font-size: 1.5em; color: green; font-family: georgia; }
+
+div.navbar	{ width: 100%; background: #88AAFF; border: 1px solid #446688; text-align: center; margin-top: 2px; margin-bottom: 5px; padding-top: 3px; padding-bottom: 3px; }
+a.navlink	{ width: 19%; color: #446688; padding: 2px 5px 2px 5px; margin: 0px 2px 0px 2px; font-weight: bold; white-space: no-wrap; }
+a.navlink:link	{ background: #88AAFF; color: #446688; }
+a.navlink:hover	{ background: #DDEEFF; color: #FF8833; text-decoration: underline; }
+
+.indexlink	{ font-size: 1.1em; font-weight: bold; display: block; }
+ul.indexlinks li	{ margin-top: 5px; }
+
+span.token1	{ color: green; font-style: italic; }
+span.token2	{ color: blue; font-style: italic; }
+span.token3	{ color: red; font-style: italic; }
+
+span.php_keyword	{ font-weight: bold; color: blue; }
+span.php_op	{ font-weight: bold; color: maroon; }
+span.php_string	{ color: green; }
+span.php_num	{ color: #60A060; }
+span.php_var		{ font-weight: bold; }
+span.php_comment	{ color: gray; font-style: italic; }

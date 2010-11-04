@@ -102,7 +102,7 @@ function &xthreads_gettfcache($fid=0) {
 
 function xthreads_format_thread_date() {
 	// since this is so useful, always format start time/date for each thread
-	global $thread, $mybb, $threadurl, $threadurl_q;
+	global $thread, $mybb;
 	$thread['threaddate'] = my_date($mybb->settings['dateformat'], $thread['dateline']);
 	$thread['threadtime'] = my_date($mybb->settings['timeformat'], $thread['dateline']);
 	

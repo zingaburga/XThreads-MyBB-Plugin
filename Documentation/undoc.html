@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+ <head>
+  <title>XThreads Documentation - Undocumented Features</title>
+  <link rel="stylesheet" type="text/css" href="stylesheet.css" />
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+ </head>
+ <body>
+  <div class="header">
+   <h1>XThreads Documentation - Undocumented Features</h1>
+   <div class="navbar">
+    <a class="navlink" href="index.html">About</a>
+    <a class="navlink" href="undoc.html">Undocumented Features</a>
+   </div>
+  </div>
+  
+  <div class="content">
+   <p>This page will describe a number of things not documented in the interface, due to lack of space or otherwise.</p>
+   <h2>Thread Filtering</h2>
+   <p>XThreads offers a <code>{$filters_set}</code> array variable on the forumdisplay page when thread filters are used.  This section describes this array.</p>
+   <p>The general format to use in templates is something like this: <code>{$filters_set['<span class="token1">key</span>']['<span class="token2">var</span>']}</code>.  <span class="token1">key</span> refers to the filter; for example, if you've enabled filtering on a thread field named &quot;myfield&quot;, the corresponding <span class="token1">key</span> is <em>myfield</em>.  As for <span class="token2">var</span>, the following are available:</p>
+   <ul>
+    <li><strong>value</strong>: value of selected filter, for example, if the user is filtering &quot;myfield&quot; by &quot;label_a&quot;, sticking <code>{$filters_set['myfield']['value']}</code> in the appropriate template will display <code>label_a</code>.  Note, if an array of filters have been used, this will contain all values selected, separated by commas.</li>
+    <li><strong>urlarg</strong>: URL parameter with selected filter, for example, <code>filtertf_myfield=label_a</code></li>
+    <li><strong>urlarga</strong>: same as above, but with a preceeding ampersand, eg <code>&amp;amp;filtertf_myfield=label_a</code></li>
+    <li><strong>urlargq</strong>: same as above, but with a preceeding question mark, eg <code>?filtertf_myfield=label_a</code></li>
+    <li><strong>forminput</strong>: like <em>urlarg</em>, but as a hidden form parameter, eg <code>&lt;input type=&quot;hidden&quot; name=&quot;filtertf_myfield&quot; value=&quot;label_a&quot; /&gt;</code></li>
+    <li><strong>selected</strong>: an array, containing the selected value as a key and <code>&nbsp;selected=&quot;selected&quot;</code> as the value (that's a preceeding space before 'selected' there).  Example usage - the appropriate option in the listbox will be selected depending on what filter is being used:
+     <div style="margin-left: 1em;"><code>&lt;select name=&quot;filtertf_myfield&quot;&gt;<br />&lt;option value=&quot;label_a&quot;{$filters_set['myfield']['selected']['label_a']}&gt;label_a&lt;/option&gt;<br />&lt;option value=&quot;label_b&quot;{$filters_set['myfield']['selected']['label_b']}&gt;label_b&lt;/option&gt;<br />...<br />&lt;/select&gt;</code></div></li>
+    <li><strong>checked</strong>: same as above, but sets value to <code>&nbsp;checked=&quot;checked&quot;</code></li>
+    <li><strong>active</strong>: same as above, but sets value to <code>filtertf_active</code> (may be useful for applying a CSS class)</li>
+    <li><strong>nullselected</strong>: if filter is NOT set, will set to <code>&nbsp;selected=&quot;selected&quot;</code>, otherwise will be blank</li>
+    <li><strong>nullchecked</strong>: if filter is NOT set, will set to <code>&nbsp;checked=&quot;checked&quot;</code>, otherwise will be blank</li>
+    <li><strong>nullactive</strong>: if filter is NOT set, will set to <code>filtertf_active</code>, otherwise will be blank</li>
+    <li><strong>hiddencss</strong>: puts hidden CSS if filter is set, is blank otherwise; in other words, if this filter is being used at all, this will be set to <code>display: none;</code></li>
+    <li><strong>visiblecss</strong>: opposite of the above; set to <code>display: none;</code> if filter is NOT set, or blank otherwise</li>
+   </ul>
+   <p>There are also some special values for <span class="token1">key</span>, these are:</p>
+   <ul>
+    <li><strong>__xt_uid</strong>, <strong>__xt_lastposteruid</strong>, <strong>__xt_prefix</strong> and <strong>__xt_icon</strong>: for filtering by uid, lastposteruid, prefix and icon, respectively (if enabled)</li>
+    <li><strong>__all</strong>: aggregation of all thread field filters, and uid/lastposteruid/prefix/icon filters (does not include inline search); this doesn't support <em>selected</em>, <em>checked</em> and <em>active</em> as <span class="token2">var</span></li>
+    <li><strong>__search</strong>: for inline forum searching, if enabled</li>
+   </ul>
+   
+   <h2>Display Format Fields</h2>
+   <p>The <em>Display Format</em>, <em>Display Item Format</em>, <em>Blank Replacement Value</em>, <em>Unviewable Value</em> and replacement values for <em>Formatting Map List</em> have fairly complex display formatting abilities - this section will try to explain how it works.</p>
+   <h3>Special Tokens</h3>
+   <ul>
+    <li><code>{VALUE}</code> - represents the value; not available for <em>Blank Replacement Value</em> as the value is blank here</li>
+    <li><code>{RAWVALUE}</code> - as above, but without the sanitisation step (step 5 below) - use with caution!  Only available in <em>Display Item Format</em> and <em>Display Format</em> if multiple values are not allowed.</li>
+    <li><code>{VALUE$1}</code>, <code>{VALUE$2}</code>, <code>{VALUE$3}</code> etc - represents captured value components if a capturing <em>Text Mask Filter</em> is defined</li>
+    <li><code>{RAWVALUE$1}</code>, <code>{RAWVALUE$2}</code>, <code>{RAWVALUE$3}</code> etc - as above, but values not gone through the sanitiser</li>
+    <li>Variables - similar to how they work in MyBB templates, eg <code>{$mybb-&gt;user['username']}</code>; note, these must be surrounded by curly braces as in the preceeding example.  Variables are always in the global scope.</li>
+    <li>Conditionals - in the same syntax as the <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=464">Template Conditionals plugin</a>; <code>&lt;template ...&gt;</code> calls are not allowed.  <code>{VALUE}</code> and similar tokens above are treated as quoted string values, eg <code>&lt;?='This is '.{VALUE}?&gt;</code> is valid syntax.  Note that, as all variables need to be globalised, this won't work correctly with some PHP syntax, such as <code>$$variable</code></li>
+    <li>PHP - this is only available if <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=260">PHP in Templates plugin</a> is installed and activated; accepts PHP within &lt;?php ... ?&gt; tags, similar to how the plugin works</li>
+   </ul>
+   
+   <h3>Parse Process</h3>
+   <ol>
+    <li>If the value is blank, the <em>Blank Replacement Value</em> will be displayed</li>
+    <li>If the user is in a group which cannot view the value, the process will continue, however <em>Unviewable Value</em> will be used in place of <em>Display Format</em></li>
+    <li>At this point, file thread fields will go off and do its own thing; other thread fields continue</li>
+    <li>If the value matches one defined in the <em>Formatting Value List</em>, the defined replacement will be used here and the following step will be skipped</li>
+    <li>The value will be sanitised according to the <em>Display Parsing</em> option chosen, at this point (eg, MyCode parsed)</li>
+    <li>If a capturing <em>Text Mask Filter</em> is used, components are captured and sent through the sanitiser (as above)</li>
+    <li>If multiple values are supported, the above goes into <em>Display Item Format</em>, and the above two steps are repeated for each value.  Once done, all these values are aggregated together, separated by the <em>Multiple Value Delimiter</em></li>
+    <li>Finally, the value goes into the <em>Display Format</em>, for display</li>
+   </ol>
+   
+   <h2>Additional Template Variables</h2>
+   <p>XThreads adds some variables which can be used in templates for convenience.</p>
+   <ul>
+    <li>Thread/forum URL variables through <code>{$forumurl}</code>, <code>{$forumurl_q}</code>, <code>{$threadurl}</code> and <code>{$threadurl_q}</code> (the <code>_q</code> variants append a <code>?</code> or <code>&amp;amp;</code> depending on the context of the URL).  Example: <code>&lt;a href=&quot;{$forumurl?}filtertf_myfield=something&quot;&gt;filter by something&lt;/a&gt;</code></li>
+    <li>Thread start date is evaluated in a variable through <code>{$thread['threaddate']}</code> and <code>{$thread['threadtime']}</code>; available in forumdisplay/showthread/search</li>
+   </ul>
+   
+   <h2>Other</h2>
+   <ul>
+    <li>Admins can add XThreads attachments by placing the file in the <em>uploads/xthreads_ul/admindrop</em> folder (and not a subfolder of that), and specify the filename (through URL box) using <em>file://</em> prefix.  For example, if an admin tells the system to retrieve the URL <em>file://bigfile.iso</em>, XThreads will <strong>move</strong> the file in <em>uploads/xthreads_ul/admindrop/bigfile.iso</em> to where xtattachments are stored.</li>
+    <li>A number of &quot;internal variables&quot; can be modified by editing the <em>cache/xthreads.php</em> file.  XThreads needs to be installed for this file to exist.  Note that this file is auto-generated and may be overwritten during an upgrade, however values will be retained.</li>
+    <li>Template modifications performed by XThreads can be redone (ie, after you install a new theme) by deactivating and reactivating the plugin (without un/installing)</li>
+   </ul>
+   
+   <h2>XThreads Additions</h2>
+   <p>Just a list of the stuff XThreads adds:</p>
+   <h3>AdminCP UI Additions</h3>
+   <ul>
+    <li><em>Custom Thread Fields</em> section under the Configuration tab - this is where you can add custom thread fields</li>
+	<li><em>XThreads Options</em> section under forum add/edit - this allows you to customise various XThreads options on a per forum basis</li>
+   </ul>
+   <h3>Modified Templates</h3>
+   <ul>
+    <li><strong>editpost</strong> and <strong>newthread</strong> - adds <code>{$extra_threadfields}</code> to the template, which just displays any added thread fields</li>
+    <li><strong>showthread</strong> - inserts <code>{$first_post}</code> before <code>{$posts}</code>; in XThreads, it's possible to customise the first post differently from other posts</li>
+    <li><strong>forumdisplay_threadlist</strong> - inserts <code>{$nullthreads}</code> after <code>{$threads}</code>; this is just for display &quot;null threads&quot; if thread grouping is used</li>
+   </ul>
+   <h3>Added Templates</h3>
+   <ul>
+    <li><strong>editpost_first</strong> - allows you to have a different <em>editpost</em> template for editing the first post of a thread; defaults to <code>{$editpost}</code> which uses the default <em>editpost</em> template</li>
+    <li><strong>forumdisplay_group_sep</strong> and <strong>forumdisplay_thread_null</strong> - for use with thread grouping (is explained if you enable thread grouping); defaults to nothing</li>
+    <li><strong>showthread_noreplies</strong> - displayed in the <code>{$posts}</code> variable for <em>showthread</em> only if the thread has no replies; see the comment in the template for more information</li>
+    <li><strong>forumdisplay_searchforum_inline</strong> - inline forum searching - you don't need to bother with this unless you want to...</li>
+    <li><strong>threadfields_inputrow</strong> - how extra fields are displayed in newthread/editpost (of first post) - don't need to worry about this one either</li>
+   </ul>
+   <p>Although not an added template, you can create <em>postbit_first*</em> templates to override the various <em>postbit*</em> templates for the first post of a thread.</p>
+   
+   
+  </div>
+ </body>
+</html>

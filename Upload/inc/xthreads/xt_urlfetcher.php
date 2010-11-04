@@ -335,7 +335,7 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 				$data = self::fill_fread($fr, 16384);
 				$len = strlen($data);
 				$p = strpos($data, "\r\n\r\n");
-				if(!$p || $p > 12288) { // should be no reason to have >12KB headers
+				if(!$p || $p > 12288 || substr($data, 0, 4) != 'HTTP') { // should be no reason to have >12KB headers
 					$this->errno = 0;
 					$this->errstr = 'headernotfound';
 					break;
