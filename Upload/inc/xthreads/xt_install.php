@@ -17,7 +17,7 @@ function xthreads_info() {
 		'website'		=> 'http://mybbhacks.zingaburga.com/',
 		'author'		=> 'ZiNgA BuRgA',
 		'authorsite'	=> 'http://zingaburga.com/',
-		'version'		=> number_format(XTHREADS_VERSION, 2),
+		'version'		=> xthreads_format_version_number(XTHREADS_VERSION),
 		'compatibility'	=> '14*,15*,16*',
 		'guid'			=> ''
 	);

@@ -943,7 +943,7 @@ function xthreads_vercheck() {
 				}
 			}
 			
-			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, number_format(XTHREADS_VERSION, 2), number_format(XTHREADS_INSTALLED_VERSION, 2), $link), 'type' => 'alert');
+			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, xthreads_format_version_number(XTHREADS_VERSION), xthreads_format_version_number(XTHREADS_INSTALLED_VERSION), $link), 'type' => 'alert');
 		}
 		if($admin_session['data']['flash_message'])
 			$admin_session['data']['flash_message']['message'] .= '</div><br /><div class="'.$msg['type'].'">'.$msg['message'];
@@ -952,3 +952,10 @@ function xthreads_vercheck() {
 	}
 }
 
+function xthreads_format_version_number($v) {
+	$ret = number_format($v, 3);
+	if(substr($ret, -1) === '0')
+		return substr($ret, 0, -1);
+	else
+		return $ret;
+}

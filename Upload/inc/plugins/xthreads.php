@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.33);
+define('XTHREADS_VERSION', 1.337);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
 
 
