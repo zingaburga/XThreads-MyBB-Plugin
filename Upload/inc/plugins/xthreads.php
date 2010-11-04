@@ -108,6 +108,13 @@ function xthreads_format_thread_date() {
 	
 	// I'm lazy, also do threadurl evaluation here
 	xthreads_set_threadforum_urlvars('thread', $thread['tid']);
+	
+	// issue on forumdisplay: it's possible for subforums to override the forum URL variable, so set it again here just in case
+	static $done=false;
+	if(!$done) {
+		$done = true;
+		xthreads_set_threadforum_urlvars('forum', $thread['fid']);
+	}
 }
 
 function xthreads_set_threadforum_urlvars($where, $id) {
