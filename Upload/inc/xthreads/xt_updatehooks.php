@@ -240,7 +240,7 @@ function xthreads_copy_thread(&$a) {
 } */
 
 function xthreads_duplicate_threadfield_data($tid_old, $tid_new) {
-	global $db;
+	global $db, $mybb;
 	@ignore_user_abort(true); // not really that good, since cancelling elsewhere will break transaction, but, well, copies might be slow, so...
 	$tf = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$tid_old));
 	$tf['tid'] = $tid_new;

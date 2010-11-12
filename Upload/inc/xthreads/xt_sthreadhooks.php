@@ -4,7 +4,7 @@ if(!defined('IN_MYBB'))
 
 
 function xthreads_showthread() {
-	global $thread, $forum;
+	global $thread;
 	global $threadfield_cache, $db, $threadfields;
 	
 	$threadfields = array();

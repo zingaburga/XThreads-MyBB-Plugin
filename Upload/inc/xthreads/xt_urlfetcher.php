@@ -175,7 +175,7 @@ if(!defined('IN_MYBB'))
 	
 	// since fread'ing won't necessarily fill the requested buffer size...
 	/*protected*/ static function &fill_fread(&$fp, $len) {
-		$fill = 0;
+		//$fill = 0;
 		$ret = '';
 		while(!feof($fp) && $len > 0) {
 			$data = fread($fp, $len);

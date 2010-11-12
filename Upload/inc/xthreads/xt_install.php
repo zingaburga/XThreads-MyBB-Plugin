@@ -31,7 +31,7 @@ function xthreads_is_installed() {
 }
 
 function xthreads_install() {
-	global $db, $cache, $mybb;
+	global $db, $cache;
 	$create_table_suffix = $db->build_create_table_collation();
 	
 	$dbtype = xthreads_db_type();

@@ -693,13 +693,13 @@ function xthreads_admin_forumedit() {
 		foreach($inputs as $name => $type) {
 			$name = 'xthreads_'.$name;
 			$langdesc = $name.'_desc';
-			$formfunc = 'generate_'.$type;
+			//$formfunc = 'generate_'.$type;
 			if(is_array($type)) {
 				foreach($type as &$t) {
 					$ln = $name.'_'.$t;
 					$t = $lang->$ln;
 				}
-				$html = $form->generate_select_box($name, $type, $data[$name], array($id => $name));
+				$html = $form->generate_select_box($name, $type, $data[$name], array('id' => $name));
 			}
 			elseif($type == 'text_box')
 				$html = $form->generate_text_box($name, $data[$name], array('id' => $name));

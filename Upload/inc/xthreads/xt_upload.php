@@ -213,7 +213,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	$attacharray = array(
 		'posthash' => $posthash,
 		'tid' => $tid,
-		'uid' => $uid,
+		'uid' => $mybb->user['uid'],
 		'field' => $tf['field'],
 		'filename' => $attachment['name'],
 		'uploadmime' => $attachment['type'],

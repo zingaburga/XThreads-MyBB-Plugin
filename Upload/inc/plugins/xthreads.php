@@ -327,7 +327,7 @@ function xthreads_breadcrumb_hack($fid) {
 	if(!$pforumcache) {
 		if(!is_array($forum_cache))
 			cache_forums();
-		foreach($forum_cache as $key => &$val) {
+		foreach($forum_cache as &$val) {
 			// MyBB does this very weirdly... I mean, like
 			// ...the second dimension of the array is useless, since fid
 			// is pulling a unique $val already...

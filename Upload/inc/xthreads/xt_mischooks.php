@@ -7,7 +7,7 @@ function xthreads_search() {
 	$threadfield_cache = xthreads_gettfcache();
 	if(!empty($threadfield_cache)) {
 		function xthreads_search_dbhook(&$s, &$db) {
-			global $threadfield_cache, $fid;
+			global $threadfield_cache;
 			
 			$fields = '';
 			foreach($threadfield_cache as &$v)
@@ -47,7 +47,7 @@ function xthreads_search() {
 }
 
 function xthreads_search_result(&$data, $tplname) {
-	global $threadfields, $threadfield_cache, $forumcache, $templates, $mybb;
+	global $threadfields, $threadfield_cache, $forumcache, $mybb;
 	
 	// need to set these variables before doing threadfields stuff!
 	$data['threaddate'] = my_date($mybb->settings['dateformat'], $data['dateline']);
