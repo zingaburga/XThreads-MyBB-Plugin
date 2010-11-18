@@ -78,6 +78,7 @@
    <h2>Other</h2>
    <ul>
     <li>Admins can add XThreads attachments by placing the file in the <em>uploads/xthreads_ul/admindrop</em> folder (and not a subfolder of that), and specify the filename (through URL box) using <em>file://</em> prefix.  For example, if an admin tells the system to retrieve the URL <em>file://bigfile.iso</em>, XThreads will <strong>move</strong> the file in <em>uploads/xthreads_ul/admindrop/bigfile.iso</em> to where xtattachments are stored.</li>
+    <li>You can force xthreads_attach.php to download a file (as opposed to viewing the file in the browser) by appending <em>?download=1</em> (or <em>&amp;download=1</em> if you're using query strings) to the URL</li>
     <li>A number of &quot;internal variables&quot; can be modified by editing the <em>cache/xthreads.php</em> file.  XThreads needs to be installed for this file to exist.  Note that this file is auto-generated and may be overwritten during an upgrade, however values will be retained.</li>
     <li>Template modifications performed by XThreads can be redone (ie, after you install a new theme) by deactivating and reactivating the plugin (without un/installing)</li>
    </ul>

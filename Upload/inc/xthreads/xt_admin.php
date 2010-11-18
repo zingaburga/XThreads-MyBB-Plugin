@@ -959,3 +959,27 @@ function xthreads_format_version_number($v) {
 	else
 		return $ret;
 }
+
+/**
+ * Convert shorthand size notation to byte value.  Eg '2k' => 2048
+ * 
+ * @param s Size string
+ * @return size in bytes
+ */
+function xthreads_size_to_bytes($s) {
+	$s = strtolower(trim($s));
+	if(!$s) return 0;
+	$v = floatval($s);
+	$last = substr($s, -1);
+	if($last == 'b')
+		$last = substr($s, -2, 1);
+	switch($last) {
+		case 'e': $v *= 1024;
+		case 'p': $v *= 1024;
+		case 't': $v *= 1024;
+		case 'g': $v *= 1024;
+		case 'm': $v *= 1024;
+		case 'k': $v *= 1024;
+	}
+	return intval(round($v));
+}

@@ -285,46 +285,19 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		foreach($props as $field => &$prop) {
 			if($field == 'field') $field = 'newfield';
 			// cause you can't "continue" in a switch statement, lol...
-			if($field == 'forums' || $field == 'editable_gids' || $field == 'viewable_gids') continue;
+			if($field == 'forums' || $field == 'editable_gids' || $field == 'viewable_gids' || $field == 'filemaxsize') continue;
 			if($prop['datatype'] == 'string')
 				$mybb->input[$field] = trim($mybb->input[$field]);
 			else
 				$mybb->input[$field] = intval($mybb->input[$field]);
 		}
 		$mybb->input['textmask'] = str_replace("\x0", '', $mybb->input['textmask']);
+		$mybb->input['filemaxsize'] = xthreads_size_to_bytes($mybb->input['filemaxsize']);
 		$mybb->input['fileimage_mindim'] = strtolower($mybb->input['fileimage_mindim']);
 		$mybb->input['fileimage_maxdim'] = strtolower($mybb->input['fileimage_maxdim']);
 		
 		$mybb->input['fileimage_mindim'] = strtolower(trim($mybb->input['fileimage_mindim']));
 		$mybb->input['fileimage_maxdim'] = strtolower(trim($mybb->input['fileimage_maxdim']));
-		/*
-		$mybb->input['title'] = trim($mybb->input['title']);
-		$mybb->input['desc'] = trim($mybb->input['desc']);
-		$mybb->input['newfield'] = trim($mybb->input['newfield']);
-		$mybb->input['unviewableval'] = trim($mybb->input['unviewableval']);
-		$mybb->input['blankval'] = trim($mybb->input['blankval']);
-		$mybb->input['defaultval'] = trim($mybb->input['defaultval']);
-		$mybb->input['dispformat'] = trim($mybb->input['dispformat']);
-		$mybb->input['dispitemformat'] = trim($mybb->input['dispitemformat']);
-		$mybb->input['textmask'] = trim(str_replace("\x0", '', $mybb->input['textmask']));
-		$mybb->input['maxlen'] = intval($mybb->input['maxlen']);
-		$mybb->input['fieldwidth'] = intval($mybb->input['fieldwidth']);
-		$mybb->input['fieldheight'] = intval($mybb->input['fieldheight']);
-		$mybb->input['vallist'] = trim($mybb->input['vallist']);
-		$mybb->input['disporder'] = intval($mybb->input['disporder']);
-		$mybb->input['tabstop'] = intval($mybb->input['tabstop']);
-		$mybb->input['hideedit'] = intval($mybb->input['hideedit']);
-		$mybb->input['formhtml'] = trim($mybb->input['formhtml']);
-		$mybb->input['allowfilter'] = intval($mybb->input['allowfilter']);
-		
-		$mybb->input['filemagic'] = trim($mybb->input['filemagic']);
-		$mybb->input['fileexts'] = trim($mybb->input['fileexts']);
-		$mybb->input['filemaxsize'] = intval($mybb->input['filemaxsize']);
-		//$mybb->input['fileimage'] = trim($mybb->input['fileimage']);
-		$mybb->input['fileimgthumbs'] = trim($mybb->input['fileimgthumbs']);
-		
-		$mybb->input['formatmap'] = trim($mybb->input['formatmap']);
-		*/
 		if(!xthreads_empty($mybb->input['formatmap'])) {
 			$fm = array();
 			foreach(explode("\n", str_replace("\r", '', $mybb->input['formatmap'])) as $map) {
@@ -708,6 +681,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		}
 	}
 	// TODO: weird issue where inputtype isn't being set...
+	if(!ini_get('file_uploads'))
+		$lang->threadfields_file_name_info .= '<div style="color: red; font-style: italic;">'.$lang->threadfields_file_upload_disabled_warning.'</div>';
 	make_form_row('inputtype', 'select_box', $inputtypes, '<div id="inputtype_file_explain" style="font-size: 0.95em; margin-top: 1em;">'.$lang->threadfields_file_name_info.'</div>');
 	make_form_row('maxlen', 'text_box');
 	make_form_row('fieldwidth', 'text_box');
@@ -715,9 +690,23 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	make_form_row('vallist', 'text_area');
 	make_form_row('formhtml', 'text_area');
 	make_form_row('fileexts', 'text_box');
+	
 	if(!is_int(2147483648)) // detect 32-bit PHP
 		$lang->threadfields_filemaxsize_desc .= $lang->threadfields_filemaxsize_desc_2gbwarn;
+	// PHP upload limits
+	$upload_max_filesize = @ini_get('upload_max_filesize');
+	$post_max_size = @ini_get('post_max_size');
+	if($upload_max_filesize || $post_max_size) {
+		$lang->threadfields_filemaxsize_desc .= '<br /><br />'.$lang->threadfields_filemaxsize_desc_phplimit;
+		if(!$lang->limit_upload_max_filesize)
+			$lang->load('config_attachment_types');
+		if($upload_max_filesize)
+			$lang->threadfields_filemaxsize_desc .= '<br />'.$lang->sprintf($lang->limit_upload_max_filesize, $upload_max_filesize);
+		if($post_max_size)
+			$lang->threadfields_filemaxsize_desc .= '<br />'.$lang->sprintf($lang->limit_post_max_size, $post_max_size);
+	}
 	make_form_row('filemaxsize', 'text_box');
+	
 	if($data['editable_gids'] && !is_array($data['editable_gids']))
 		$data['editable_gids'] = array_map('intval',array_map('trim',explode(',', $data['editable_gids'])));
 	if(!empty($data['editable_gids']))

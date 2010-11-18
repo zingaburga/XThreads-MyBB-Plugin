@@ -33,6 +33,7 @@ $l['threadfields_file_name_info'] = 'Variables are referenced with <code>{$GLOBA
 	<li><em>dims</em> - an array containing width/height of uploaded image if the option to require image uploads is chosen.  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'dims\'][\'w\']}</code> would get the width of the uploaded image.</li>
 	<li><em>thumbs</em> - an array containing width/height of thumbnails (if used).  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'thumbs\'][\'320x240\'][\'w\']}</code> would get the real image width of the 320x240 thumbnail.</li>
 </ul>';
+$l['threadfields_file_upload_disabled_warning'] = 'It appears that file uploading has been disabled on this server.  XThreads assumes that it is enabled, so if a user tries to upload something, it will fail unless you enable file uploads (URL fetching will still work if enabled).  Please set the <em>file_uploads</em> php.ini value to \'1\'.';
 $l['threadfields_title'] = 'Title';
 $l['threadfields_title_desc'] = 'Name of this custom thread field.';
 $l['threadfields_desc'] = 'Description';
@@ -88,6 +89,7 @@ $l['threadfields_fileexts_desc'] = 'A pipe (|) separated list of valid file exte
 $l['threadfields_filemaxsize'] = 'Maximum File Size';
 $l['threadfields_filemaxsize_desc'] = 'The maximum allowable file size, in <strong>bytes</strong>, for files accepted in this thread field.  0 = no maximum.';
 $l['threadfields_filemaxsize_desc_2gbwarn'] = '  Note, you are running a 32-bit version of PHP, which may have issues with handling files larger than 2GB in size.  A 64-bit build of PHP does not have this issue.';
+$l['threadfields_filemaxsize_desc_phplimit'] = 'File uploads will be constrained by the following PHP limitations (these upload limits can be changed in php.ini):';
 $l['threadfields_filereqimg'] = 'Only Accept Image Files';
 $l['threadfields_filereqimg_desc'] = 'If yes, will require the uploaded (or URL fetched) file for this field to be an image.  If it isn\'t deemed to be a valid image (according to GD) the file will be rejected.  Note that you must enable this option to use features like thumbnail generation.';
 $l['threadfields_fileimage_mindim'] = 'Minimum Image Dimensions';
