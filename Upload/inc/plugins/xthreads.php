@@ -534,32 +534,7 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 		$v = eval_str($tfinfo['formatmap'][$v]); // not sanitized obviously
 	} else {
 		$type = $tfinfo['sanitize'];
-		switch($type & XTHREADS_SANITIZE_MASK) {
-			case XTHREADS_SANITIZE_HTML:
-				$v = htmlspecialchars_uni($v);
-				break;
-			case XTHREADS_SANITIZE_HTML_NL:
-				$v = nl2br(htmlspecialchars_uni($v));
-				break;
-			case XTHREADS_SANITIZE_PARSER:
-				global $parser;
-				if(!is_object($parser)) {
-					require_once MYBB_ROOT.'inc/class_parser.php';
-					$parser = new postParser;
-				}
-				$parser_opts = array(
-					'nl2br' => ($type & XTHREADS_SANITIZE_PARSER_NL2BR ?1:0),
-					'filter_badwords' => ($type & XTHREADS_SANITIZE_PARSER_NOBADW ?1:0),
-					'allow_html' => ($type & XTHREADS_SANITIZE_PARSER_HTML ?1:0),
-					'allow_mycode' => ($type & XTHREADS_SANITIZE_PARSER_MYCODE ?1:0),
-					'allow_imgcode' => ($type & XTHREADS_SANITIZE_PARSER_MYCODEIMG ?1:0),
-					'allow_smilies' => ($type & XTHREADS_SANITIZE_PARSER_SMILIES ?1:0),
-					'allow_videocode' => ($type & XTHREADS_SANITIZE_PARSER_VIDEOCODE ?1:0),
-					'me_username' => $mename
-				);
-				$v = $parser->parse_message($v, $parser_opts);
-				break;
-		}
+		$v = xthreads_sanitize_disp_string($type, $v, $parser_opts, $mename);
 	}
 	
 	if(!xthreads_empty($dispfmt)) {
@@ -576,15 +551,7 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 					case XTHREADS_SANITIZE_PARSER:
 						$vars['VALUE$'] = array();
 						foreach($match as $i => &$val) {
-							$setvar =& $vars['VALUE$'][$i];
-							switch($type & XTHREADS_SANITIZE_MASK) {
-								case XTHREADS_SANITIZE_HTML:
-									$setvar = htmlspecialchars_uni($val); break;
-								case XTHREADS_SANITIZE_HTML_NL:
-									$setvar = nl2br(htmlspecialchars_uni($val)); break;
-								case XTHREADS_SANITIZE_PARSER:
-									$setvar = $parser->parse_message($val, $parser_opts); break;
-							}
+							$vars['VALUE$'][$i] = xthreads_sanitize_disp_string($type, $val, $parser_opts, $mename);
 						}
 						break;
 					default:
@@ -594,6 +561,35 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 		}
 		$v = eval_str($dispfmt, $vars);
 	}
+}
+
+function xthreads_sanitize_disp_string($type, &$v, &$parser_opts = null, $mename='') {
+	switch($type & XTHREADS_SANITIZE_MASK) {
+		case XTHREADS_SANITIZE_HTML:
+			return htmlspecialchars_uni($v);
+		case XTHREADS_SANITIZE_HTML_NL:
+			return strtr(nl2br(htmlspecialchars_uni($v)), array("\r" => '', "\n" => ''));
+		case XTHREADS_SANITIZE_PARSER:
+			global $parser;
+			if(!is_object($parser)) {
+				require_once MYBB_ROOT.'inc/class_parser.php';
+				$parser = new postParser;
+			}
+			if(empty($parser_opts)) {
+				$parser_opts = array(
+					'nl2br' => ($type & XTHREADS_SANITIZE_PARSER_NL2BR ?1:0),
+					'filter_badwords' => ($type & XTHREADS_SANITIZE_PARSER_NOBADW ?1:0),
+					'allow_html' => ($type & XTHREADS_SANITIZE_PARSER_HTML ?1:0),
+					'allow_mycode' => ($type & XTHREADS_SANITIZE_PARSER_MYCODE ?1:0),
+					'allow_imgcode' => ($type & XTHREADS_SANITIZE_PARSER_MYCODEIMG ?1:0),
+					'allow_smilies' => ($type & XTHREADS_SANITIZE_PARSER_SMILIES ?1:0),
+					'allow_videocode' => ($type & XTHREADS_SANITIZE_PARSER_VIDEOCODE ?1:0),
+					'me_username' => $mename
+				);
+			}
+			return $parser->parse_message($v, $parser_opts);
+	}
+	return $v;
 }
 
 function eval_str(&$s, $vars=array()) {

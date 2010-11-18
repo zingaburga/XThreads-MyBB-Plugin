@@ -446,7 +446,6 @@ function xthreads_buildtfcache() {
 					$tf['allowfilter'],
 					$tf['defaultval'],
 					$tf['fieldheight'],
-					$tf['sanitize']
 				);
 				if(!$tf['fileimage'])
 					unset($tf['fileimgthumbs']);
@@ -515,6 +514,21 @@ function xthreads_buildtfcache() {
 		}
 		if(!xthreads_empty($tf['filemagic'])) {
 			$tf['filemagic'] = array_map('urldecode', array_unique(explode('|', $tf['filemagic'])));
+		}
+		
+		// fix sanitize
+		switch($tf['inputtype']) {
+			case XTHREADS_INPUT_TEXT:
+				//if($tf['sanitize'] == XTHREADS_SANITIZE_HTML_NL)
+				//	$tf['sanitize'] = XTHREADS_SANITIZE_HTML;
+				break;
+			case XTHREADS_INPUT_SELECT:
+				$tf['sanitize'] = XTHREADS_SANITIZE_HTML;
+				break;
+			case XTHREADS_INPUT_CHECKBOX:
+			case XTHREADS_INPUT_RADIO:
+				$tf['sanitize'] = XTHREADS_SANITIZE_NONE;
+				break;
 		}
 		// santize -> separate mycode stuff?
 		
