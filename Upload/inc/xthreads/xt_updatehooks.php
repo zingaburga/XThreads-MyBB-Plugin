@@ -140,7 +140,8 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 							break;
 						}
 					}
-					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', $val)) {
+					// we'll apply datatype restrictions before testing textmask
+					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', xthreads_convert_str_to_datatype($val, $v['datatype']))) {
 						$errors[] = array('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
 						break;
 					}
@@ -184,7 +185,7 @@ function xthreads_input_posthandler_insert(&$ph) {
 			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric($ph->data['xthreads_'.$k]))
 				$xtaupdates[] = $ph->data['xthreads_'.$k];
 			
-			$updates[$k] = $db->escape_string($ph->data['xthreads_'.$k]);
+			$updates[$k] = $db->escape_string(xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']));
 		}
 	}
 	
@@ -212,6 +213,22 @@ function xthreads_input_posthandler_insert(&$ph) {
 	$updates['tid'] = $tid;
 	$db->replace_query('threadfields_data', $updates);
 }
+
+function xthreads_convert_str_to_datatype($s, $type) {
+	switch($type) {
+		case XTHREADS_DATATYPE_TEXT:
+			return $s;
+		case XTHREADS_DATATYPE_INT:
+		case XTHREADS_DATATYPE_BIGINT:
+			return intval($s);
+		case XTHREADS_DATATYPE_UINT:
+		case XTHREADS_DATATYPE_BIGUINT:
+			return (int)abs(intval($s));
+		case XTHREADS_DATATYPE_FLOAT:
+			return doubleval($s);
+	}
+}
+
 function xthreads_delete_thread($tid) {
 	global $db;
 	// awesome thing about this is that it will delete threadfields even if the thread was moved to a different forum

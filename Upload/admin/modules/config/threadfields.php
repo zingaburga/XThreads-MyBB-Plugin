@@ -419,8 +419,18 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		if($mybb->input['multival_enable'] || $mybb->input['inputtype'] == XTHREADS_INPUT_CHECKBOX) {
 			if(xthreads_empty($mybb->input['multival']))
 				$errors[] = $lang->error_require_multival_delimiter;
+			// force textual datatype
+			if($mybb->input['datatype'] !== XTHREADS_DATATYPE_TEXT)
+				$mybb->input['datatype'] = XTHREADS_DATATYPE_TEXT;
 		} else
 			$mybb->input['multival'] = '';
+		
+		/* if($mybb->input['datatype'] !== XTHREADS_DATATYPE_TEXT) {
+			// verify value list if applicable
+			if($mybb->input['inputtype'] == XTHREADS_INPUT_SELECT || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) {
+				// maybe we won't do this...
+			}
+		} */
 		
 		$mybb->input['fileimage'] = '';
 		if($mybb->input['filereqimg']) {
@@ -488,48 +498,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				else
 					$new_tf[$field] = $db->escape_string($mybb->input[$field]);
 			}
-			/*
-			$new_tf = array(
-				'title' => $db->escape_string($mybb->input['title']),
-				'desc' => $db->escape_string($mybb->input['desc']),
-				'field' => $db->escape_string($mybb->input['newfield']),
-				'forums' => $db->escape_string($mybb->input['forums']),
-				'disporder' => $db->escape_string($mybb->input['disporder']),
-				'tabstop' => $db->escape_string($mybb->input['tabstop']),
-				'hideedit' => $db->escape_string($mybb->input['hideedit']),
-				'editable' => $db->escape_string($mybb->input['editable']),
-				'editable_gids' => $db->escape_string($mybb->input['editable_gids']),
-				'viewable_gids' => $db->escape_string($mybb->input['viewable_gids']),
-				'inputtype' => $db->escape_string($mybb->input['inputtype']),
-				'unviewableval' => $db->escape_string($mybb->input['unviewableval']),
-				'blankval' => $db->escape_string($mybb->input['blankval']),
-				'defaultval' => $db->escape_string($mybb->input['defaultval']),
-				'dispformat' => $db->escape_string($mybb->input['dispformat']),
-				'dispitemformat' => $db->escape_string($mybb->input['dispitemformat']),
-				'formatmap' => $db->escape_string($mybb->input['formatmap']),
-				'formhtml' => $db->escape_string($mybb->input['formhtml']),
-				'multival' => $db->escape_string($mybb->input['multival']),
-				'textmask' => $db->escape_string($mybb->input['textmask']),
-				'maxlen' => $db->escape_string($mybb->input['maxlen']),
-				'fieldwidth' => $db->escape_string($mybb->input['fieldwidth']),
-				'fieldheight' => $db->escape_string($mybb->input['fieldheight']),
-				'vallist' => $db->escape_string($mybb->input['vallist']),
-				'sanitize' => $db->escape_string($mybb->input['sanitize']),
-				'allowfilter' => $db->escape_string($mybb->input['allowfilter']),
-				'filemagic' => $db->escape_string($mybb->input['filemagic']),
-				'fileexts' => $db->escape_string($mybb->input['fileexts']),
-				'filemaxsize' => $db->escape_string($mybb->input['filemaxsize']),
-				'fileimage' => $db->escape_string($mybb->input['fileimage']),
-				'fileimgthumbs' => $db->escape_string($mybb->input['fileimgthumbs']),
-			);
-			*/
 			
 			switch($mybb->input['inputtype']) {
 				case XTHREADS_INPUT_FILE:
 					$fieldtype = 'int(10) unsigned not null default 0';
-					break;
-				case XTHREADS_INPUT_TEXTAREA:
-					$fieldtype = 'text not null';
 					break;
 				case XTHREADS_INPUT_FILE_URL:
 					$fieldtype = 'varchar(255) not null default ""';
@@ -538,18 +510,36 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				case XTHREADS_INPUT_SELECT:
 				case XTHREADS_INPUT_RADIO:
 				//case XTHREADS_INPUT_CHECKBOX:
-					if($new_tf['multival'] === '' || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) {
+					if(($new_tf['multival'] === '' || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) && $new_tf['datatype'] != XTHREADS_DATATYPE_TEXT) {
 						$fieldtype = 'varchar(255) not null default ""';
 						break;
 					}
 					
 				default:
-					if($new_tf['allowfilter']) {
-						// initially, try 1024 chars
-						$fieldtype = 'varchar(1024) not null default ""';
-						$using_long_varchar = true;
-					} else {
-						$fieldtype = 'text not null';
+					switch($new_tf['datatype']) {
+						case XTHREADS_DATATYPE_INT:
+							$fieldtype = 'int(10) not null default 0';
+							break;
+						case XTHREADS_DATATYPE_UINT:
+							$fieldtype = 'int(11) unsigned not null default 0';
+							break;
+						case XTHREADS_DATATYPE_BIGINT:
+							$fieldtype = 'bigint(30) not null default 0';
+							break;
+						case XTHREADS_DATATYPE_BIGUINT:
+							$fieldtype = 'bigint(31) unsigned not null default 0';
+							break;
+						case XTHREADS_DATATYPE_FLOAT:
+							$fieldtype = 'double not null default 0';
+							break;
+						default:
+							if($new_tf['allowfilter'] && $mybb->input['inputtype'] != XTHREADS_INPUT_TEXTAREA) {
+								// initially, try 1024 chars
+								$fieldtype = 'varchar(1024) not null default ""';
+								$using_long_varchar = true;
+							} else {
+								$fieldtype = 'text not null';
+							}
 					}
 			}
 			if($update) {
@@ -771,6 +761,14 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	make_form_row('blankval', 'text_area');
 	make_form_row('defaultval', 'text_area');
 	make_form_row('dispformat', 'text_area');
+	make_form_row('datatype', 'select_box', array(
+		XTHREADS_DATATYPE_TEXT => $lang->threadfields_datatype_text,
+		XTHREADS_DATATYPE_INT => $lang->threadfields_datatype_int,
+		XTHREADS_DATATYPE_UINT => $lang->threadfields_datatype_uint,
+		XTHREADS_DATATYPE_BIGINT => $lang->threadfields_datatype_bigint,
+		XTHREADS_DATATYPE_BIGUINT => $lang->threadfields_datatype_biguint,
+		XTHREADS_DATATYPE_FLOAT => $lang->threadfields_datatype_float,
+	));
 	$data['multival_enable'] = ($data['multival'] !== '' ? 1:0);
 	make_form_row('multival_enable', 'yes_no_radio');
 	unset($data['multival_enable']);
@@ -821,6 +819,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		if(!e) e = ($('multival_enable_yes').checked && $('row_multival_enable').style.display != 'none');
 		xt_visi('row_multival', e);
 		xt_visi('row_dispitemformat', e);
+		xt_visi('row_datatype', !e);
 	}
 	$('multival_enable_yes').onclick = xt_multival_enable;
 	$('multival_enable_no').onclick = xt_multival_enable;
@@ -863,6 +862,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_vallist', selectIn);
 		xt_visi('row_formhtml', si == <?php echo XTHREADS_INPUT_CUSTOM; ?>);
 		
+		xt_visi('row_datatype', !checkboxIn && !fileIn);
 		xt_visi('row_multival_enable', !checkboxIn && !radioIn && !fileIn);
 		xt_multival_enable();
 		
@@ -881,7 +881,21 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			if(dispfmt_obj.value == fileVal)
 				dispfmt_obj.value = "{VALUE}";
 		}
+		
+		if(textAreaIn) {
+			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML; ?>")
+				$('sanitize').selectedIndex++;
+		} else if(textIn) {
+			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML_NO; ?>")
+				$('sanitize').selectedIndex--;
+		}
 	}).apply($('inputtype'));
+	
+	($('datatype').onchange = function() {
+		var isText = this.options[this.selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>";
+		xt_visi('row_multival_enable', isText);
+		xt_multival_enable();
+	}).apply($('datatype'));
 	
 	($('editable').onchange = function() {
 		xt_visi('row_editable_gids', this.options[this.selectedIndex].value == "99");

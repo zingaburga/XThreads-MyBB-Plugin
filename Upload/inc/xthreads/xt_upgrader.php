@@ -9,7 +9,7 @@ if(!is_array($info)) return false;
 
 global $db, $cache;
 
-if($info['version'] < 1.1) {
+if(XTHREADS_INSTALLED_VERSION < 1.1) {
 	// add viewable groups thing to thread fields
 	
 	// don't need to worry about separating these writes as this version only supports MySQL
@@ -19,7 +19,7 @@ if($info['version'] < 1.1) {
 	)');
 }
 
-if($info['version'] < 1.2) {
+if(XTHREADS_INSTALLED_VERSION < 1.2) {
 	
 	require MYBB_ROOT.'inc/adminfunctions_templates.php';
 	find_replace_templatesets('forumdisplay_searchforum_inline', '#\\</form\\>#', '{$xthreads_forum_filter_form}</form>');
@@ -48,12 +48,12 @@ if($info['version'] < 1.2) {
 	*/
 }
 
-if($info['version'] < 1.3) {
+if(XTHREADS_INSTALLED_VERSION < 1.3) {
 	// we won't bother to fix potential issues with multiple values with textboxes
 }
 
 /*
-if($info['version'] < 1.31) {
+if(XTHREADS_INSTALLED_VERSION < 1.31) {
 	// make table alterations for longer varchars + removal of default value
 	$query = $db->simple_select('threadfields', 'field', 'inputtype IN ('.implode(',', array(XTHREADS_INPUT_TEXT, XTHREADS_INPUT_SELECT, XTHREADS_INPUT_RADIO, XTHREADS_INPUT_CHECKBOX)).')');
 	$qry_base = 'ALTER TABLE `'.$db->table_prefix.'threadfields_data` MODIFY ';
@@ -67,7 +67,7 @@ if($info['version'] < 1.31) {
 }
 */
 
-if($info['version'] < 1.32) {
+if(XTHREADS_INSTALLED_VERSION < 1.32) {
 	// fix DB collations
 	$collation = $db->build_create_table_collation();
 	if($collation && ($db->type == 'mysql' || $db->type == 'mysqli')) {
@@ -96,12 +96,10 @@ if($info['version'] < 1.32) {
 	}
 }
 
-if($info['version'] < 1.33) {
+if(XTHREADS_INSTALLED_VERSION < 1.33) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
 		`tabstop` tinyint(1) not null default 1
 	)');
-	
-	xthreads_buildtfcache();
 	
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` varchar(255) not null default ""');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_hidebreadcrumb` tinyint(3) not null default 0');
@@ -117,6 +115,14 @@ if($info['version'] < 1.33) {
 		}
 	}
 	$db->free_result($query);
+}
+
+if(XTHREADS_INSTALLED_VERSION < 1.34) {
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
+		`datatype` tinyint(3) not null default '.XTHREADS_DATATYPE_TEXT.'
+	)');
+	
+	xthreads_buildtfcache();
 }
 
 return true;

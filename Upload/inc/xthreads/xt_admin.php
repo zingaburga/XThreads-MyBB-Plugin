@@ -133,6 +133,11 @@ function &xthreads_threadfields_props() {
 			'db_type' => 'text',
 			'default' => '',
 		),
+		'datatype' => array(
+			'db_type' => 'tinyint',
+			'default' => XTHREADS_DATATYPE_TEXT,
+			'inputtype' => 'select_box',
+		),
 		'textmask' => array(
 			'db_size' => 150,
 			'default' => '^.*$',
@@ -449,6 +454,7 @@ function xthreads_buildtfcache() {
 				);
 				if(!$tf['fileimage'])
 					unset($tf['fileimgthumbs']);
+				$tf['datatype'] = XTHREADS_DATATYPE_TEXT;
 				break;
 			
 			case XTHREADS_INPUT_TEXTAREA:
@@ -491,7 +497,14 @@ function xthreads_buildtfcache() {
 		
 		if(xthreads_empty($tf['multival']))
 			unset($tf['dispitemformat']);
+		else
+			$tf['datatype'] = XTHREADS_DATATYPE_TEXT;
 		
+		if($tf['datatype'] != XTHREADS_DATATYPE_TEXT) {
+			// disable santizer for a free speed boost
+			if(($tf['sanitize'] & XTHREADS_SANITIZE_MASK) != XTHREADS_SANITIZE_PARSER)
+				$tf['sanitize'] = XTHREADS_SANITIZE_NONE;
+		}
 		
 		// preformat stuff to save time later
 		if($tf['formatmap'])

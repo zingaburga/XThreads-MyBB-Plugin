@@ -81,6 +81,13 @@ define('XTHREADS_INPUT_FILE', 5);
 define('XTHREADS_INPUT_FILE_URL', 6);
 define('XTHREADS_INPUT_CUSTOM', 7);
 
+define('XTHREADS_DATATYPE_TEXT', 0);
+define('XTHREADS_DATATYPE_INT', 1);
+define('XTHREADS_DATATYPE_UINT', 2);
+define('XTHREADS_DATATYPE_BIGINT', 3);
+define('XTHREADS_DATATYPE_BIGUINT', 4);
+define('XTHREADS_DATATYPE_FLOAT', 5);
+
 
 if(defined('IN_ADMINCP')) {
 	require MYBB_ROOT.'inc/xthreads/xt_admin.php';
