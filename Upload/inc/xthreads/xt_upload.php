@@ -110,7 +110,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	
 	if($tf['fileimage']) {
 		$img_dimensions = @getimagesize($attachment['tmp_name']);
-		if(empty($img_dimensions) || !in_array($img_dimensions[2], array(IMAGETYPE_GIF,IMAGETYPE_JPEG,IMAGETYPE_PNG))) {
+		if(empty($img_dimensions) || !in_array($img_dimensions[2], array(IMAGETYPE_GIF,IMAGETYPE_JPEG,IMAGETYPE_PNG,IMAGETYPE_WBMP))) {
 			@unlink($attachment['tmp_name']);
 			return array('error' => $lang->error_attachtype);
 		}
@@ -123,6 +123,32 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 			)) {
 				@unlink($attachment['tmp_name']);
 				// TODO: better error message
+				return array('error' => $lang->error_attachtype);
+			}
+		}
+		// convert WBMP -> PNG (saves space, bandwidth and works with MyBB's thumbnail generator)
+		// unfortunately, although this is nice, we have a problem of filetype checking etc...
+		if($img_dimensions[2] == IMAGETYPE_WBMP) {
+			if(function_exists('imagecreatefromwbmp') && $img = @imagecreatefromwbmp($attachment['tmp_name'])) {
+				@unlink($attachment['tmp_name']);
+				@imagepng($img, $attachment['tmp_name'], 6); // use zlib's recommended compression level
+				imgdestroy($img);
+				unset($img);
+				// double check that we have a file
+				if(!file_exists($attachment['tmp_name']))
+					return array('error' => $lang->error_attachtype); // get user to upload a non-WBMP file, lol
+				// change extension + update filesize, do MIME as well
+				if(strtolower(substr($attachment['name'], -5)) == '.wbmp')
+					$attachment['name'] = substr($attachment['name'], 0, -5).'.png';
+				$file_size = @filesize($attachment['tmp_name']);
+				if(strtolower($attachment['type']) == 'image/wbmp')
+					$attachment['type'] = 'image/png';
+				// update type too
+				$img_dimensions[2] = IMAGETYPE_PNG;
+			}
+			else {
+				// can't do much, error out
+				@unlink($attachment['tmp_name']);
 				return array('error' => $lang->error_attachtype);
 			}
 		}
