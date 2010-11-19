@@ -425,12 +425,13 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		} else
 			$mybb->input['multival'] = '';
 		
-		/* if($mybb->input['datatype'] !== XTHREADS_DATATYPE_TEXT) {
+		if($mybb->input['datatype'] !== XTHREADS_DATATYPE_TEXT) {
 			// verify value list if applicable
-			if($mybb->input['inputtype'] == XTHREADS_INPUT_SELECT || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) {
+			/* if($mybb->input['inputtype'] == XTHREADS_INPUT_SELECT || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) {
 				// maybe we won't do this...
-			}
-		} */
+			} */
+			$mybb->input['datatype'] = min_max($mybb->input['datatype'], XTHREADS_DATATYPE_TEXT, XTHREADS_DATATYPE_FLOAT);
+		}
 		
 		$mybb->input['fileimage'] = '';
 		if($mybb->input['filereqimg']) {

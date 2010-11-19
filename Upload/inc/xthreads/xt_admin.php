@@ -450,7 +450,7 @@ function xthreads_buildtfcache() {
 					$tf['sanitize'],
 					$tf['allowfilter'],
 					$tf['defaultval'],
-					$tf['fieldheight'],
+					$tf['fieldheight']
 				);
 				if(!$tf['fileimage'])
 					unset($tf['fileimgthumbs']);

@@ -17,16 +17,20 @@ function xthreads_forumdisplay() {
 	$xthreads_forum_filter_form = $xthreads_forum_filter_args = '';
 	if(!empty($threadfield_cache)) {
 		function xthreads_forumdisplay_dbhook(&$s, &$db) {
-			global $threadfield_cache, $fid, $plugins, $threadfields;
+			global $threadfield_cache, $fid, $plugins, $threadfields, $xthreads_forum_sort;
 			//if(empty($threadfield_cache)) return;
 			
 			$fields = '';
 			foreach($threadfield_cache as &$v)
 				$fields .= ', tfd.`'.$v['field'].'` AS `xthreads_'.$v['field'].'`';
 			
+			$sortjoin = '';
+			if(!empty($xthreads_forum_sort) && isset($xthreads_forum_sort['sortxtacol']))
+				$sortjoin = ' LEFT JOIN '.$db->table_prefix.'xtattachments xta ON tfd.`'.$xthreads_forum_sort['sortxtacol'].'`=xta.aid';
+			
 			$s = strtr($s, array(
 				'SELECT t.*, ' => 'SELECT t.*'.$fields.', ',
-				'WHERE t.fid=' => 'LEFT JOIN `'.$db->table_prefix.'threadfields_data` tfd ON t.tid=tfd.tid WHERE t.fid=',
+				'WHERE t.fid=' => 'LEFT JOIN `'.$db->table_prefix.'threadfields_data` tfd ON t.tid=tfd.tid'.$sortjoin.' WHERE t.fid=',
 			));
 			$plugins->add_hook('forumdisplay_thread', 'xthreads_forumdisplay_thread');
 			$threadfields = array();
@@ -118,6 +122,38 @@ function xthreads_forumdisplay() {
 			//if($mybb->input['sortby'] == 'tf_'.$n)
 			//	$tf_sort = $n;
 		}
+		
+		// sorting by thread fields
+		if($mybb->input['sortby'] && substr($mybb->input['sortby'], 0, 2) == 'tf') {
+			global $xthreads_forum_sort;
+			if(substr($mybb->input['sortby'], 0, 3) == 'tf_') {
+				$n = substr($mybb->input['sortby'], 3);
+				if(isset($threadfield_cache[$n]) && xthreads_empty($threadfield_cache[$n]['multival']) && $threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_FILE) {
+					$xthreads_forum_sort = array(
+						't' => 'tfd.',
+						'sortby' => $mybb->input['sortby'],
+						'sortfield' => '`'.$n.'`'
+					);
+				}
+			}
+			// xtattachment sorting
+			elseif(substr($mybb->input['sortby'], 0, 4) == 'tfa_') {
+				$p = strpos($mybb->input['sortby'], '_', 5);
+				if($p) {
+					$field = strtolower(substr($mybb->input['sortby'], 4, $p-4));
+					$n = substr($mybb->input['sortby'], $p+1);
+					if(isset($threadfield_cache[$n]) && $threadfield_cache[$n]['inputtype'] == XTHREADS_INPUT_FILE && in_array($field, array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads'))) {
+						$xthreads_forum_sort = array(
+							't' => 'xta.',
+							'sortby' => $mybb->input['sortby'],
+							'sortfield' => '`'.$field.'`',
+							'sortxtacol' => $n
+						);
+					}
+				}
+			}
+		}
+		
 		// Quick Thread integration
 		if(function_exists('quickthread_run'))
 			xthreads_forumdisplay_quickthread();
@@ -211,14 +247,19 @@ function xthreads_forumdisplay() {
 		unset($filters_set['__search']['nullselected'], $filters_set['__search']['nullchecked'], $filters_set['__search']['nullactive']);
 	}
 	
-	if($forum['xthreads_inlinesearch'] || !empty($tf_filters) || !empty($xt_filters)) {
+	$using_filter = ($forum['xthreads_inlinesearch'] || !empty($tf_filters) || !empty($xt_filters));
+	if($using_filter || isset($xthreads_forum_sort)) {
 		// only nice way to do all of this is to gain control of $templates, so let's do it
 		control_object($GLOBALS['templates'], '
 			function get($title, $eslashes=1, $htmlcomments=1) {
 				static $done=false;
 				if(!$done && $title == \'forumdisplay_orderarrow\') {
 					$done = true;
-					xthreads_forumdisplay_filter();
+					'.($using_filter?'xthreads_forumdisplay_filter();':'').'
+					'.($xthreads_forum_sort?'
+						$orderbyhack = xthreads_forumdisplay_sorter();
+						return $orderbyhack.parent::get($title, $eslashes, $htmlcomments);
+					':'').'
 				}
 				return parent::get($title, $eslashes, $htmlcomments);
 			}
@@ -257,6 +298,18 @@ function xthreads_forumdisplay_quickthread() {
 	if(!strpos($tpl, 'enctype="multipart/form-data"'))
 		$tpl = str_replace('<form method="post" ', '<form method="post" enctype="multipart/form-data" ', $tpl);
 	$tpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1'.strtr($GLOBALS['extra_threadfields'], array('$' => '\\$')).'$2', $tpl, 1);
+}
+
+function xthreads_forumdisplay_sorter() {
+	global $xthreads_forum_sort, $mybb;
+	if(empty($xthreads_forum_sort)) return '';
+	$GLOBALS['t'] = $xthreads_forum_sort['t'];
+	$GLOBALS['sortby'] = $xthreads_forum_sort['sortby'];
+	$GLOBALS['sortfield'] = $xthreads_forum_sort['sortfield'];
+	$mybb->input['sortby'] = htmlspecialchars($xthreads_forum_sort['sortby']);
+	$GLOBALS['sortsel'] = array($xthreads_forum_sort['sortby'] => 'selected="selected"');
+	// apply paranoia filtering...
+	return '"; $orderarrow[\''.strtr($xthreads_forum_sort['sortby'], array('\\\\' => '\\', '\'' => '', '"' => '')).'\'] = "';
 }
 
 function xthreads_forumdisplay_filter_input($arg, &$tffilter, &$filter_set) {
