@@ -487,6 +487,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		}
 		$s = $xta_cache[$s];
 		$s['downloads_friendly'] = my_number_format($s['downloads']);
+		$s['url'] = xthreads_get_xta_url($s); // this must be placed before filename so that it isn't htmlspecialchar'd!
 		$s['filename'] = htmlspecialchars_uni($s['filename']);
 		$s['uploadmime'] = htmlspecialchars_uni($s['uploadmime']);
 		if(!$s['updatetime']) $s['updatetime'] = $s['uploadtime'];
@@ -494,7 +495,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
 		if(isset($s['md5hash'])) {
 			$s['md5hash'] = bin2hex($s['md5hash']);
 		}
-		$s['url'] = xthreads_get_xta_url($s);
 		$s['icon'] = get_attachment_icon(get_extension($s['filename']));
 		
 		$s['upload_time'] = my_date($mybb->settings['timeformat'], $s['uploadtime']);
