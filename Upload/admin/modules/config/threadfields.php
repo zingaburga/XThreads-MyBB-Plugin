@@ -376,6 +376,28 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		if(!xthreads_empty($mybb->input['textmask'])) {
 			// test for bad regex
+			// we'll now overwrite the error handler since MyBB's handler seems to interfere with the following
+			if(!function_exists('xthreads_textmask_errhandler')) { //paranoia
+				function xthreads_textmask_errhandler($errno, $errstr) {
+					$GLOBALS['previous_error'] = array($errno, $errstr);
+				}
+			}
+			unset($GLOBALS['previous_error']);
+			set_error_handler('xthreads_textmask_errhandler');
+			@preg_match('~'.str_replace('~', '\\~', $mybb->input['textmask']).'~si', 'testvalue');
+			restore_error_handler();
+			if(!empty($GLOBALS['previous_error'])) {
+				$errmsg =& $GLOBALS['previous_error'][1];
+				if(substr($errmsg, 0, 12) == 'preg_match()') {
+					$p = strpos($errmsg, ':', 12);
+					if($p)
+						$errmsg = trim(substr($errmsg, $p+1));
+					else
+						$errmsg = trim(substr($errmsg, 12));
+					$errors[] = $lang->sprintf($lang->error_bad_textmask, $errmsg);
+				}
+			}
+			/*
 			if(function_exists('error_get_last')) {
 				@preg_match('~'.str_replace('~', '\\~', $mybb->input['textmask']).'~si', 'testvalue');
 				$error = error_get_last();
@@ -392,6 +414,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			
 			if(substr($errmsg, 0, 13) == 'preg_match():')
 				$errors[] = $lang->sprintf($lang->error_bad_textmask, trim(substr($errmsg, 13)));
+			*/
 		}
 		
 		switch($mybb->input['inputtype']) {
@@ -816,11 +839,19 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	
 	function xt_multival_enable() {
 		var si = parseInt($('inputtype').options[$('inputtype').selectedIndex].value);
-		var e = (si == <?php echo XTHREADS_INPUT_CHECKBOX; ?>); // forced
+		var checkboxIn = (si == <?php echo XTHREADS_INPUT_CHECKBOX; ?>);
+		var fileIn = (si == <?php echo XTHREADS_INPUT_FILE; ?> || si == <?php echo XTHREADS_INPUT_FILE_URL; ?>);
+		e = checkboxIn; // forced
+		
+		xt_visi('row_multival_enable', checkboxIn || (
+			(si != <?php echo XTHREADS_INPUT_RADIO; ?> && !fileIn)
+			&& $('datatype').options[$('datatype').selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>"
+		));
+		
 		if(!e) e = ($('multival_enable_yes').checked && $('row_multival_enable').style.display != 'none');
 		xt_visi('row_multival', e);
 		xt_visi('row_dispitemformat', e);
-		xt_visi('row_datatype', !e);
+		xt_visi('row_datatype', !e && !checkboxIn && !fileIn);
 	}
 	$('multival_enable_yes').onclick = xt_multival_enable;
 	$('multival_enable_no').onclick = xt_multival_enable;
@@ -863,8 +894,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_vallist', selectIn);
 		xt_visi('row_formhtml', si == <?php echo XTHREADS_INPUT_CUSTOM; ?>);
 		
-		xt_visi('row_datatype', !checkboxIn && !fileIn);
-		xt_visi('row_multival_enable', !checkboxIn && !radioIn && !fileIn);
+		//xt_visi('row_datatype', !checkboxIn && !fileIn);
+		//xt_visi('row_multival_enable', !checkboxIn && !radioIn && !fileIn);
 		xt_multival_enable();
 		
 		xt_visi('row_filemagic', pureFileIn);
@@ -893,8 +924,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	}).apply($('inputtype'));
 	
 	($('datatype').onchange = function() {
-		var isText = this.options[this.selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>";
-		xt_visi('row_multival_enable', isText);
+		//var isText = this.options[this.selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>";
+		//xt_visi('row_multival_enable', isText);
 		xt_multival_enable();
 	}).apply($('datatype'));
 	
