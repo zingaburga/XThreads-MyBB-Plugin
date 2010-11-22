@@ -309,7 +309,7 @@ function xthreads_forumdisplay_sorter() {
 	$mybb->input['sortby'] = htmlspecialchars($xthreads_forum_sort['sortby']);
 	$GLOBALS['sortsel'] = array($xthreads_forum_sort['sortby'] => 'selected="selected"');
 	// apply paranoia filtering...
-	return '"; $orderarrow[\''.strtr($xthreads_forum_sort['sortby'], array('\\\\' => '\\', '\'' => '', '"' => '')).'\'] = "';
+	return '"; $orderarrow[\''.strtr($xthreads_forum_sort['sortby'], array('\\' => '', '\'' => '', '"' => '')).'\'] = "';
 }
 
 function xthreads_forumdisplay_filter_input($arg, &$tffilter, &$filter_set) {

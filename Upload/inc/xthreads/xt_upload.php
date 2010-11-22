@@ -252,7 +252,8 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	);
 	if(isset($file_md5))
 		$attacharray['md5hash'] = $file_md5;
-	// set md5hash to null otherwise, but stupid #&#^&@ MyBB DB API is too stupid for that...
+	else
+		$attacharray['md5hash'] = null;
 	if(!empty($img_dimensions)) {
 		$origdimarray = array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2]);
 		$attacharray['thumbs'] = serialize(array('orig' => $origdimarray));
@@ -261,9 +262,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	if($update_attachment) {
 		unset($attacharray['downloads'], $attacharray['uploadtime']);
 		//$attacharray['updatetime'] = TIME_NOW;
-		$db->update_query('xtattachments', array_map(array($db, 'escape_string'), $attacharray), 'aid='.$prevattach['aid']);
-		if(isset($prevattach['md5hash']) && !isset($file_md5)) // ensure that MD5 hash is null too
-			$db->write_query('UPDATE '.$db->table_prefix.'xtattachments SET md5hash=NULL WHERE aid='.$prevattach['aid']);
+		xthreads_db_update('xtattachments', $attacharray, 'aid='.$prevattach['aid']);
 		$attacharray['aid'] = $prevattach['aid'];
 		
 		// and finally, delete old attachment
@@ -271,7 +270,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 		$new_file = $path.$month_dir.$filename;
 	}
 	else {
-		$attacharray['aid'] = $db->insert_query('xtattachments', array_map(array($db, 'escape_string'), $attacharray));
+		$attacharray['aid'] = xthreads_db_insert('xtattachments', $attacharray);
 		// now that we have the aid, move the file
 		$new_file = $path.$month_dir.'file_'.$attacharray['aid'].'_'.$basename;
 		@rename($path.$month_dir.$filename, $new_file);

@@ -185,7 +185,7 @@ function xthreads_input_posthandler_insert(&$ph) {
 			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric($ph->data['xthreads_'.$k]))
 				$xtaupdates[] = $ph->data['xthreads_'.$k];
 			
-			$updates[$k] = $db->escape_string(xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']));
+			$updates[$k] = xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']);
 		}
 	}
 	
@@ -203,7 +203,7 @@ function xthreads_input_posthandler_insert(&$ph) {
 	}
 	
 	if($update) {
-		$db->update_query('threadfields_data', $updates, 'tid='.$tid);
+		xthreads_db_update('threadfields_data', $updates, 'tid='.$tid);
 		// check if actually updated (it may be possible that an entry for this thread isn't added yet)
 		if($db->affected_rows() > 0)
 			return;
@@ -211,7 +211,7 @@ function xthreads_input_posthandler_insert(&$ph) {
 	}
 	
 	$updates['tid'] = $tid;
-	$db->replace_query('threadfields_data', $updates);
+	xthreads_db_replace('threadfields_data', $updates, 'tid='.$tid);
 }
 
 function xthreads_convert_str_to_datatype($s, $type) {
@@ -271,7 +271,7 @@ function xthreads_duplicate_threadfield_data($tid_old, $tid_new) {
 		$oldpath = dirname($oldname).'/';
 		$xta['attachname'] = substr(md5(uniqid(mt_rand(), true).substr($mybb->post_code, 16)), 12, 8).substr($xta['attachname'], 8);
 		unset($xta['aid']);
-		$tf[$xta['field']] = $xta['aid'] = $db->insert_query('xtattachments', array_map(array($db, 'escape_string'), $xta));
+		$tf[$xta['field']] = $xta['aid'] = xthreads_db_insert('xtattachments', $xta);
 		
 		$newname = xthreads_get_attach_path($xta);
 		$newpath = dirname($newname).'/';
@@ -287,7 +287,7 @@ function xthreads_duplicate_threadfield_data($tid_old, $tid_new) {
 		xthreads_hardlink_file($oldname, $newname);
 	}
 	
-	$db->insert_query('threadfields_data', array_map(array($db, 'escape_string'), $tf));
+	xthreads_db_insert('threadfields_data', $tf);
 	@ignore_user_abort(false);
 }
 
@@ -1013,3 +1013,58 @@ function xthreads_js_remove_noreplies_notice() {
 	$templates->cache['postbit_classic'] = $js.$templates->cache['postbit_classic'];
 }
 
+
+// --- some functions to fix up MyBB's bad DB methods ---
+// escape function which handles NULL values properly, and enquotes strings
+function xthreads_db_escape($s) {
+	if($s === null) return 'NULL';
+	if($s === true) return '1';
+	if($s === false) return '0';
+	if(is_string($s)) return '\''.$GLOBALS['db']->escape_string($s).'\'';
+	return (string)$s;
+}
+
+// $db->update_query function which uses above escape method automatically
+function xthreads_db_update($table, $update, $where='') {
+	global $db;
+	if($db->type == 'pgsql')
+		$fd = '"';
+	else
+		$fd = '`';
+	
+	$sql = '';
+	foreach($update as $k => &$v)
+		$sql .= ($sql?', ':'').$fd.$k.$fd.'='.xthreads_db_escape($v);
+	
+	if($where) $sql .= ' WHERE '.$where;
+	
+	return $db->write_query('UPDATE '.$db->table_prefix.$table.' SET '.$sql);
+}
+
+function xthreads_db_insert($table, $insert, $replace=false) {
+	global $db;
+	if($db->type == 'pgsql')
+		$fd = '"';
+	else
+		$fd = '`';
+	
+	$db->write_query(($replace?'REPLACE':'INSERT').' INTO '.$db->table_prefix.$table.'('.$fd.implode($fd.','.$fd, array_keys($insert)).$fd.') VALUES('.implode(',', array_map('xthreads_db_escape', $insert)).')');
+	if($replace) return true;
+	return $db->insert_id();
+}
+
+// emulation for replace query
+// this function is NOT thread safe on non-MySQL
+function xthreads_db_replace($table, $insert, $where) {
+	global $db;
+	if($db->type == 'mysql' || $db->type == 'mysqli')
+		return xthreads_db_insert($table, $insert, true);
+	
+	$query = $db->simple_select($table, '*', $where, array('limit' => 1));
+	$exists = $db->num_rows($query);
+	$db->free_result($query);
+	if($exists)
+		return xthreads_db_update($table, $insert, $where);
+	else
+		return xthreads_db_insert($table, $insert);
+}
