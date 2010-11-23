@@ -525,7 +525,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			
 			switch($mybb->input['inputtype']) {
 				case XTHREADS_INPUT_FILE:
-					$fieldtype = 'int(10) unsigned not null default 0';
+					$fieldtype = xthreads_db_fielddef('int', null, true).' not null default 0';
 					break;
 				case XTHREADS_INPUT_FILE_URL:
 					$fieldtype = 'varchar(255) not null default ""';
@@ -542,16 +542,12 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				default:
 					switch($new_tf['datatype']) {
 						case XTHREADS_DATATYPE_INT:
-							$fieldtype = 'int(10) not null default 0';
-							break;
 						case XTHREADS_DATATYPE_UINT:
-							$fieldtype = 'int(11) unsigned not null default 0';
+							$fieldtype = xthreads_db_fielddef('int', null, $new_tf['datatype']==XTHREADS_DATATYPE_UINT).' not null default 0';
 							break;
 						case XTHREADS_DATATYPE_BIGINT:
-							$fieldtype = 'bigint(30) not null default 0';
-							break;
 						case XTHREADS_DATATYPE_BIGUINT:
-							$fieldtype = 'bigint(31) unsigned not null default 0';
+							$fieldtype = xthreads_db_fielddef('bigint', null, $new_tf['datatype']==XTHREADS_DATATYPE_BIGUINT).' not null default 0';
 							break;
 						case XTHREADS_DATATYPE_FLOAT:
 							$fieldtype = 'double not null default 0';

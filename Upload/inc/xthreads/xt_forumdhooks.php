@@ -256,7 +256,7 @@ function xthreads_forumdisplay() {
 				if(!$done && $title == \'forumdisplay_orderarrow\') {
 					$done = true;
 					'.($using_filter?'xthreads_forumdisplay_filter();':'').'
-					'.($xthreads_forum_sort?'
+					'.(isset($xthreads_forum_sort)?'
 						$orderbyhack = xthreads_forumdisplay_sorter();
 						return $orderbyhack.parent::get($title, $eslashes, $htmlcomments);
 					':'').'
