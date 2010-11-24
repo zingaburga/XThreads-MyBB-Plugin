@@ -3,7 +3,7 @@
 if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
-if(!is_array($info)) return false;
+if(!defined('XTHREADS_INSTALLED_VERSION')) return false;
 
 // even if there are no upgrade actions to be run for a particular upgrade, we'll get the user into the habbit of running the upgrader
 

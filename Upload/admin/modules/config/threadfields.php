@@ -543,14 +543,14 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					switch($new_tf['datatype']) {
 						case XTHREADS_DATATYPE_INT:
 						case XTHREADS_DATATYPE_UINT:
-							$fieldtype = xthreads_db_fielddef('int', null, $new_tf['datatype']==XTHREADS_DATATYPE_UINT).' not null default 0';
+							$fieldtype = xthreads_db_fielddef('int', null, $new_tf['datatype']==XTHREADS_DATATYPE_UINT).' default null';
 							break;
 						case XTHREADS_DATATYPE_BIGINT:
 						case XTHREADS_DATATYPE_BIGUINT:
-							$fieldtype = xthreads_db_fielddef('bigint', null, $new_tf['datatype']==XTHREADS_DATATYPE_BIGUINT).' not null default 0';
+							$fieldtype = xthreads_db_fielddef('bigint', null, $new_tf['datatype']==XTHREADS_DATATYPE_BIGUINT).' default null';
 							break;
 						case XTHREADS_DATATYPE_FLOAT:
-							$fieldtype = 'double not null default 0';
+							$fieldtype = 'double default null';
 							break;
 						default:
 							if($new_tf['allowfilter'] && $mybb->input['inputtype'] != XTHREADS_INPUT_TEXTAREA) {

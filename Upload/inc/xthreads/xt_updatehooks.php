@@ -185,7 +185,10 @@ function xthreads_input_posthandler_insert(&$ph) {
 			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric($ph->data['xthreads_'.$k]))
 				$xtaupdates[] = $ph->data['xthreads_'.$k];
 			
-			$updates[$k] = xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']);
+			if($v['datatype'] != XTHREADS_DATATYPE_TEXT && $ph->data['xthreads_'.$k] === '')
+				$updates[$k] = null;
+			else
+				$updates[$k] = xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']);
 		}
 	}
 	
