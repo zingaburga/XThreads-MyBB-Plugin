@@ -129,11 +129,13 @@ function xthreads_forumdisplay() {
 			if(substr($mybb->input['sortby'], 0, 3) == 'tf_') {
 				$n = substr($mybb->input['sortby'], 3);
 				if(isset($threadfield_cache[$n]) && xthreads_empty($threadfield_cache[$n]['multival']) && $threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_FILE) {
-					$xthreads_forum_sort = array(
-						't' => 'tfd.',
-						'sortby' => $mybb->input['sortby'],
-						'sortfield' => '`'.$n.'`'
-					);
+					if($threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_TEXTAREA) { // also disallow sorting by textarea inputs
+						$xthreads_forum_sort = array(
+							't' => 'tfd.',
+							'sortby' => $mybb->input['sortby'],
+							'sortfield' => '`'.$n.'`'
+						);
+					}
 				}
 			}
 			// xtattachment sorting
