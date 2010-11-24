@@ -256,17 +256,3 @@ $l['xthreads_orphancleanup_desc'] = 'Removes orphaned XThreads attachments more 
 $l['xthreads_do_upgrade'] = 'You have uploaded a newer version of XThreads, v{1}, however the version currently installed is v{2}.  You may need to perform an upgrade for your board to be functional - to perform an upgrade, please <a href="{3}">click here</a>.';
 $l['xthreads_upgrade_done'] = 'XThreads successfully upgraded.';
 $l['xthreads_upgrade_failed'] = 'XThreads upgraded failed.';
-
-
-
-
-
-
-
-
-
-
-
-
-// since it's small, include it anyway (mainly to stop duplication of task language variables)
-include_once dirname(__FILE__).'/../xthreads.lang.php';

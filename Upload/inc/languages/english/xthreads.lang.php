@@ -20,7 +20,6 @@ $l['xthreads_xtfurlerr_headernotfound'] = 'Could not determine response HTTP hea
 $l['xthreads_xtfurlerr_errcode'] = '{1} error ({2}): {3}';
 $l['xthreads_xtfurlerr_badresponse'] = 'Could not fetch specified URL - the server returned <em>{1} {2}</em>';
 
-$l['xthreads_downloading_attachment'] = 'Downloading file <a href="{1}">{2}</a>';
 $l['xthreads_md5hash'] = 'MD5 Hash: {1}';
 $l['xthreads_rmattach'] = 'Remove/Replace';
 $l['xthreads_replaceattach'] = 'Replace';

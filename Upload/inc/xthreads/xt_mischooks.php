@@ -254,10 +254,12 @@ function xthreads_wol_patch(&$a) {
 		//case 'report':
 		//case 'sendthread':
 		
+		/*
 		case 'xtattachment':
 			$a['location_name'] = $lang->sprintf($lang->xthreads_downloading_attachment, htmlspecialchars_uni($user_activity['location']), htmlspecialchars_uni($user_activity['filenamename']));
 			// TODO: allow custom for this too
 			return;
+		*/
 	}
 	
 	if(!$fid) return;
