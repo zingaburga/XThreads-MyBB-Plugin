@@ -9,7 +9,7 @@ define('XTHREADS_VERSION', 1.40);
 
 $plugins->add_hook('forumdisplay_thread', 'xthreads_format_thread_date');
 $plugins->add_hook('showthread_start', 'xthreads_format_thread_date');
-$plugins->add_hook('global_start', 'xthreads_tplhandler');
+$plugins->add_hook('global_start', 'xthreads_global', 5); // load this before most plugins so that they will utilise our modified system
 $plugins->add_hook('archive_start', 'xthreads_archive_breadcrumb');
 
 //$plugins->add_hook('global_end', 'xthreads_fix_stats');
@@ -140,7 +140,7 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 }
 
 
-function xthreads_tplhandler() {
+function xthreads_global() {
 	global $current_page, $mybb, $templatelist, $templates;
 	switch($current_page) {
 		case 'misc.php':
@@ -220,6 +220,27 @@ function xthreads_tplhandler() {
 			');
 			$templates->non_existant_templates = array();
 			$templates->xt_tpl_prefix = explode(',', $forum['xthreads_tplprefix']);
+		}
+		if($forum['xthreads_langprefix'] !== '') {
+			global $lang;
+			// this forum has a custom lang prefix, hook into lang system
+			control_object($lang, '
+				function load($section, $isdatahandler=false, $supress_error=false) {
+					$this->__xt_load($section, $isdatahandler, $supress_error);
+					foreach($this->xt_lang_prefix as &$pref)
+						if($pref !== \'\')
+							$this->__xt_load($pref.$section, $isdatahandler, true);
+				}
+				function __xt_load($section, $isdatahandler=false, $supress_error=false) {
+					return parent::load($section, $isdatahandler, $supress_error);
+				}
+			');
+			$lang->xt_lang_prefix = explode(',', $forum['xthreads_langprefix']);
+			// load global lang messages that we couldn't before
+			foreach($lang->xt_lang_prefix as &$pref) if($pref !== '') {
+				$lang->__xt_load($pref.'global', false, true);
+				$lang->__xt_load($pref.'messages', false, true);
+			}
 		}
 		//if($forum['xthreads_firstpostattop']) {
 			switch($current_page) {
