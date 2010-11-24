@@ -81,6 +81,12 @@
     <li>You can force xthreads_attach.php to download a file (as opposed to viewing the file in the browser) by appending <em>?download=1</em> (or <em>&amp;download=1</em> if you're using query strings) to the URL</li>
     <li>A number of &quot;internal variables&quot; can be modified by editing the <em>cache/xthreads.php</em> file.  XThreads needs to be installed for this file to exist.  Note that this file is auto-generated and may be overwritten during an upgrade, however values will be retained.</li>
     <li>Template modifications performed by XThreads can be redone (ie, after you install a new theme) by deactivating and reactivating the plugin (without un/installing)</li>
+    <li>XThreads can sort any non-textarea custom thread field in forumdisplay.  This reuses MyBB's sorting system - just that the URL parameter is a little different.
+     <br />To sort by a thread field, prefix its key with <code>tf_</code>, for example, <em>forumdisplay.php?fid=2&amp;sortby=tf_myfield</em> will sort the threads by <em>myfield</em>.  File input fields are a bit different, they need to be prefixed with <code>tfa_<span class="token1">component</span>_</code> where <span class="token1">component</span> is either <code>filename</code>, <code>filesize</code>, <code>uploadtime</code>, <code>updatetime</code> or <code>downloads</code>.
+     <br />Although XThreads adds this ability transparently (and to the list of default sort bys in the AdminCP), it is up to you to add appropriate options to the forumdisplay sorter listbox, if you want to.
+     <br />As this uses MyBB's system, template variables will be the same, eg <code>{$sortsel['tf_myfield']}</code> will be <code>selected=&quot;selected&quot;</code> if sorting by <em>myfield</em>.
+     <br />Note that this is not indexed, like MyBB's sorting options aren't.
+    </li>
    </ul>
    
    <h2>XThreads Additions</h2>
