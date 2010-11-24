@@ -239,6 +239,13 @@ $l['xthreads_wol_newreply'] = 'New Reply';
 $l['xthreads_wol_showthread'] = 'Show Thread';
 $l['xthreads_wol_xtattachment'] = 'XThreads File Download';
 
+$l['xthreads_sort_threadfield_prefix'] = 'Thread Field: ';
+$l['xthreads_sort_filename'] = 'file name';
+$l['xthreads_sort_filesize'] = 'file size';
+$l['xthreads_sort_uploadtime'] = 'upload time';
+$l['xthreads_sort_updatetime'] = 'update time';
+$l['xthreads_sort_downloads'] = 'no. downloads';
+
 $l['xthreads_confirm_uninstall'] = 'Are you sure you wish to uninstall XThreads?  Uninstalling will cause all XThreads related modifications (excluding template modifications you have performed on those not added by XThreads) will be removed.<br />Well, obviously you\'re sure, cause you clicked on the link... this is just for those (like me) who accidentally click on the wrong things...';
 
 

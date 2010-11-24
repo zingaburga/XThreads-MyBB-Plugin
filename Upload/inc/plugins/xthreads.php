@@ -93,12 +93,18 @@ if(defined('IN_ADMINCP')) {
 	require MYBB_ROOT.'inc/xthreads/xt_admin.php';
 }
 
+/**
+ * Grab all information on thread fields
+ * 
+ * @param fid: forum ID to filter relevance from; 0 = no filtering (get all fields), -1 = only get fields applying to all forums
+ * @return array of thread fields
+ */
 function &xthreads_gettfcache($fid=0) {
 	global $cache;
 	$tf = $cache->read('threadfields');
 	if($fid && !empty($tf)) {
 		foreach($tf as $k => &$v) {
-			if($v['forums'] && strpos(','.$v['forums'].',', ','.$fid.',') === false) {
+			if($v['forums'] && ($fid == -1 || strpos(','.$v['forums'].',', ','.$fid.',') === false)) {
 				unset($tf[$k]);
 			}
 		}

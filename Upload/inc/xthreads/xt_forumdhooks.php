@@ -124,6 +124,9 @@ function xthreads_forumdisplay() {
 		}
 		
 		// sorting by thread fields
+		// replicate some MyBB behaviour
+		if(!isset($mybb->input['sortby']) && !empty($forum['defaultsortby']))
+			$mybb->input['sortby'] = $forum['defaultsortby'];
 		if($mybb->input['sortby'] && substr($mybb->input['sortby'], 0, 2) == 'tf') {
 			global $xthreads_forum_sort;
 			if(substr($mybb->input['sortby'], 0, 3) == 'tf_') {

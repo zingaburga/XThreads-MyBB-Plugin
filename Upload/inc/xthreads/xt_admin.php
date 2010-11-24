@@ -662,7 +662,39 @@ function xthreads_admin_forumedit() {
 			}
 		');
 	}
+	function xthreads_admin_forumedit_hook_sorter(&$args) {
+		global $lang;
+		static $done = false;
+		if($done || $args['title'] != $lang->default_view_options) return;
+		$done = true;
+		global $view_options, $default_sort_by, $form, $forum_data;
+		if(count($view_options) != 3) return; // back out if things seem a little odd
+		// add our custom sortby options here
+		$threadfield_cache = xthreads_gettfcache($forum_data['fid'] ? $forum_data['fid'] : -1);
+		if(empty($threadfield_cache)) return;
+		$changed = false;
+		foreach($threadfield_cache as &$tf) {
+			if($tf['inputtype'] == XTHREADS_INPUT_TEXTAREA) continue;
+			if(!$lang->xthreads_sort_threadfield_prefix) $lang->load('xthreads');
+			
+			$changed = true;
+			$itemname = $lang->xthreads_sort_threadfield_prefix.$tf['title'];
+			if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
+				foreach(array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads') as $tfan) {
+					$langvar = 'xthreads_sort_'.$tfan;
+					$default_sort_by['tfa_'.$tfan.'_'.$tf['field']] = $itemname.' ['.$lang->$langvar.']';
+				}
+			} else
+				$default_sort_by['tf_'.$tf['field']] = $itemname;
+		}
+		if(!$changed) return;
+		
+		// regenerate stuff
+		$view_options[1] = $lang->default_sort_by."<br />\n".$form->generate_select_box('defaultsortby', $default_sort_by, $forum_data['defaultsortby'], array('checked' => $forum_data['defaultsortby'], 'id' => 'defaultsortby'));
+		$args['content'] = '<div class="forum_settings_bit">'.implode('</div><div class="forum_settings_bit">', $view_options).'</div>';
+	}
 	$GLOBALS['plugins']->add_hook('admin_formcontainer_output_row', 'xthreads_admin_forumedit_hook');
+	$GLOBALS['plugins']->add_hook('admin_formcontainer_output_row', 'xthreads_admin_forumedit_hook_sorter');
 	function xthreads_admin_forumedit_run() {
 		global $lang, $form, $forum_data, $form_container;
 		
