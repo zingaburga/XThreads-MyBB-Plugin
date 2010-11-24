@@ -191,6 +191,7 @@ $l['error_invalid_thumb_dims'] = 'Invalid thumbnail dimensions specified.';
 $l['error_field_name_in_use'] = 'The field key you have chosen is already in use for another field.  Please choose an unused unique key.';
 $l['error_field_name_tid'] = 'Key name cannot be &quot;tid&quot; - please choose a different name.';
 $l['error_field_name_invalid'] = 'Key names must contain only alphanumeric, underscore and hypen characters.';
+$l['error_field_name_reserved'] = 'Sorry, key names cannot start with two underscore characters (__) because this is a reserved construct.';
 $l['error_field_name_too_long'] = 'Key names must be 50 characters long or less.';
 
 $l['threadfields_enable_js'] = 'It appears that you have JavaScript disabled.  To make things easier for you, it is strongly recommended to enable JavaScript for this page.';

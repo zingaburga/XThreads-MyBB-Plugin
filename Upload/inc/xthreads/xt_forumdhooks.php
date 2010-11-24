@@ -70,54 +70,6 @@ function xthreads_forumdisplay() {
 				}
 				
 				xthreads_forumdisplay_filter_input('filtertf_'.$n, $tf_filters[$n], $filters_set[$n]);
-				/*
-				if(is_array($tf_filters[$n])) {
-					$filters_set[$n] = array(
-						'value' => '',
-						'urlarg' => '',
-						'urlarga' => '&',
-						'urlargq' => '?',
-						'forminput' => '',
-						'selected' => array(),
-						'checked' => array(),
-						'active' => array(),
-						'hiddencss' => 'display: none;',
-						'visiblecss' => '',
-					);
-					$filterurl = '';
-					foreach($tf_filters[$n] as &$val) {
-						$filters_set[$n]['forminput'] .= '<input type="hidden" name="filtertf_'.htmlspecialchars($n).'[]" value="'.htmlspecialchars_uni($val).'" />';
-						$filterurl .= ($filterurl ? '&':'').'filtertf_'.rawurlencode($n).'[]='.rawurlencode($val);
-						
-						$filters_set[$n]['value'] .= ($filters_set[$n]['value'] ? ', ':'').htmlspecialchars_uni($val);
-						$filters_set[$n]['selected'][$val] = ' selected="selected"';
-						$filters_set[$n]['checked'][$val] = ' checked="checked"';
-						$filters_set[$n]['active'][$val] = 'filtertf_active';
-					}
-					$filters_set[$n]['urlarg'] = htmlspecialchars_uni($filterurl);
-					$filters_set[$n]['urlarga'] = '&amp;'.$filters_set[$n]['urlarg'];
-					$filters_set[$n]['urlargq'] = '?'.$filters_set[$n]['urlarg'];
-					$xthreads_forum_filter_form .= $filters_set[$n]['forminput'];
-					$xthreads_forum_filter_args .= '&'.$filterurl;
-				} else {
-					$formarg = '<input type="hidden" name="filtertf_'.htmlspecialchars($n).'" value="'.htmlspecialchars_uni($tf_filters[$n]).'" />';
-					$xthreads_forum_filter_form .= $formarg;
-					$urlarg = 'filtertf_'.rawurlencode($n).'='.rawurlencode($tf_filters[$n]);
-					$xthreads_forum_filter_args .= '&'.$urlarg;
-					$filters_set[$n] = array(
-						'value' => htmlspecialchars_uni($tf_filters[$n]),
-						'urlarg' => htmlspecialchars_uni($urlarg),
-						'urlarga' => '&amp;'.htmlspecialchars_uni($urlarg),
-						'urlargq' => '?'.htmlspecialchars_uni($urlarg),
-						'forminput' => $formarg,
-						'selected' => array($tf_filters[$n] => ' selected="selected"'),
-						'checked' => array($tf_filters[$n] => ' checked="checked"'),
-						'active' => array($tf_filters[$n] => 'filtertf_active'),
-						'hiddencss' => 'display: none;',
-						'visiblecss' => '',
-					);
-				}
-				*/
 			}
 			//if($mybb->input['sortby'] == 'tf_'.$n)
 			//	$tf_sort = $n;
