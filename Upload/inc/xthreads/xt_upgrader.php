@@ -104,7 +104,6 @@ if(XTHREADS_INSTALLED_VERSION < 1.33) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` varchar(255) not null default ""');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_hidebreadcrumb` tinyint(3) not null default 0');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_addfiltenable` varchar(200) not null default ""');
-	$cache->update_forums();
 	
 	// replace default comment in showthread_noreplies template
 	$query = $db->simple_select('templates', 'tid,template', 'title="showthread_noreplies"');
@@ -117,12 +116,15 @@ if(XTHREADS_INSTALLED_VERSION < 1.33) {
 	$db->free_result($query);
 }
 
-if(XTHREADS_INSTALLED_VERSION < 1.34) {
+if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
 		`datatype` tinyint(3) not null default '.XTHREADS_DATATYPE_TEXT.'
 	)');
 	
 	xthreads_buildtfcache();
+	
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_langprefix` varchar(255) not null default \'\'');
+	$cache->update_forums();
 }
 
 return true;

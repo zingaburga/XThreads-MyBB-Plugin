@@ -712,6 +712,7 @@ function xthreads_admin_forumedit() {
 		else // adding
 			$data = array(
 				'xthreads_tplprefix' => '',
+				'xthreads_langprefix' => '',
 				'xthreads_grouping' => 0,
 				'xthreads_firstpostattop' => 0,
 				'xthreads_inlinesearch' => 0,
@@ -738,6 +739,7 @@ function xthreads_admin_forumedit() {
 		
 		$inputs = array(
 			'tplprefix' => 'text_box',
+			'langprefix' => 'text_box',
 			'grouping' => 'text_box',
 			'firstpostattop' => 'yes_no_radio',
 			'inlinesearch' => 'yes_no_radio',
@@ -861,6 +863,7 @@ function xthreads_admin_forumcommit() {
 	
 	$db->update_query('forums', array(
 		'xthreads_tplprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_tplprefix'])))),
+		'xthreads_langprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_langprefix'])))),
 		'xthreads_grouping' => intval(trim($mybb->input['xthreads_grouping'])),
 		'xthreads_firstpostattop' => intval(trim($mybb->input['xthreads_firstpostattop'])),
 		'xthreads_allow_blankmsg' => intval(trim($mybb->input['xthreads_allow_blankmsg'])),
