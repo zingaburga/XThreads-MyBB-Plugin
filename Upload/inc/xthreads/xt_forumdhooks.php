@@ -118,7 +118,7 @@ function xthreads_forumdisplay() {
 	$xt_filters = array();
 	$enabled_xtf = explode(',', $forum['xthreads_addfiltenable']);
 	if(!empty($enabled_xtf)) {
-		global $lang;
+		//global $lang;
 		foreach($enabled_xtf as &$xtf) {
 			$filters_set['__xt_'.$xtf] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
 			if(isset($mybb->input['filterxt_'.$xtf]) && $mybb->input['filterxt_'.$xtf] !== '') {
@@ -132,6 +132,7 @@ function xthreads_forumdisplay() {
 				
 				xthreads_forumdisplay_filter_input('filterxt_'.$xtf, $xt_filters[$xtf], $filters_set['__xt_'.$xtf]);
 				
+				/*
 				if(is_array($xt_filters[$xtf]))
 					$ids = implode(',', $xt_filters[$xtf]);
 				else
@@ -172,6 +173,7 @@ function xthreads_forumdisplay() {
 						unset($icons);
 						break;
 				}
+				*/
 			}
 		}
 	}
