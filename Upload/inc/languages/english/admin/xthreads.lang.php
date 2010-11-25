@@ -199,7 +199,8 @@ $l['commit_changes'] = 'Commit Changes';
 
 $l['xthreads_opts'] = 'XThreads Options <span style="font-size: smaller;">(note that these settings do not cascade down into child forums)</span>';
 $l['xthreads_tplprefix'] = 'Template Prefix';
-$l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.  Multiple prefixes can be defined, separated by commas - XThreads will attempt to find a template using one of the prefixes in the order defined
+$l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.
+<br />Multiple prefixes can be defined, separated by commas - XThreads will attempt to find a template using one of the prefixes in the order defined
 <br />This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* and <em>portal_announcement</em>* templates.  Note that, for these special cases (excluding <em>forumbit_*</em> templates), multiple template prefixes will not be searched - only the first prefix will be used.';
 $l['xthreads_langprefix'] = 'Language File Prefix';
 $l['xthreads_langprefix_desc'] = 'This option will load additional language files based on the prefixes supplied (comma delimited if you wish to supply more than one prefix).  For example, if you specify <em>lp1_,lp2_</em> here, when MyBB tries to load, say, <em>forumdisplay.lang.php</em>, XThreads will then load (if possible) <em>lp1_forumdisplay.lang.php</em> followed by <em>lp2_forumdisplay.lang.php</em>, adding to and overwriting any language definitions defined in previously loaded files.';
@@ -226,6 +227,9 @@ $l['xthreads_allow_blankmsg'] = 'Allow Blank Post Message';
 $l['xthreads_allow_blankmsg_desc'] = 'If yes, new threads in this forum will not require a message to be entered.';
 $l['xthreads_nostatcount'] = 'Don\'t include this forum\'s threads/posts in global forum statistics';
 $l['xthreads_nostatcount_desc'] = 'If yes, threads and posts made in this forum will not increase the forum\'s statistics on the number of threads and posts across all forums (eg at the bottom of the forum home, or stats.php).';
+$l['xthreads_defaultfilter'] = 'Default Thread Filter';
+$l['xthreads_defaultfilter_desc'] = 'This filter is applied to forumdisplay if no filter has been specified in the URL.  Separate entries with newlines; URI encoding supported.  Example:
+<code style="display: block; margin-left: 2em;">myfield=something<br />__xt_uid=1<br />field2[]=value1<br />field2[]=value2</code>';
 $l['xthreads_addfiltenable'] = 'Enable Thread Filters';
 $l['xthreads_addfiltenable_desc'] = 'This feature works similar to filtering forumdisplay threads by custom thread fields.  This does not affect templates, so you need to make appropriate changes to make this option useful.  If you tick any of the options below, users can filter threads displayed on forumdisplay by the relevant fields by appending the URL parameter <code>filterxt_<em>fieldname</em></code>, for example <em>forumdisplay.php?fid=2&amp;filterxt_uid=2</em> will only display threads created by the user with UID of 2.  Note, multiple filters are allowed, and you can also specify an array of values for a single field.';
 $l['xthreads_cust_wolstr'] = 'Custom WOL Text';

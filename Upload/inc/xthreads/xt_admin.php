@@ -721,6 +721,7 @@ function xthreads_admin_forumedit() {
 				'xthreads_force_postlayout' => '',
 				'xthreads_hideforum' => 0,
 				'xthreads_hidebreadcrumb' => 0,
+				'xthreads_defaultfilter' => '',
 				'xthreads_afe_uid' => 0,
 				'xthreads_afe_lastposteruid' => 0,
 				'xthreads_afe_prefix' => 0,
@@ -750,6 +751,7 @@ function xthreads_admin_forumedit() {
 			'hidebreadcrumb' => 'yes_no_radio',
 			'allow_blankmsg' => 'yes_no_radio',
 			'nostatcount' => 'yes_no_radio',
+			'defaultfilter' => 'text_area',
 		);
 		foreach($inputs as $name => $type) {
 			$name = 'xthreads_'.$name;
@@ -764,6 +766,8 @@ function xthreads_admin_forumedit() {
 			}
 			elseif($type == 'text_box')
 				$html = $form->generate_text_box($name, $data[$name], array('id' => $name));
+			elseif($type == 'text_area')
+				$html = $form->generate_text_area($name, $data[$name], array('id' => $name));
 			elseif($type == 'yes_no_radio')
 				$html = $form->generate_yes_no_radio($name, ($data[$name] ? '1':'0'), true);
 			//elseif($type == 'check_box')
@@ -874,6 +878,7 @@ function xthreads_admin_forumcommit() {
 		'xthreads_force_postlayout' => trim($mybb->input['xthreads_force_postlayout']),
 		'xthreads_hideforum' => intval($mybb->input['xthreads_hideforum']),
 		'xthreads_hidebreadcrumb' => intval($mybb->input['xthreads_hidebreadcrumb']),
+		'xthreads_defaultfilter' => $db->escape_string($mybb->input['xthreads_defaultfilter']),
 		'xthreads_addfiltenable' => $db->escape_string($addfiltenable),
 //		'xthreads_deffilter' => $db->escape_string($deffilter),
 		'xthreads_wol_announcements' => $db->escape_string(trim($mybb->input['xthreads_wol_announcements'])),

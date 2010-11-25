@@ -15,6 +15,7 @@ function xthreads_forumdisplay() {
 		'__all' => array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active'),
 	);
 	$xthreads_forum_filter_form = $xthreads_forum_filter_args = '';
+	$use_default_filter = true;
 	if(!empty($threadfield_cache)) {
 		function xthreads_forumdisplay_dbhook(&$s, &$db) {
 			global $threadfield_cache, $fid, $plugins, $threadfields, $xthreads_forum_sort;
@@ -60,19 +61,15 @@ function xthreads_forumdisplay() {
 			
 			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n])) {
 				$tf_filters[$n] = $mybb->input['filtertf_'.$n];
+				$use_default_filter = false;
 				// ignore blank inputs
 				if($tf['ignoreblankfilter'] && (
 					(is_array($mybb->input['filtertf_'.$n]) && (empty($tf_filters[$n]) || $tf_filters[$n] == array(''))) ||
 					($tf_filters[$n] === '')
 				)) {
 					unset($tf_filters[$n]);
-					continue;
 				}
-				
-				xthreads_forumdisplay_filter_input('filtertf_'.$n, $tf_filters[$n], $filters_set[$n]);
 			}
-			//if($mybb->input['sortby'] == 'tf_'.$n)
-			//	$tf_sort = $n;
 		}
 		
 		// sorting by thread fields
@@ -122,62 +119,98 @@ function xthreads_forumdisplay() {
 		foreach($enabled_xtf as &$xtf) {
 			$filters_set['__xt_'.$xtf] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
 			if(isset($mybb->input['filterxt_'.$xtf]) && $mybb->input['filterxt_'.$xtf] !== '') {
-				// sanitise input here as we may need to grab extra info
-				if(!is_array($mybb->input['filterxt_'.$xtf]))
-					$xt_filters[$xtf] = intval($mybb->input['filterxt_'.$xtf]);
-				elseif(count($mybb->input['filterxt_'.$xtf]) < 2)
-					$xt_filters[$xtf] = intval(reset($mybb->input['filterxt_'.$xtf]));
+				$xt_filters[$xtf] = $mybb->input['filterxt_'.$xtf];
+				$use_default_filter = false;
+			}
+		}
+	}
+	
+	if($use_default_filter && $forum['xthreads_defaultfilter']) {
+		// TODO: preparse default filter
+		// TODO: support conditionals etc
+		foreach(explode("\n", str_replace("\r", '', $forum['xthreads_defaultfilter'])) as $filter) {
+			list($n, $v) = array_map('urldecode', explode('=', $filter, 2));
+			if(!isset($v)) continue;
+			$isarray = false;
+			if($p = strrpos($n, '[')) {
+				$n = substr($n, 0, $p);
+				$isarray = true;
+			}
+			unset($filter_array);
+			if(substr($n, 0, 5) == '__xt_') {
+				$n = substr($n, 5);
+				if(in_array($n, $enabled_xtf))
+					$filter_array =& $xt_filters;
+			} else {
+				if(isset($threadfield_cache[$n]) && $threadfield_cache[$n]['allowfilter'])
+					$filter_array =& $tf_filters;
+			}
+			if(isset($filter_array)) {
+				if($isarray)
+					$filter_array[$n][] = $v;
 				else
-					$xt_filters[$xtf] = array_map('intval', $mybb->input['filterxt_'.$xtf]);
-				
-				xthreads_forumdisplay_filter_input('filterxt_'.$xtf, $xt_filters[$xtf], $filters_set['__xt_'.$xtf]);
-				
-				/*
-				if(is_array($xt_filters[$xtf]))
-					$ids = implode(',', $xt_filters[$xtf]);
-				else
-					$ids = $xt_filters[$xtf];
-				
-				// grab extra info for $filter_set array
-				switch($xtf) {
-					case 'uid': case 'lastposteruid':
-						// perhaps might be nice if we could merge these two together...
-						$info = xthreads_forumdisplay_xtfilter_extrainfo('users', array('username'), 'uid', $ids, 'guest');
-						$filters_set['__xt_'.$xtf]['name'] = $info['username'];
-						break;
-					case 'prefix':
-						// displaystyles?
-						if(!$lang->xthreads_no_prefix) $lang->load('xthreads');
-						$info = xthreads_forumdisplay_xtfilter_extrainfo('threadprefixes', array('prefix', 'displaystyle'), 'pid', $ids, 'xthreads_no_prefix');
-						$filters_set['__xt_'.$xtf]['name'] = $info['prefix'];
-						$filters_set['__xt_'.$xtf]['displayname'] = $info['displaystyle'];
-						break;
-					case 'icon':
-						// we'll retrieve icons from the cache rather than query the DB
-						$icons = $GLOBALS['cache']->read('posticons');
-						if(is_array($xt_filters[$xtf]))
-							$ids =& $xt_filters[$xtf];
-						else
-							$ids = array($ids);
-						
-						$filters_set['__xt_'.$xtf]['name'] = '';
-						$iconstr =& $filters_set['__xt_'.$xtf]['name'];
-						foreach($ids as $id) {
-							if($id && $icons[$id])
-								$iconstr .= ($iconstr?', ':'') . htmlspecialchars_uni($icons[$id]['name']);
-							elseif(!$id) {
-								if(!$lang->xthreads_no_icon) $lang->load('xthreads');
-								$iconstr .= ($iconstr?', ':'') . '<em>'.$lang->xthreads_no_icon.'</em>';
-							}
-						}
-						unset($icons);
-						break;
-				}
-				*/
+					$filter_array[$n] = $v;
 			}
 		}
 	}
 	unset($enabled_xtf);
+	
+	foreach($tf_filters as $n => &$filter) {
+		xthreads_forumdisplay_filter_input('filtertf_'.$n, $filter, $filters_set[$n]);
+	}
+	foreach($xt_filters as $n => &$filter) {
+		// sanitise input here as we may need to grab extra info
+		if(is_array($filter))
+			$filter = array_map('intval', $filter);
+		else
+			$filter = intval($filter);
+		
+		xthreads_forumdisplay_filter_input('filterxt_'.$n, $filter, $filters_set['__xt_'.$n]);
+		
+		/*
+		if(is_array($filter))
+			$ids = implode(',', $filter);
+		else
+			$ids = $filter;
+		
+		// grab extra info for $filter_set array
+		switch($n) {
+			case 'uid': case 'lastposteruid':
+				// perhaps might be nice if we could merge these two together...
+				$info = xthreads_forumdisplay_xtfilter_extrainfo('users', array('username'), 'uid', $ids, 'guest');
+				$filters_set['__xt_'.$n]['name'] = $info['username'];
+				break;
+			case 'prefix':
+				// displaystyles?
+				if(!$lang->xthreads_no_prefix) $lang->load('xthreads');
+				$info = xthreads_forumdisplay_xtfilter_extrainfo('threadprefixes', array('prefix', 'displaystyle'), 'pid', $ids, 'xthreads_no_prefix');
+				$filters_set['__xt_'.$n]['name'] = $info['prefix'];
+				$filters_set['__xt_'.$n]['displayname'] = $info['displaystyle'];
+				break;
+			case 'icon':
+				// we'll retrieve icons from the cache rather than query the DB
+				$icons = $GLOBALS['cache']->read('posticons');
+				if(is_array($filter))
+					$ids =& $filter;
+				else
+					$ids = array($ids);
+				
+				$filters_set['__xt_'.$n]['name'] = '';
+				$iconstr =& $filters_set['__xt_'.$n]['name'];
+				foreach($ids as $id) {
+					if($id && $icons[$id])
+						$iconstr .= ($iconstr?', ':'') . htmlspecialchars_uni($icons[$id]['name']);
+					elseif(!$id) {
+						if(!$lang->xthreads_no_icon) $lang->load('xthreads');
+						$iconstr .= ($iconstr?', ':'') . '<em>'.$lang->xthreads_no_icon.'</em>';
+					}
+				}
+				unset($icons);
+				break;
+		}
+		*/
+	}
+	unset($filter);
 	
 	if($xthreads_forum_filter_args) {
 		$filters_set['__all']['urlarg'] = htmlspecialchars_uni(substr($xthreads_forum_filter_args, 1));
@@ -273,6 +306,8 @@ function xthreads_forumdisplay_sorter() {
 
 function xthreads_forumdisplay_filter_input($arg, &$tffilter, &$filter_set) {
 	global $xthreads_forum_filter_form, $xthreads_forum_filter_args;
+	if(is_array($tffilter) && count($tffilter) == 1) // single element array -> remove array-ness
+		$tffilter = reset($tffilter);
 	if(is_array($tffilter)) {
 		$filter_set = array(
 			'value' => '',
