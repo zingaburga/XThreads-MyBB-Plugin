@@ -197,7 +197,7 @@ $l['error_field_name_too_long'] = 'Key names must be 50 characters long or less.
 $l['threadfields_enable_js'] = 'It appears that you have JavaScript disabled.  To make things easier for you, it is strongly recommended to enable JavaScript for this page.';
 $l['commit_changes'] = 'Commit Changes';
 
-$l['xthreads_desc_more'] = 'More...';
+$l['xthreads_desc_more'] = 'Show full description...';
 $l['xthreads_opts'] = 'XThreads Options <span style="font-size: smaller;">(note that these settings do not cascade down into child forums)</span>';
 $l['xthreads_tplprefix'] = 'Template Prefix';
 $l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.
@@ -235,7 +235,8 @@ $l['xthreads_nostatcount'] = 'Don\'t include this forum\'s threads/posts in glob
 $l['xthreads_nostatcount_desc'] = 'If yes, threads and posts made in this forum will not increase the forum\'s statistics on the number of threads and posts across all forums (eg at the bottom of the forum home, or stats.php).';
 $l['xthreads_defaultfilter'] = 'Default Thread Filter';
 $l['xthreads_defaultfilter_desc'] = 'This filter is applied to forumdisplay if no filter has been specified in the URL.  Separate entries with newlines; URI encoding supported.
-<br /><!-- more -->Example:
+<br /><!-- more -->The default filter can also be disabled with no additional filter in use, by specifying <em>filterdisable</em> in the URL, eg <em>forumdisplay.php?fid=2&amp;filterdisable=1</em>
+<br />Example value for this field:
 <code style="display: block; margin-left: 2em;">myfield=something<br />__xt_uid=1<br />field2[]=value1<br />field2[]=value2</code>';
 $l['xthreads_addfiltenable'] = 'Enable Thread Filters';
 $l['xthreads_addfiltenable_desc'] = 'Enable users to filter forumdisplay by certain thread attributes (eg thread starter).

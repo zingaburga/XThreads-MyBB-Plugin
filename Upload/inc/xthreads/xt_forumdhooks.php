@@ -125,7 +125,7 @@ function xthreads_forumdisplay() {
 		}
 	}
 	
-	if($use_default_filter && $forum['xthreads_defaultfilter']) {
+	if($use_default_filter && $forum['xthreads_defaultfilter'] && !$mybb->input['filterdisable']) {
 		// TODO: preparse default filter
 		// TODO: support conditionals etc
 		foreach(explode("\n", str_replace("\r", '', $forum['xthreads_defaultfilter'])) as $filter) {
