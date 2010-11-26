@@ -506,7 +506,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			elseif(!preg_match('~^[a-z0-9_\\-]+$~i', $mybb->input['newfield'])) {
 				$errors[] = $lang->error_field_name_invalid;
 			}
-			elseif(isset($mybb->input['newfield']{2}) && $mybb->input['newfield']{0} == $mybb->input['newfield']{1} == '_') {
+			elseif(isset($mybb->input['newfield']{2}) && $mybb->input['newfield']{0} == '_' && $mybb->input['newfield']{1} == '_') {
 				// don't allow fields starting with "__" (reserved for special use)
 				// in hindsight, special uses (eg filters) really should've used something like '~' so we don't need to do this, but it's too late now
 				$errors[] = $lang->error_field_name_reserved;
