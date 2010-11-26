@@ -197,17 +197,22 @@ $l['error_field_name_too_long'] = 'Key names must be 50 characters long or less.
 $l['threadfields_enable_js'] = 'It appears that you have JavaScript disabled.  To make things easier for you, it is strongly recommended to enable JavaScript for this page.';
 $l['commit_changes'] = 'Commit Changes';
 
+$l['xthreads_desc_more'] = 'More...';
 $l['xthreads_opts'] = 'XThreads Options <span style="font-size: smaller;">(note that these settings do not cascade down into child forums)</span>';
 $l['xthreads_tplprefix'] = 'Template Prefix';
 $l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.
-<br />Multiple prefixes can be defined, separated by commas - XThreads will attempt to find a template using one of the prefixes in the order defined
+<br /><!-- more -->
+Multiple prefixes can be defined, separated by commas - XThreads will attempt to find a template using one of the prefixes in the order defined
 <br />This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* and <em>portal_announcement</em>* templates.  Note that, for these special cases (excluding <em>forumbit_*</em> templates), multiple template prefixes will not be searched - only the first prefix will be used.';
 $l['xthreads_langprefix'] = 'Language File Prefix';
-$l['xthreads_langprefix_desc'] = 'This option will load additional language files based on the prefixes supplied (comma delimited if you wish to supply more than one prefix).  For example, if you specify <em>lp1_,lp2_</em> here, when MyBB tries to load, say, <em>forumdisplay.lang.php</em>, XThreads will then load (if possible) <em>lp1_forumdisplay.lang.php</em> followed by <em>lp2_forumdisplay.lang.php</em>, adding to and overwriting any language definitions defined in previously loaded files.';
+$l['xthreads_langprefix_desc'] = 'This option will load additional language files based on the prefixes supplied (comma delimited if you wish to supply more than one prefix).
+<br /><!-- more -->For example, if you specify <em>lp1_,lp2_</em> here, when MyBB tries to load, say, <em>forumdisplay.lang.php</em>, XThreads will then load (if possible) <em>lp1_forumdisplay.lang.php</em> followed by <em>lp2_forumdisplay.lang.php</em>, adding to and overwriting any language definitions defined in previously loaded files.';
 $l['xthreads_grouping'] = 'Thread Grouping';
-$l['xthreads_grouping_desc'] = 'How many threads to group together.  A value of 0 disables grouping.  If grouping is enabled, the <em>forumdisplay_group_sep</em> template is inserted every <em>X</em> threads on the forumdisplay.  This is mainly useful if you wish to display multiple threads in a single table row.  If the number of threads does not fully fill a group, the template <em>forumdisplay_thread_null</em> is appended as many times needed to completely fill the thread group.  Internal counter is reset between sticky/normal thread separators.';
+$l['xthreads_grouping_desc'] = 'How many threads to group together.  A value of 0 disables grouping.  If grouping is enabled, the <em>forumdisplay_group_sep</em> template is inserted every <em>X</em> threads on the forumdisplay.
+<br /><!-- more -->This is mainly useful if you wish to display multiple threads in a single table row.  If the number of threads does not fully fill a group, the template <em>forumdisplay_thread_null</em> is appended as many times needed to completely fill the thread group.  Internal counter is reset between sticky/normal thread separators.';
 $l['xthreads_firstpostattop'] = 'Show first post on every showthread page';
-$l['xthreads_firstpostattop_desc'] = 'Shows the first post at the top of every page in showthread, as opposed to just the first page.  Tip: you can use the <em>postbit_first*</em> templates as opposed to the <em>postbit*</em> templates to get a different look for the first post.  On the <em>showthread</em> template, the first post is separated into the <code>{$first_post}</code> variable.  Also, the template <em>showthread_noreplies</em> is used in the <code>{$posts}</code> variable if there are no replies to the thread.';
+$l['xthreads_firstpostattop_desc'] = 'Shows the first post at the top of every page in showthread, as opposed to just the first page.
+<br /><!-- more -->Tip: you can use the <em>postbit_first*</em> templates as opposed to the <em>postbit*</em> templates to get a different look for the first post.  On the <em>showthread</em> template, the first post is separated into the <code>{$first_post}</code> variable.  Also, the template <em>showthread_noreplies</em> is used in the <code>{$posts}</code> variable if there are no replies to the thread.';
 $l['xthreads_inlinesearch'] = 'Enable XThreads\' Inline Forum Search';
 $l['xthreads_inlinesearch_desc'] = 'Replaces the search box on the forumdisplay page with XThreads\' inline search system, ignoring the search permission set for this forum.  This allows the search to display threads the same way as forumdisplay does.  The downside is that this may cause additional server load.';
 $l['xthreads_threadsperpage'] = 'Override Threads Per Page';
@@ -220,7 +225,8 @@ $l['xthreads_force_postlayout_none'] = 'Don\'t force layout';
 $l['xthreads_force_postlayout_horizontal'] = 'Force horizontal postbit layout';
 $l['xthreads_force_postlayout_classic'] = 'Force classic postbit layout';
 $l['xthreads_hideforum'] = 'Hide Forum';
-$l['xthreads_hideforum_desc'] = 'If yes, will hide this forum on your index and forumdisplay pages.  This is slightly different to disabling the Can View Forum permission in that this does not affect permissions, it just merely hides it from display (so, for example, you could put a link to it in your main menu).';
+$l['xthreads_hideforum_desc'] = 'If yes, will hide this forum on your index and forumdisplay pages.
+<br /><!-- more -->This is slightly different to disabling the Can View Forum permission in that this does not affect permissions, it just merely hides it from display (so, for example, you could put a link to it in your main menu).';
 $l['xthreads_hidebreadcrumb'] = 'Hide Forum in Breadcrumb Trail';
 $l['xthreads_hidebreadcrumb_desc'] = 'If yes, will hide this forum in the forum breadcrumb <strong>trail</strong> (it will still appear in the breadcrumb if it\'s the active forum).';
 $l['xthreads_allow_blankmsg'] = 'Allow Blank Post Message';
@@ -228,12 +234,15 @@ $l['xthreads_allow_blankmsg_desc'] = 'If yes, new threads in this forum will not
 $l['xthreads_nostatcount'] = 'Don\'t include this forum\'s threads/posts in global forum statistics';
 $l['xthreads_nostatcount_desc'] = 'If yes, threads and posts made in this forum will not increase the forum\'s statistics on the number of threads and posts across all forums (eg at the bottom of the forum home, or stats.php).';
 $l['xthreads_defaultfilter'] = 'Default Thread Filter';
-$l['xthreads_defaultfilter_desc'] = 'This filter is applied to forumdisplay if no filter has been specified in the URL.  Separate entries with newlines; URI encoding supported.  Example:
+$l['xthreads_defaultfilter_desc'] = 'This filter is applied to forumdisplay if no filter has been specified in the URL.  Separate entries with newlines; URI encoding supported.
+<br /><!-- more -->Example:
 <code style="display: block; margin-left: 2em;">myfield=something<br />__xt_uid=1<br />field2[]=value1<br />field2[]=value2</code>';
 $l['xthreads_addfiltenable'] = 'Enable Thread Filters';
-$l['xthreads_addfiltenable_desc'] = 'This feature works similar to filtering forumdisplay threads by custom thread fields.  This does not affect templates, so you need to make appropriate changes to make this option useful.  If you tick any of the options below, users can filter threads displayed on forumdisplay by the relevant fields by appending the URL parameter <code>filterxt_<em>fieldname</em></code>, for example <em>forumdisplay.php?fid=2&amp;filterxt_uid=2</em> will only display threads created by the user with UID of 2.  Note, multiple filters are allowed, and you can also specify an array of values for a single field.';
+$l['xthreads_addfiltenable_desc'] = 'Enable users to filter forumdisplay by certain thread attributes (eg thread starter).
+<br /><!-- more -->This feature works similar to filtering forumdisplay threads by custom thread fields.  This does not affect templates, so you need to make appropriate changes to make this option useful.  If you tick any of the options below, users can filter threads displayed on forumdisplay by the relevant fields by appending the URL parameter <code>filterxt_<em>fieldname</em></code>, for example <em>forumdisplay.php?fid=2&amp;filterxt_uid=2</em> will only display threads created by the user with UID of 2.  Note, multiple filters are allowed, and you can also specify an array of values for a single field.';
 $l['xthreads_cust_wolstr'] = 'Custom WOL Text';
-$l['xthreads_cust_wolstr_desc'] = 'You can have custom text for this forum on the Who\'s Online List.  If you enter text in the following textboxes, it will replace the default WOL language text.  As this replaces language strings, it will accept variables in the same way.  Go to <a href="'.xthreads_admin_url('config', 'languages').'">Languages section</a> -&gt; Edit Language Variables (under Options for your selected language) -&gt; edit <em>online.lang.php</em> to see the defaults.';
+$l['xthreads_cust_wolstr_desc'] = 'You can have custom text for this forum on the Who\'s Online List.
+<br /><!-- more -->If you enter text in the following textboxes, it will replace the default WOL language text.  As this replaces language strings, it will accept variables in the same way.  Go to <a href="'.xthreads_admin_url('config', 'languages').'">Languages section</a> -&gt; Edit Language Variables (under Options for your selected language) -&gt; edit <em>online.lang.php</em> to see the defaults.';
 $l['xthreads_afe_uid'] = 'Thread starter\'s User ID';
 $l['xthreads_afe_lastposteruid'] = 'Last poster\'s User ID';
 $l['xthreads_afe_prefix'] = 'Thread Prefix ID; <em>check URL (look for <strong>pid</strong>) when editing thread prefix in ACP</em>';

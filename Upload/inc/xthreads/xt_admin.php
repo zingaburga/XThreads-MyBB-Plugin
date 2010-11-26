@@ -636,6 +636,20 @@ function xthreads_admin_perms(&$perms) {
 	if(!$lang->can_manage_threadfields) $lang->load('xthreads');
 	$perms['threadfields'] = $lang->can_manage_threadfields;
 }
+function &xthreads_admin_forumedit_get_description($lv) {
+	global $lang;
+	static $expander_id = 0;
+	$langdesc = $lv.'_desc';
+	$desc = $lang->$langdesc;
+	if(($p = strpos($desc, '<!-- more -->')) !== false) {
+		$desc = substr($desc, 0, $p) .
+				'<a href="#" onclick="this.style.display=\'none\';$(\'xthreads_desc_expander_'.$expander_id.'\').style.display=\'\';return false;" style="padding-left: 1em; padding-right: 1em;">'.$lang->xthreads_desc_more.'</a><span style="display: none;" id="xthreads_desc_expander_'.$expander_id.'">' .
+				substr($desc, $p+13 /*strlen('<!-- more -->')*/) . '</span>';
+		
+		++$expander_id;
+	}
+	return $desc;
+}
 function xthreads_admin_forumedit() {
 	function xthreads_admin_forumedit_hook(&$args) {
 		static $done = false;
@@ -755,7 +769,7 @@ function xthreads_admin_forumedit() {
 		);
 		foreach($inputs as $name => $type) {
 			$name = 'xthreads_'.$name;
-			$langdesc = $name.'_desc';
+			$description = xthreads_admin_forumedit_get_description($name);
 			//$formfunc = 'generate_'.$type;
 			if(is_array($type)) {
 				foreach($type as &$t) {
@@ -772,7 +786,7 @@ function xthreads_admin_forumedit() {
 				$html = $form->generate_yes_no_radio($name, ($data[$name] ? '1':'0'), true);
 			//elseif($type == 'check_box')
 			//	$html = $form->generate_check_box($name, 1, $);
-			$form_container->output_row($lang->$name, $lang->$langdesc, $html);
+			$form_container->output_row($lang->$name, $description, $html);
 		}
 		
 		$afefields = array(
@@ -787,7 +801,7 @@ function xthreads_admin_forumedit() {
 			$afe = 'xthreads_afe_'.$field;
 			$afehtml .= '<tr><td width="15%" style="border: 0; padding: 1px; vertical-align: top; white-space: nowrap;">'.$form->generate_check_box($afe, 1, $field, array('checked' => $data[$afe])).'</td><td style="border: 0; padding: 1px; vertical-align: top;">&nbsp;('.$lang->$afe.')</td></tr>';
 		}
-		$form_container->output_row($lang->xthreads_addfiltenable, $lang->xthreads_addfiltenable_desc, '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$afehtml.'</table>');
+		$form_container->output_row($lang->xthreads_addfiltenable, xthreads_admin_forumedit_get_description('xthreads_addfiltenable'), '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$afehtml.'</table>');
 		
 		$wolfields = array(
 			'xthreads_wol_announcements',
@@ -802,7 +816,7 @@ function xthreads_admin_forumedit() {
 		foreach($wolfields as &$w) {
 			$wolhtml .= '<tr><td width="40%" style="border: 0; padding: 1px;"><label for="'.$w.'">'.$lang->$w.':</label></td><td style="border: 0; padding: 1px;">'.$form->generate_text_box($w, $data[$w], array('id' => $w, 'style' => 'margin-top: 0;')).'</td></tr>';
 		}
-		$form_container->output_row($lang->xthreads_cust_wolstr, $lang->xthreads_cust_wolstr_desc, '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$wolhtml.'</table>');
+		$form_container->output_row($lang->xthreads_cust_wolstr, xthreads_admin_forumedit_get_description('xthreads_cust_wolstr'), '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$wolhtml.'</table>');
 		
 		$form_container->end();
 	}
