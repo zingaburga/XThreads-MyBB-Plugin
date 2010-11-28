@@ -50,6 +50,14 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	// unescapes the slashes added by xthreads_sanitize_eval, plus addslashes() (double quote only) during preg_replace()
 	$str = strtr($str, array('\\$' => '$', '\\\\"' => '"', '\\\\' => '\\'));
 	
+	// remove all single quote strings - they mess up all our plans...
+	$strpreg = '~\'(|\\\\\\\\|.*?([^\\\\]|[^\\\\](\\\\\\\\)+))\'~s';
+	if(preg_match_all($strpreg, $str, $squotstr)) {
+		$token = '\'__PHPTPL_PLACEHOLDER_'.md5(mt_rand()).'__\'';
+		$str = preg_replace($strpreg, $token, $str);
+		$squotstr = $squotstr[0];
+	}
+	
 	// globalise all variables; conveniently will filter out stuff like {VALUE$1}
 	$str = preg_replace('~\$([a-zA-Z_][a-zA-Z_0-9]*)~', '$GLOBALS[\'$1\']', $str);
 	// won't pick up double variable syntax, eg $$var, or complex variable syntax, eg ${$var}
@@ -71,6 +79,9 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	}
 	if($do_value_repl) $str = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '"".$vars[\'$1$\'][$2].""', $str);
 	$str = strtr($str, $tr);
+	
+	if(!empty($squotstr))
+		$str = xthreads_our_str_replace($token, $squotstr, $str);
 	
 	if(xthreads_allow_php() || xthreads_phptpl_is_safe_expression($str))
 		return $str;
@@ -132,6 +143,24 @@ function xthreads_phptpl_evalphp($str, $end)
 	return '".eval(\'ob_start(); ?>'
 		.strtr(xthreads_phptpl_expr_parse($str), array('\'' => '\\\'', '\\' => '\\\\'))
 		.($end?'':'?>').'<?php return ob_get_clean();\')."';
+}
+
+// replaces a token with an array of replacements
+// copied from Syntax Highlighter plugin
+function xthreads_our_str_replace($find, &$replacements, $subject)
+{
+	$l = strlen($find);
+	// allocate some memory
+	$new_subject = str_repeat(' ', strlen($subject));
+	$new_subject = '';
+	foreach($replacements as $r)
+	{
+		if(($pos = strpos($subject, $find)) === false) break;
+		$new_subject .= substr($subject, 0, $pos).$r;
+		$subject = substr($subject, $pos+$l);
+	}
+	$new_subject .= $subject;
+	return $new_subject;
 }
 
 function xthreads_allow_php() {
