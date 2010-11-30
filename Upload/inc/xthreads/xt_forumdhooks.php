@@ -125,33 +125,24 @@ function xthreads_forumdisplay() {
 		}
 	}
 	
-	if($use_default_filter && $forum['xthreads_defaultfilter'] && !$mybb->input['filterdisable']) {
-		// TODO: preparse default filter
-		// TODO: support conditionals etc
-		foreach(explode("\n", str_replace("\r", '', $forum['xthreads_defaultfilter'])) as $filter) {
-			list($n, $v) = array_map('urldecode', explode('=', $filter, 2));
-			if(!isset($v)) continue;
-			$isarray = false;
-			if($p = strrpos($n, '[')) {
-				$n = substr($n, 0, $p);
-				$isarray = true;
-			}
-			unset($filter_array);
-			if(substr($n, 0, 5) == '__xt_') {
-				$n = substr($n, 5);
-				if(in_array($n, $enabled_xtf))
-					$filter_array =& $xt_filters;
-			} else {
-				if(isset($threadfield_cache[$n]) && $threadfield_cache[$n]['allowfilter'])
-					$filter_array =& $tf_filters;
-			}
-			if(isset($filter_array)) {
-				if($isarray)
-					$filter_array[$n][] = $v;
-				else
-					$filter_array[$n] = $v;
-			}
+	global $xtforum;
+	if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
+		$tf_filters = $xtforum['defaultfilter_tf'];
+		foreach($tf_filters as $n => &$filter) {
+			if(is_array($filter))
+				$filter = array_map('eval_str', $filter);
+			else
+				$filter = eval_str($filter);
 		}
+		unset($filter);
+		$xt_filters = $xtforum['defaultfilter_xt'];
+		foreach($xt_filters as $n => &$filter) {
+			if(is_array($filter))
+				$filter = array_map('eval_str', $filter);
+			else
+				$filter = eval_str($filter);
+		}
+		unset($filter);
 	}
 	unset($enabled_xtf);
 	

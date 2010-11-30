@@ -616,6 +616,56 @@ function xthreads_sanitize_eval(&$s, &$fields) {
 }
 
 
+// build xt_forums cache from forums cache (also reduce size of forums cache)
+function xthreads_buildcache_forums() {
+	global $cache;
+	$forums = $cache->read('forums');
+	$xtforums = array();
+	foreach($forums as $fid => $forum) {
+		$xtforum = array();
+		//$xtforum['tplprefix'] = explode(',', $forum['xthreads_tplprefix']);
+		$xtforum['langprefix'] = explode(',', $forum['xthreads_langprefix']);
+		
+		$xtforum['defaultfilter_tf'] = array();
+		$xtforum['defaultfilter_xt'] = array();
+		unset($threadfield_cache);
+		foreach(explode("\n", str_replace("\r", '', $forum['xthreads_defaultfilter'])) as $filter) {
+			list($n, $v) = array_map('urldecode', explode('=', $filter, 2));
+			if(!isset($v)) continue;
+			$isarray = false;
+			if($p = strrpos($n, '[')) {
+				$n = substr($n, 0, $p);
+				$isarray = true;
+			}
+			unset($filter_array);
+			if(substr($n, 0, 5) == '__xt_') {
+				$n = substr($n, 5);
+				// TODO: not checked if enabled (we may remove this later, so don't do anything now)
+				$filter_array =& $xtforum['defaultfilter_xt'];
+			} else {
+				if(!isset($threadfield_cache))
+					$threadfield_cache = xthreads_gettfcache($fid);
+				if(isset($threadfield_cache[$n]) && $threadfield_cache[$n]['allowfilter'])
+					$filter_array =& $xtforum['defaultfilter_tf'];
+			}
+			if(isset($filter_array)) {
+				$empty = array();
+				xthreads_sanitize_eval($v, $empty);
+				if($isarray)
+					$filter_array[$n][] = $v;
+				else
+					$filter_array[$n] = $v;
+			}
+		}
+		
+		unset($forum['xthreads_langprefix'], $forum['xthreads_defaultfilter']);
+		if(!empty($xtforum)) $xtforums[$fid] = $xtforum;
+	}
+	
+	$cache->update('xt_forums', $xtforums);
+	$cache->update('forums', $forums);
+}
+
 function xthreads_admin_cachehack() {
 	control_object($GLOBALS['cache'], '
 		function update_threadfields() {

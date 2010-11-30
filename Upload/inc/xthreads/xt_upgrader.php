@@ -126,6 +126,8 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_langprefix` varchar(255) not null default \'\'');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_defaultfilter` text not null');
 	$cache->update_forums();
+	
+	xthreads_buildcache_forums();
 }
 
 return true;

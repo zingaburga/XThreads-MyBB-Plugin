@@ -204,8 +204,11 @@ function xthreads_global() {
 	$fid = intval($fid);
 	
 	if($fid) {
-		global $forum;
+		global $forum, $cache, $xtforum;
 		$forum = get_forum($fid);
+		$xtforums = $cache->read('xt_forums');
+		$xtforum = $xtforums[$fid];
+		unset($xtforums);
 		if($forum['xthreads_tplprefix'] !== '') {
 			// this forum has a custom tpl prefix, hook into templates system
 			control_object($templates, '
@@ -221,13 +224,13 @@ function xthreads_global() {
 			$templates->non_existant_templates = array();
 			$templates->xt_tpl_prefix = explode(',', $forum['xthreads_tplprefix']);
 		}
-		if($forum['xthreads_langprefix'] !== '') {
+		if(!empty($xtforum['langprefix'])) {
 			global $lang;
 			// this forum has a custom lang prefix, hook into lang system
 			control_object($lang, '
 				function load($section, $isdatahandler=false, $supress_error=false) {
 					$this->__xt_load($section, $isdatahandler, $supress_error);
-					foreach($this->xt_lang_prefix as &$pref)
+					foreach($this->__xt_lang_prefix as &$pref)
 						if($pref !== \'\')
 							$this->__xt_load($pref.$section, $isdatahandler, true);
 				}
@@ -235,9 +238,9 @@ function xthreads_global() {
 					return parent::load($section, $isdatahandler, $supress_error);
 				}
 			');
-			$lang->xt_lang_prefix = explode(',', $forum['xthreads_langprefix']);
+			$lang->__xt_lang_prefix = $xtforum['langprefix'];
 			// load global lang messages that we couldn't before
-			foreach($lang->xt_lang_prefix as &$pref) if($pref !== '') {
+			foreach($lang->__xt_lang_prefix as &$pref) if($pref !== '') {
 				$lang->__xt_load($pref.'global', false, true);
 				$lang->__xt_load($pref.'messages', false, true);
 			}

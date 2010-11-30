@@ -144,6 +144,7 @@ function xthreads_install() {
 		}
 	}
 	$cache->update_forums();
+	xthreads_buildcache_forums();
 	
 	xthreads_buildtfcache();
 	xthreads_write_xtcachefile();
@@ -337,15 +338,21 @@ function xthreads_uninstall() {
 	}
 	$cache->update_forums();
 	
-	$cache->update('threadfields', null);
-	if(is_object($cache->handler) && method_exists($cache->handler, 'delete')) {
-		$cache->handler->delete('threadfields');
-	}
-	$db->delete_query('datacache', 'title="threadfields"');
+	xthreads_delete_datacache('threadfields');
+	xthreads_delete_datacache('xt_forums');
 	
 	@unlink(MYBB_ROOT.'cache/xthreads.php');
 	
 	$db->delete_query('templates', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
+}
+
+function xthreads_delete_datacache($key) {
+	global $cache, $db;
+	$cache->update($key, null);
+	if(is_object($cache->handler) && method_exists($cache->handler, 'delete')) {
+		$cache->handler->delete($key);
+	}
+	$db->delete_query('datacache', 'title="'.$db->escape_string($key).'"');
 }
 
 // rebuild threadfields cache on phptpl activation/deactivation
