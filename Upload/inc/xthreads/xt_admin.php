@@ -630,8 +630,9 @@ function xthreads_buildcache_forums() {
 		$xtforum['defaultfilter_xt'] = array();
 		unset($threadfield_cache);
 		foreach(explode("\n", str_replace("\r", '', $forum['xthreads_defaultfilter'])) as $filter) {
-			list($n, $v) = array_map('urldecode', explode('=', $filter, 2));
+			list($n, $v) = explode('=', $filter, 2);
 			if(!isset($v)) continue;
+			$n = urldecode($n);
 			$isarray = false;
 			if($p = strrpos($n, '[')) {
 				$n = substr($n, 0, $p);
@@ -670,6 +671,9 @@ function xthreads_admin_cachehack() {
 	control_object($GLOBALS['cache'], '
 		function update_threadfields() {
 			xthreads_buildtfcache();
+		}
+		function update_xt_forums() {
+			xthreads_buildcache_forums();
 		}
 	');
 }
@@ -955,6 +959,7 @@ function xthreads_admin_forumcommit() {
 	), 'fid='.$fid);
 	
 	$cache->update_forums();
+	xthreads_buildcache_forums();
 }
 
 // TODO: special formatting mappings

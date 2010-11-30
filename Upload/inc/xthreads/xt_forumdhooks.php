@@ -130,19 +130,17 @@ function xthreads_forumdisplay() {
 		$tf_filters = $xtforum['defaultfilter_tf'];
 		foreach($tf_filters as $n => &$filter) {
 			if(is_array($filter))
-				$filter = array_map('eval_str', $filter);
+				$filter = array_map('urldecode', array_map('eval_str', $filter));
 			else
-				$filter = eval_str($filter);
+				$filter = urldecode(eval_str($filter));
 		}
-		unset($filter);
 		$xt_filters = $xtforum['defaultfilter_xt'];
 		foreach($xt_filters as $n => &$filter) {
 			if(is_array($filter))
-				$filter = array_map('eval_str', $filter);
+				$filter = array_map('urldecode', array_map('eval_str', $filter));
 			else
-				$filter = eval_str($filter);
+				$filter = urldecode(eval_str($filter));
 		}
-		unset($filter);
 	}
 	unset($enabled_xtf);
 	
