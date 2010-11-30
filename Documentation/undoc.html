@@ -38,7 +38,7 @@
    </ul>
    <p>There are also some special values for <span class="token1">key</span>, these are:</p>
    <ul>
-    <li><strong>__xt_uid</strong>, <strong>__xt_lastposteruid</strong>, <strong>__xt_prefix</strong> and <strong>__xt_icon</strong>: for filtering by uid, lastposteruid, prefix and icon, respectively (if enabled)</li>
+    <li><strong>__xt_uid</strong>, <strong>__xt_lastposteruid</strong>, <strong>__xt_prefix</strong> and <strong>__xt_icon</strong>: for filtering by uid, lastposteruid, prefix and icon, respectively</li>
     <li><strong>__all</strong>: aggregation of all thread field filters, and uid/lastposteruid/prefix/icon filters (does not include inline search); this doesn't support <em>selected</em>, <em>checked</em> and <em>active</em> as <span class="token2">var</span></li>
     <li><strong>__search</strong>: for inline forum searching, if enabled</li>
    </ul>
@@ -87,6 +87,7 @@
      <br />As this uses MyBB's system, template variables will be the same, eg <code>{$sortsel['tf_myfield']}</code> will be <code>selected=&quot;selected&quot;</code> if sorting by <em>myfield</em>.
      <br />Note that this is not indexed, like MyBB's sorting options aren't.
     </li>
+    <li>XThreads can filter forumdisplay by thread starter, last poster, thread icon and thread prefix (MyBB 1.6 only); to do this, supply <em>filterxt_<span class="token1">field</span>=<span class="token2">value</span></em> to the URL, where <span class="token1">field</span> is either <em>uid</em>, <em>lastposteruid</em>, <em>icon</em>, <em>prefix</em>.  For example, <em>forumdisplay.php?fid=2&amp;filterxt_uid=1</em></li>
    </ul>
    
    <h2>XThreads Additions</h2>

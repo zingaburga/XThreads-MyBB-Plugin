@@ -641,8 +641,8 @@ function xthreads_buildcache_forums() {
 			unset($filter_array);
 			if(substr($n, 0, 5) == '__xt_') {
 				$n = substr($n, 5);
-				// TODO: not checked if enabled (we may remove this later, so don't do anything now)
-				$filter_array =& $xtforum['defaultfilter_xt'];
+				if(in_array($n, array('uid','lastposteruid','icon','prefix')))
+					$filter_array =& $xtforum['defaultfilter_xt'];
 			} else {
 				if(!isset($threadfield_cache))
 					$threadfield_cache = xthreads_gettfcache($fid);
@@ -771,11 +771,13 @@ function xthreads_admin_forumedit() {
 		
 		if(isset($forum_data['xthreads_tplprefix'])) { // editing (or adding with submitted errors)
 			$data =& $forum_data;
+			/*
 			// additional filter enable needs to be split up
 			if(!isset($data['xthreads_afe_uid']) && isset($data['xthreads_addfiltenable'])) {
 				foreach(explode(',', $data['xthreads_addfiltenable']) as $afe)
 					$data['xthreads_afe_'.$afe] = 1;
 			}
+			*/
 		}
 		else // adding
 			$data = array(
@@ -790,10 +792,10 @@ function xthreads_admin_forumedit() {
 				'xthreads_hideforum' => 0,
 				'xthreads_hidebreadcrumb' => 0,
 				'xthreads_defaultfilter' => '',
-				'xthreads_afe_uid' => 0,
-				'xthreads_afe_lastposteruid' => 0,
-				'xthreads_afe_prefix' => 0,
-				'xthreads_afe_icon' => 0,
+				//'xthreads_afe_uid' => 0,
+				//'xthreads_afe_lastposteruid' => 0,
+				//'xthreads_afe_prefix' => 0,
+				//'xthreads_afe_icon' => 0,
 				'xthreads_allow_blankmsg' => 0,
 				'xthreads_nostatcount' => 0,
 				'xthreads_wol_announcements' => '',
@@ -843,6 +845,7 @@ function xthreads_admin_forumedit() {
 			$form_container->output_row($lang->$name, $description, $html);
 		}
 		
+		/*
 		$afefields = array(
 			'uid',
 			'lastposteruid',
@@ -856,6 +859,7 @@ function xthreads_admin_forumedit() {
 			$afehtml .= '<tr><td width="15%" style="border: 0; padding: 1px; vertical-align: top; white-space: nowrap;">'.$form->generate_check_box($afe, 1, $field, array('checked' => $data[$afe])).'</td><td style="border: 0; padding: 1px; vertical-align: top;">&nbsp;('.$lang->$afe.')</td></tr>';
 		}
 		$form_container->output_row($lang->xthreads_addfiltenable, xthreads_admin_forumedit_get_description('xthreads_addfiltenable'), '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$afehtml.'</table>');
+		*/
 		
 		$wolfields = array(
 			'xthreads_wol_announcements',
@@ -899,6 +903,7 @@ function xthreads_admin_forumcommit() {
 		$fid = intval($mybb->input['fid']);
 	}
 	
+	/*
 	// handle additional filters
 	$afefields = array(
 		'uid',
@@ -931,7 +936,7 @@ function xthreads_admin_forumcommit() {
 				$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` DROP KEY `xthreads_'.$afe.'`', true);
 			}
 		}
-	
+	*/
 	
 	$db->update_query('forums', array(
 		'xthreads_tplprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_tplprefix'])))),
@@ -947,7 +952,7 @@ function xthreads_admin_forumcommit() {
 		'xthreads_hideforum' => intval($mybb->input['xthreads_hideforum']),
 		'xthreads_hidebreadcrumb' => intval($mybb->input['xthreads_hidebreadcrumb']),
 		'xthreads_defaultfilter' => $db->escape_string($mybb->input['xthreads_defaultfilter']),
-		'xthreads_addfiltenable' => $db->escape_string($addfiltenable),
+		//'xthreads_addfiltenable' => $db->escape_string($addfiltenable),
 //		'xthreads_deffilter' => $db->escape_string($deffilter),
 		'xthreads_wol_announcements' => $db->escape_string(trim($mybb->input['xthreads_wol_announcements'])),
 		'xthreads_wol_forumdisplay' => $db->escape_string(trim($mybb->input['xthreads_wol_forumdisplay'])),

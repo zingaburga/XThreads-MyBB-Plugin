@@ -113,9 +113,12 @@ function xthreads_forumdisplay() {
 			xthreads_forumdisplay_quickthread();
 	}
 	$xt_filters = array();
-	$enabled_xtf = explode(',', $forum['xthreads_addfiltenable']);
-	if(!empty($enabled_xtf)) {
+	//$enabled_xtf = explode(',', $forum['xthreads_addfiltenable']);
+	//if(!empty($enabled_xtf)) {
 		//global $lang;
+		//foreach($enabled_xtf as &$xtf) {
+		$enabled_xtf = array('uid','icon','lastposteruid');
+		if($mybb->version_code >= 1500) $enabled_xtf[] = 'prefix';
 		foreach($enabled_xtf as &$xtf) {
 			$filters_set['__xt_'.$xtf] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
 			if(isset($mybb->input['filterxt_'.$xtf]) && $mybb->input['filterxt_'.$xtf] !== '') {
@@ -123,7 +126,8 @@ function xthreads_forumdisplay() {
 				$use_default_filter = false;
 			}
 		}
-	}
+		unset($enabled_xtf);
+	//}
 	
 	global $xtforum;
 	if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
@@ -142,7 +146,7 @@ function xthreads_forumdisplay() {
 				$filter = urldecode(eval_str($filter));
 		}
 	}
-	unset($enabled_xtf);
+	//unset($enabled_xtf);
 	
 	foreach($tf_filters as $n => &$filter) {
 		xthreads_forumdisplay_filter_input('filtertf_'.$n, $filter, $filters_set[$n]);

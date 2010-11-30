@@ -130,7 +130,6 @@ function xthreads_install() {
 		'hideforum' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'hidebreadcrumb' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'defaultfilter' => 'text not null',
-		'addfiltenable' => 'varchar(200) not null default \'\'',
 		'wol_announcements' => 'varchar(255) not null default \'\'',
 		'wol_forumdisplay' => 'varchar(255) not null default \'\'',
 		'wol_newthread' => 'varchar(255) not null default \'\'',
@@ -142,6 +141,16 @@ function xthreads_install() {
 		if(!$db->field_exists($field, 'forums')) {
 			$db->write_query('ALTER TABLE '.$db->table_prefix.'forums ADD COLUMN xthreads_'.$field.' '.$fdef);
 		}
+	}
+	// add indexes
+	foreach(array(
+		'uid',
+		'lastposteruid',
+		'prefix',
+		'icon',
+	) as $afe) {
+		if($afe == 'uid') continue; // we won't remove this from the above array
+		$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` ADD KEY `xthreads_'.$afe.'` (`'.$afe.'`)', true);
 	}
 	$cache->update_forums();
 	xthreads_buildcache_forums();
@@ -281,16 +290,14 @@ function xthreads_uninstall() {
 		$db->write_query('DROP TABLE '.$db->table_prefix.'xtattachments');
 	
 	// remove any indexes added on the threads table
-	if($db->field_exists('xthreads_addfiltenable', 'forums')) {
-		foreach(array(
-			'uid',
-			'lastposteruid',
-			'prefix',
-			'icon',
-		) as $afe) {
-			if($afe == 'uid') continue; // we won't remove this from the above array
-			$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` DROP KEY `xthreads_'.$afe.'`', true);
-		}
+	foreach(array(
+		'uid',
+		'lastposteruid',
+		'prefix',
+		'icon',
+	) as $afe) {
+		if($afe == 'uid') continue; // we won't remove this from the above array
+		$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` DROP KEY `xthreads_'.$afe.'`', true);
 	}
 	
 	$fields = array(
@@ -307,7 +314,7 @@ function xthreads_uninstall() {
 		'xthreads_hideforum',
 		'xthreads_hidebreadcrumb',
 		'xthreads_defaultfilter',
-		'xthreads_addfiltenable',
+		'xthreads_addfiltenable', // legacy (uninstall w/o upgrade)
 		//'xthreads_pull_firstpost',
 		'xthreads_wol_announcements',
 		'xthreads_wol_forumdisplay',
