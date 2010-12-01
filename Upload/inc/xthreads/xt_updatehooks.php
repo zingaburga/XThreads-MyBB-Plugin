@@ -1016,6 +1016,151 @@ function xthreads_js_remove_noreplies_notice() {
 	$templates->cache['postbit_classic'] = $js.$templates->cache['postbit_classic'];
 }
 
+function xthreads_moderation() {
+	// try to hook into custom moderation
+	// lovely MyBB provides no custom moderation hook, what gives?
+	$modactions = array(
+		'openclosethread',
+		'stick',
+		'removeredirects',
+		'deletethread',
+		'do_deletethread',
+		'deletepoll',
+		'do_deletepoll',
+		'approvethread',
+		'unapprovethread',
+		'deleteposts',
+		'do_deleteposts',
+		'mergeposts',
+		'do_mergeposts',
+		'move',
+		'do_move',
+		'threadnotes',
+		'do_threadnotes',
+		'getip',
+		'merge',
+		'do_merge',
+		'split',
+		'do_split',
+		'removesubscriptions',
+		'multideletethreads',
+		'do_multideletethreads',
+		'multiopenthreads',
+		'multiclosethreads',
+		'multiapprovethreads',
+		'multiunapprovethreads',
+		'multistickthreads',
+		'multiunstickthreads',
+		'multimovethreads',
+		'do_multimovethreads',
+		'multideleteposts',
+		'do_multideleteposts',
+		'multimergeposts',
+		'do_multimergeposts',
+		'multisplitposts',
+		'do_multisplitposts',
+		'multiapproveposts',
+		'multiunapproveposts',
+	);
+	if($GLOBALS['mybb']->version_code >= 1500) {
+		$modactions[] = 'cancel_delayedmoderation';
+		$modactions[] = 'do_delayedmoderation';
+		$modactions[] = 'delayedmoderation';
+	}
+	if(in_array($GLOBALS['mybb']->input['action'], $modactions)) return;
+	
+	// we are probably now looking at custom moderation - let's get ourselves a hook into the system
+	control_object($GLOBALS['db'], '
+		function simple_select($table, $fields="*", $conditions="", $options=array()) {
+			static $done=false;
+			if(!$done && $table == "modtools" && $fields == "tid, type, name, description" && substr($conditions, 0, 4) == "tid=" && empty($options)) {
+				$done = true;
+				xthreads_moderation_custom();
+			}
+			return parent::simple_select($table, $fields, $conditions, $options);
+		}
+	');
+}
+
+function xthreads_moderation_custom() {
+	//if($tool['type'] != 't') return;
+	if(!is_object($GLOBALS['custommod'])) return;
+	
+	control_object($GLOBALS['custommod'], '
+		function execute_thread_moderation($thread_options, $tids) {
+			if($thread_options[\'deletethread\'] != 1 && !xthreads_empty($thread_options[\'edit_threadfields\']))
+				xthreads_moderation_custom_do($tids, $thread_options[\'edit_threadfields\']);
+			return parent::execute_thread_moderation($thread_options, $tids);
+		}
+	');
+	
+	// this function is executed before copy thread (yay!)
+	function xthreads_moderation_custom_do(&$tids, &$editstr) {
+		$edits = array();
+		$threadfields = xthreads_gettfcache(); // grab all threadfields
+		foreach(explode("\n", str_replace("\r",'',$editstr)) as $editline) {
+			$editline = trim($editline);
+			list($n, $v) = explode('=', $editline, 2);
+			if(!isset($v)) continue;
+			
+			// don't allow editing of file fields
+			if(!isset($threadfields[$n]) || $threadfields[$n]['inputtype'] == XTHREADS_INPUT_FILE) continue;
+			// we don't do much validation here as we trust admins, right?
+			
+			$upperv = strtoupper($v);
+			if($upperv != '{VALUE}') {
+				if(($upperv === '' || $upperv == 'NULL' || $upperv == 'NUL') && $threadfields[$n]['datatype'] != XTHREADS_DATATYPE_TEXT)
+					$edits[$n] = null;
+				else
+					$edits[$n] = $v;
+			}
+		}
+		if(empty($edits)) return;
+		$modfields = array_keys($edits);
+		
+		global $db;
+		/* $query = $db->query('
+			SELECT t.tid, tfd.`'.implode('`, tfd.`', $modfields).'`
+			FROM '.TABLE_PREFIX.'threads t
+			LEFT JOIN '.TABLE_PREFIX.'threadfields_data tfd ON t.tid=tfd.tid
+			WHERE t.tid IN ('.implode(',', $tids).')
+		'); */
+		$query = $db->simple_select('threadfields_data', 'tid,`'.implode('`,`', $modfields).'`', 'tid IN ('.implode(',', $tids).')');
+		while($thread = $db->fetch_array($query)) {
+			$updates = array();
+			foreach($edits as $n => $v) {
+				// TODO: support variables/conditionals?
+				$v = xthreads_str_ireplace(array('{value}', '{tid}'), array($thread[$n], $thread['tid']), $v);
+				if($v != $thread[$n])
+					$updates[$n] = $v;
+			}
+			if(!empty($updates)) {
+				xthreads_db_update('threadfields_data', $updates, 'tid='.$thread['tid']);
+			}
+		}
+		$db->free_result($query);
+	}
+}
+
+// because MyBB's str_ireplace workaround is buggy...
+function xthreads_str_ireplace($find, $replace, $subject) {
+	if(str_ireplace('a','b','A') == 'A') { // buggy workaround
+		if(is_array($find)) {
+			foreach($find as &$s)
+				$s = '#'.preg_quote($s, '#').'#i';
+		} else
+			$find = '#'.preg_quote($find, '#').'#i';
+		if(is_array($replace)) {
+			foreach($replace as &$s)
+				$s = strtr($s, array('\\' => '\\\\', '$' => '\\$'));
+		} else
+			$replace = strtr($replace, array('\\' => '\\\\', '$' => '\\$'));
+		return preg_replace($find, $replace, $subject);
+	}
+	else
+		return str_ireplace($find, $replace, $subject);
+}
+
 
 // --- some functions to fix up MyBB's bad DB methods ---
 // escape function which handles NULL values properly, and enquotes strings

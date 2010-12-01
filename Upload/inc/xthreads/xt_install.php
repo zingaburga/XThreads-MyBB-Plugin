@@ -351,6 +351,17 @@ function xthreads_uninstall() {
 	@unlink(MYBB_ROOT.'cache/xthreads.php');
 	
 	$db->delete_query('templates', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
+	
+	// try to determine and remove stuff added to the custom moderation table
+	$query = $db->simple_select('modtools', 'tid,threadoptions');
+	while($tool = $db->fetch_array($query)) {
+		$opts = unserialize($tool['threadoptions']);
+		if(isset($opts['edit_threadfields'])) {
+			unset($opts['edit_threadfields']);
+			$db->update_query('modtools', array('threadoptions' => $db->escape_string(serialize($opts))), 'tid='.$tool['tid']);
+		}
+	}
+	
 }
 
 function xthreads_delete_datacache($key) {

@@ -238,7 +238,7 @@ $l['xthreads_defaultfilter'] = 'Default Thread Filter';
 $l['xthreads_defaultfilter_desc'] = 'This filter is applied to forumdisplay if no filter has been specified in the URL.  Separate entries with newlines; variables/conditionals supported (in filter value only), as well as URI encoding (note, URI decoding done <em>after</em> variables and conditionals have been evaluated).
 <br /><!-- more -->The default filter can also be disabled with no additional filter in use, by specifying <em>filterdisable</em> in the URL, eg <em>forumdisplay.php?fid=2&amp;filterdisable=1</em>
 <br />Example value for this field:
-<code style="display: block; margin-left: 2em;">myfield=something<br />__xt_uid=1<br />field2[]=value1<br />field2[]={$mybb->user[\'username\']}</code>';
+<code style="display: block; margin-left: 2em;">myfield=something<br />__xt_uid=1<br />field2[]=value1<br />field2[]={$mybb-&gt;user[\'username\']}</code>';
 /* $l['xthreads_addfiltenable'] = 'Enable Thread Filters';
 $l['xthreads_addfiltenable_desc'] = 'Enable users to filter forumdisplay by certain thread attributes (eg thread starter).
 <br /><!-- more -->This feature works similar to filtering forumdisplay threads by custom thread fields.  This does not affect templates, so you need to make appropriate changes to make this option useful.  If you tick any of the options below, users can filter threads displayed on forumdisplay by the relevant fields by appending the URL parameter <code>filterxt_<em>fieldname</em></code>, for example <em>forumdisplay.php?fid=2&amp;filterxt_uid=2</em> will only display threads created by the user with UID of 2.  Note, multiple filters are allowed, and you can also specify an array of values for a single field.'; */
@@ -263,6 +263,10 @@ $l['xthreads_sort_filesize'] = 'file size';
 $l['xthreads_sort_uploadtime'] = 'upload time';
 $l['xthreads_sort_updatetime'] = 'update time';
 $l['xthreads_sort_downloads'] = 'no. downloads';
+
+$l['xthreads_modtool_edit_threadfields'] = 'Modify Custom Thread Field(s)';
+$l['xthreads_modtool_edit_threadfields_desc'] = 'You can use this option to modify XThreads\' custom thread fields when this tool is executed.  Specify each thread field you wish to edit on a separate line and assign to the thread field\'s key using = (equals sign).  The current value (before setting) of the field can be denoted by <code>{VALUE}</code>.  Example:
+<code style="display: block; margin-left: 2em;">myfield=something<br />anotherfield={VALUE},something else</code>';
 
 $l['xthreads_confirm_uninstall'] = 'Are you sure you wish to uninstall XThreads?  Uninstalling will cause all XThreads related modifications (excluding template modifications you have performed on those not added by XThreads) will be removed.<br />Well, obviously you\'re sure, cause you clicked on the link... this is just for those (like me) who accidentally click on the wrong things...';
 

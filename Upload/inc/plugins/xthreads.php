@@ -43,6 +43,7 @@ $plugins->add_hook('datahandler_post_update_thread', 'xthreads_input_posthandler
 $plugins->add_hook('datahandler_post_validate_post', 'xthreads_input_posthandler_postvalidate', 10, $updatehooks_file);
 $plugins->add_hook('class_moderation_delete_thread', 'xthreads_delete_thread', 10, $updatehooks_file);
 $plugins->add_hook('class_moderation_copy_thread', 'xthreads_copy_thread', 10, $updatehooks_file);
+$plugins->add_hook('moderation_start', 'xthreads_moderation', 10, $updatehooks_file);
 //$plugins->add_hook('class_moderation_split_posts', 'xthreads_split_posts', 10, $updatehooks_file);
 
 $plugins->add_hook('newthread_start', 'xthreads_inputdisp', 10, $updatehooks_file);

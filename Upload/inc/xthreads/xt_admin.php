@@ -18,6 +18,15 @@ $plugins->add_hook('admin_forum_management_add_commit', 'xthreads_admin_forumcom
 $plugins->add_hook('admin_forum_management_add_insert_query', 'xthreads_admin_forumcommit_myplazaturbo_fix');
 $plugins->add_hook('admin_forum_management_edit_commit', 'xthreads_admin_forumcommit');
 
+$plugins->add_hook('admin_config_mod_tools_add_thread_tool', 'xthreads_admin_modtool');
+$plugins->add_hook('admin_config_mod_tools_edit_thread_tool', 'xthreads_admin_modtool');
+$plugins->add_hook('admin_config_mod_tools_add_post_tool', 'xthreads_admin_modtool');
+$plugins->add_hook('admin_config_mod_tools_edit_post_tool', 'xthreads_admin_modtool');
+$plugins->add_hook('admin_config_mod_tools_add_thread_tool_commit', 'xthreads_admin_modtool_commit');
+$plugins->add_hook('admin_config_mod_tools_edit_thread_tool_commit', 'xthreads_admin_modtool_commit');
+$plugins->add_hook('admin_config_mod_tools_add_post_tool_commit', 'xthreads_admin_modtool_commit');
+$plugins->add_hook('admin_config_mod_tools_edit_post_tool_commit', 'xthreads_admin_modtool_commit');
+
 $plugins->add_hook('admin_tools_recount_rebuild_start', 'xthreads_admin_rebuildthumbs');
 
 $plugins->add_hook('admin_load', 'xthreads_vercheck');
@@ -965,6 +974,46 @@ function xthreads_admin_forumcommit() {
 	
 	$cache->update_forums();
 	xthreads_buildcache_forums();
+}
+
+
+function xthreads_admin_modtool() {
+	$GLOBALS['plugins']->add_hook('admin_formcontainer_output_row', 'xthreads_admin_modtool_2');
+	function xthreads_admin_modtool_2(&$args) {
+		if($args['title'] == $GLOBALS['lang']->new_subject.' <em>*</em>') {
+			$GLOBALS['plugins']->remove_hook('admin_formcontainer_output_row', 'xthreads_admin_modtool_2');
+			$GLOBALS['plugins']->add_hook('admin_formcontainer_end', 'xthreads_admin_modtool_3');
+		}
+	}
+	function xthreads_admin_modtool_3($rtn) {
+		$GLOBALS['plugins']->remove_hook('admin_formcontainer_end', 'xthreads_admin_modtool_3');
+		
+		global $lang;
+		$lang->load('xthreads');
+		if($GLOBALS['errors']) {
+			$val =& $GLOBALS['mybb']->input['edit_threadfields'];
+		} else {
+			$val =& $GLOBALS['thread_options']['edit_threadfields'];
+		}
+		$GLOBALS['form_container']->output_row($lang->xthreads_modtool_edit_threadfields, $lang->xthreads_modtool_edit_threadfields_desc, $GLOBALS['form']->generate_text_area('edit_threadfields', $val));
+	}
+}
+
+function xthreads_admin_modtool_commit() {
+	global $mybb, $thread_options, $db;
+	if(isset($GLOBALS['update_tool'])) {
+		// updating
+		$tid = intval($mybb->input['tid']);
+	} else {
+		$tid = $GLOBALS['tid'];
+	}
+	
+	// MyBB bug with adding modtool ignoring prefix??
+	
+	// TODO: validate this?
+	$thread_options['edit_threadfields'] = $mybb->input['edit_threadfields'];
+	
+	$db->update_query('modtools', array('threadoptions' => $db->escape_string(serialize($thread_options))), 'tid='.$tid);
 }
 
 // TODO: special formatting mappings
