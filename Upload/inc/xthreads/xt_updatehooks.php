@@ -263,6 +263,10 @@ function xthreads_duplicate_threadfield_data($tid_old, $tid_new) {
 	global $db, $mybb;
 	@ignore_user_abort(true); // not really that good, since cancelling elsewhere will break transaction, but, well, copies might be slow, so...
 	$tf = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$tid_old));
+	if(empty($tf)) { // no threadfields set for this thread -> nothing to duplicate
+		@ignore_user_abort(false);
+		return;
+	}
 	$tf['tid'] = $tid_new;
 	
 	// copy xtattachments over
@@ -375,8 +379,10 @@ function xthreads_inputdisp() {
 					$curthreaddata = array();
 					foreach($threadfield_cache as $k => &$v)
 						if(!isset($threadfields[$k])) {
-							if(empty($curthreaddata))
+							if(empty($curthreaddata)) {
 								$curthreaddata = $db->fetch_array($db->simple_select('threadfields_data', '`'.implode('`,`', array_keys($threadfield_cache)).'`', 'tid='.$thread['tid']));
+								if(empty($curthreaddata)) break; // there isn't anything set for this thread
+							}
 							
 							$threadfields[$k] =& $curthreaddata[$k];
 						}
@@ -513,7 +519,9 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			$tf_fw_cols = ' cols="'.intval($tf['fieldwidth']).'"';
 		}
 		
-		if(isset($data[$k]))
+		if(!isset($data)) // no threadfield data set for this thread
+			$defval = '';
+		elseif(isset($data[$k]))
 			$defval = $data[$k];
 		else
 			$defval = $tf['defaultval'];
@@ -812,7 +820,8 @@ function xthreads_upload_attachments() {
 	}
 	// if editing post, also commit change to thread field immediately (waiting for user to submit is unreliable)
 	if(($GLOBALS['current_page'] == 'editpost.php' || ($GLOBALS['thread']['tid'] && $GLOBALS['current_page'] == 'newthread.php')) && !empty($threadfield_updates)) {
-		$db->update_query('threadfields_data', $threadfield_updates, 'tid='.$GLOBALS['thread']['tid']);
+		xthreads_db_update_replace('threadfields_data', $threadfield_updates, 'tid', $GLOBALS['thread']['tid']);
+		//$db->update_query('threadfields_data', $threadfield_updates, 'tid='.$GLOBALS['thread']['tid']);
 	}
 	
 	@ignore_user_abort(false);
@@ -1119,13 +1128,13 @@ function xthreads_moderation_custom() {
 		$modfields = array_keys($edits);
 		
 		global $db;
-		/* $query = $db->query('
+		$query = $db->query('
 			SELECT t.tid, tfd.`'.implode('`, tfd.`', $modfields).'`
 			FROM '.TABLE_PREFIX.'threads t
 			LEFT JOIN '.TABLE_PREFIX.'threadfields_data tfd ON t.tid=tfd.tid
 			WHERE t.tid IN ('.implode(',', $tids).')
-		'); */
-		$query = $db->simple_select('threadfields_data', 'tid,`'.implode('`,`', $modfields).'`', 'tid IN ('.implode(',', $tids).')');
+		');
+		//$query = $db->simple_select('threadfields_data', 'tid,`'.implode('`,`', $modfields).'`', 'tid IN ('.implode(',', $tids).')');
 		while($thread = $db->fetch_array($query)) {
 			$updates = array();
 			foreach($edits as $n => $v) {
@@ -1135,7 +1144,7 @@ function xthreads_moderation_custom() {
 					$updates[$n] = $v;
 			}
 			if(!empty($updates)) {
-				xthreads_db_update('threadfields_data', $updates, 'tid='.$thread['tid']);
+				xthreads_db_update_replace('threadfields_data', $updates, 'tid', $thread['tid']);
 			}
 		}
 		$db->free_result($query);
@@ -1215,4 +1224,14 @@ function xthreads_db_replace($table, $insert, $where) {
 		return xthreads_db_update($table, $insert, $where);
 	else
 		return xthreads_db_insert($table, $insert);
+}
+
+// try to update, if unsuccessful, will run replace query
+function xthreads_db_update_replace($table, $update, $idname, $idval) {
+	$where = '`'.$idname.'`='.xthreads_db_escape($idval);
+	xthreads_db_update($table, $update, $where);
+	if($GLOBALS['db']->affected_rows() == 0) {
+		$update[$idname] = $idval;
+		xthreads_db_replace($table, $update, $where);
+	}
 }

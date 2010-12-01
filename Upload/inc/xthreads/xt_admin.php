@@ -532,7 +532,7 @@ function xthreads_buildtfcache() {
 			$tf['viewable_gids'] = array_unique(explode(',', $tf['viewable_gids']));
 		}
 		if($tf['fileimgthumbs']) {
-			$tf['fileimgthumbs'] = array_unique(explode('|', $tf['fileimgthumbs']));
+			$tf['fileimgthumbs'] = array_unique(explode('|', str_replace(',','|',$tf['fileimgthumbs'])));
 		}
 		if(!xthreads_empty($tf['filemagic'])) {
 			$tf['filemagic'] = array_map('urldecode', array_unique(explode('|', $tf['filemagic'])));

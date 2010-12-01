@@ -13,10 +13,10 @@ function xthreads_showthread() {
 	if(!empty($threadfield_cache)) {
 		// just do an extra query to grab the threadfields
 		$threadfields = $db->fetch_array($db->simple_select('threadfields_data', '`'.implode('`,`', array_keys($threadfield_cache)).'`', 'tid='.$thread['tid']));
-		if(empty($threadfields)) return;
-		foreach($threadfields as $k => &$v) {
-			xthreads_get_xta_cache($threadfield_cache[$k], $thread['tid']);
-			xthreads_sanitize_disp($v, $threadfield_cache[$k], $thread['username']);
+		if(!isset($threadfields)) $threadfields = array();
+		foreach($threadfield_cache as $k => &$v) {
+			xthreads_get_xta_cache($v, $thread['tid']);
+			xthreads_sanitize_disp($threadfields[$k], $v, $thread['username']);
 		}
 	}
 }
