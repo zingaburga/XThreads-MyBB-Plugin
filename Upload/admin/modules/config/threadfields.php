@@ -831,6 +831,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	
 ?><script type="text/javascript">
 <!--
+	
 	function xt_visi(o,v) {
 		$(o).style.display = (v ? '':'none');
 	}
@@ -1035,6 +1036,44 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			$('textmask_select').focus();
 	};
 	
+//-->
+</script>
+<script type="text/javascript" src="jscripts/xtofedit.js?xtver=<?php echo XTHREADS_VERSION; ?>"></script>
+<script type="text/javascript">
+<!--
+xtOFEditorLang.confirmFormSubmit = "<?php echo $lang->xthreads_js_confirm_form_submit; ?>";
+xtOFEditorLang.windowTitle = "<?php echo $lang->xthreads_js_edit_value; ?>";
+xtOFEditorLang.saveButton = "<?php echo $lang->xthreads_js_save_changes; ?>";
+xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_changes; ?>";
+
+var fmtMapEditor = new xtOFEditor();
+fmtMapEditor.src = $('formatmap');
+fmtMapEditor.loadFunc = function(s) {
+	var a = s.replace("\r", "").split("\n");
+	var data = [];
+	for(var i=0; i<a.length; i++) {
+		var p = a[i].indexOf("{|}");
+		if(p < 0) continue;
+		data.push([ a[i].substring(0, p), a[i].substring(p+3) ]);
+	}
+	return data;
+};
+fmtMapEditor.saveFunc = function(a) {
+	var ret = "";
+	for(var i=0; i<a.length; i++) {
+		ret += a[i].join("{|}") + "\n";
+	}
+	return ret;
+};
+fmtMapEditor.fields = [
+	{title: "<?php echo $lang->xthreads_js_formatmap_from; ?>", width: '45%', elemFunc: fmtMapEditor.textAreaFunc},
+	{title: "<?php echo $lang->xthreads_js_formatmap_to; ?>", width: '55%', elemFunc: fmtMapEditor.textAreaFunc}
+];
+
+fmtMapEditor.copyStyles=true;
+
+fmtMapEditor.init();
+
 //-->
 </script><?php
 	

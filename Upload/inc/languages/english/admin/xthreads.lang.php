@@ -268,6 +268,14 @@ $l['xthreads_modtool_edit_threadfields'] = 'Modify Custom Thread Field(s)';
 $l['xthreads_modtool_edit_threadfields_desc'] = 'You can use this option to modify XThreads\' custom thread fields when this tool is executed.  Specify each thread field you wish to edit on a separate line and assign to the thread field\'s key using = (equals sign).  The current value (before setting) of the field can be denoted by <code>{VALUE}</code>.  NOTE: values here are NOT validated, and permissions are NOT checked!  Example:
 <code style="display: block; margin-left: 2em;">myfield=something<br />anotherfield={VALUE},something else</code>';
 
+$l['xthreads_js_confirm_form_submit'] = 'You have an editor window open - are you sure you wish to submit these changes without closing this window?';
+$l['xthreads_js_edit_value'] = 'Edit Value';
+$l['xthreads_js_save_changes'] = 'Save Changes';
+$l['xthreads_js_close_save_changes'] = 'Do you wish to save changes before closing this window?';
+
+$l['xthreads_js_formatmap_from'] = 'Value';
+$l['xthreads_js_formatmap_to'] = 'Displayed Output';
+
 $l['xthreads_confirm_uninstall'] = 'Are you sure you wish to uninstall XThreads?  Uninstalling will cause all XThreads related modifications (excluding template modifications you have performed on those not added by XThreads) will be removed.<br />Well, obviously you\'re sure, cause you clicked on the link... this is just for those (like me) who accidentally click on the wrong things...';
 
 
