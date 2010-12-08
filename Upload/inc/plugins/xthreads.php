@@ -479,7 +479,16 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 		$s['dims'] =& $s['thumbs']['orig'];
 	}
 }
-function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null) {
+function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
+	if(!$noextra) {
+		// this "hack" stops this function being totally independent of the outside world :(
+		global $threadfields_x;
+		if(!isset($threadfields_x))
+			$threadfields_x = array();
+		$sx =& $threadfields_x[$tfinfo['field']];
+	} // otherwise, let the following line dummy the variable
+	$sx = array('title' => htmlspecialchars_uni($tfinfo['title']), 'desc' => htmlspecialchars_uni($tfinfo['desc']));
+	
 	if($s === '' || $s === null) { // won't catch file inputs, as they are integer type
 		if(!xthreads_empty($tfinfo['blankval'])) $s = eval_str($tfinfo['blankval']);
 		return;

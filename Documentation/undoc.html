@@ -53,7 +53,7 @@
     <li><code>{RAWVALUE$1}</code>, <code>{RAWVALUE$2}</code>, <code>{RAWVALUE$3}</code> etc - as above, but values not gone through the sanitiser</li>
     <li>Variables - similar to how they work in MyBB templates, eg <code>{$mybb-&gt;user['username']}</code>; note, these must be surrounded by curly braces as in the preceeding example.  Variables are always in the global scope.</li>
     <li>Conditionals - in the same syntax as the <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=464">Template Conditionals plugin</a>; <code>&lt;template ...&gt;</code> calls are not allowed.  <code>{VALUE}</code> and similar tokens above are treated as quoted string values, eg <code>&lt;?='This is '.{VALUE}?&gt;</code> is valid syntax.  Note that, as all variables need to be globalised, this won't work correctly with some PHP syntax, such as <code>$$variable</code></li>
-    <li>PHP - this is only available if <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=260">PHP in Templates plugin</a> is installed and activated; accepts PHP within &lt;?php ... ?&gt; tags, similar to how the plugin works</li>
+    <li>PHP - this is only available if <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=260">PHP in Templates plugin</a> is installed and activated (and/or appropriate setting set in <em>cache/xthreads.php</em>); accepts PHP within <code>&lt;?php ... ?&gt;</code> tags, similar to how the plugin works</li>
    </ul>
    
    <h3>Parse Process</h3>
@@ -67,6 +67,13 @@
     <li>If multiple values are supported, the above goes into <em>Display Item Format</em>, and the above two steps are repeated for each value.  Once done, all these values are aggregated together, separated by the <em>Multiple Value Delimiter</em></li>
     <li>Finally, the value goes into the <em>Display Format</em>, for display</li>
    </ol>
+   
+   <h2>Additional Custom Thread Field Variables</h2>
+   <p>In addition to the <code>{$GLOBALS['threadfields']['<em>key</em>']</code> variable (which displays the value of the thread field), there are other values which can be displayed via the additional variable, <code>{$GLOBALS['threadfields<strong style="color: brown;">_x</strong>']['<em>key</em>']['<span class="token1">valuename</span>']</code> variable, where <span class="token1">valuename</span> can be one of the following:</p>
+   <ul>
+    <li><strong>title</strong> - displays the title given to the thread field</li>
+    <li><strong>desc</strong> - displays the description given to the thread field</li>
+   </ul>
    
    <h2>Additional Template Variables</h2>
    <p>XThreads adds some variables which can be used in templates for convenience.</p>
