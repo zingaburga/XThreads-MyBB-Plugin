@@ -399,49 +399,9 @@ function xthreads_breadcrumb_hack($fid) {
 
 function xthreads_handle_uploads() {
 	global $mybb, $current_page;
-	if($mybb->request_method == 'post' && ($current_page == 'newthread.php' || $current_page == 'editpost.php')) {
-		global $thread;
-		if($current_page == 'editpost.php') {
-			if($mybb->input['action'] == 'deletepost' && $mybb->request_method == 'post') return;
-			// check if first post
-			$pid = intval($mybb->input['pid']);
-			if(!$thread) {
-				$post = get_post($pid);
-				if(!empty($post))
-					$thread = get_thread($post['tid']);
-				if(empty($thread)) return;
-				$pid = $post['pid'];
-			}
-			if($thread['firstpost'] != $pid)
-				return;
-		} elseif($mybb->input['tid']) { /* ($mybb->input['action'] == 'editdraft' || $mybb->input['action'] == 'savedraft') && */
-			$thread = get_thread(intval($mybb->input['tid']));
-			if($thread['visible'] != -2 || $thread['uid'] != $mybb->user['uid']) // ensure that this is, indeed, a draft
-				unset($GLOBALS['thread']);
-		}
-		
-		// permissions check - ideally, should get MyBB to do this, but I see no easy way to implement it unfortunately
-		if($mybb->user['suspendposting'] == 1) return;
-		if($thread['fid']) $fid = $thread['fid'];
-		else $fid = intval($mybb->input['fid']);
-		$forum = get_forum($fid);
-		if(!$forum['fid'] || $forum['open'] == 0 || $forum['type'] != 'f') return;
-		
-		$forumpermissions = forum_permissions($fid);
-		if($forumpermissions['canview'] == 0) return;
-		if($current_page == 'newthread.php' && $forumpermissions['canpostthreads'] == 0) return;
-		elseif($current_page == 'editpost.php') {
-			if(!is_moderator($fid, 'caneditposts')) {
-				if($thread['closed'] == 1 || $forumpermissions['caneditposts'] == 0 || $mybb->user['uid'] != $thread['uid']) return;
-				if($mybb->settings['edittimelimit'] != 0 && $thread['dateline'] < (TIME_NOW-($mybb->settings['edittimelimit']*60))) return;
-			}
-		}
-		
-		if(!verify_post_check($mybb->input['my_post_key'], true)) return;
-		check_forum_password($forum['fid']);
-		
+	if($mybb->request_method == 'post' && ($current_page == 'newthread.php' || ($current_page == 'editpost.php' && $mybb->input['action'] != 'deletepost'))) {
 		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
-		xthreads_upload_attachments();
+		xthreads_upload_attachments_global();
 	}
 }
 
@@ -644,17 +604,7 @@ function eval_str(&$s, $vars=array()) {
 	return eval('return "'.$s.'";');
 }
 
-// wildcard match like the *nix filesystem
-function xthreads_wildcard_match($str, $wc) {
-	return preg_match('~'.strtr(preg_quote($wc, '~'), array(
-		'\\*' => '.*',
-		'\\?' => '.',
-		'\\[' => '[', // hmm, won't properly match groups; [a-z] format should still work
-		'\\]' => ']',
-	)).'~i', $str);
-}
-
-
+// gets array of all usergroups user is in, stored in keys
 function &xthreads_get_user_usergroups(&$user) {
 	if($user['additionalgroups'])
 		$ug = array_flip(explode(',', $user['additionalgroups']));

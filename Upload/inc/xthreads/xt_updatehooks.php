@@ -700,6 +700,51 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 	}
 }
 
+function xthreads_upload_attachments_global() {
+	//if($mybb->request_method == 'post' && ($current_page == 'newthread.php' || ($current_page == 'editpost.php' && $mybb->input['action'] != 'deletepost'))
+	// the above line is always checked and true
+	global $mybb, $current_page, $thread;
+	if($current_page == 'editpost.php') {
+		// check if first post
+		$pid = intval($mybb->input['pid']);
+		if(!$thread) {
+			$post = get_post($pid);
+			if(!empty($post))
+				$thread = get_thread($post['tid']);
+			if(empty($thread)) return;
+			$pid = $post['pid'];
+		}
+		if($thread['firstpost'] != $pid)
+			return;
+	} elseif($mybb->input['tid']) { /* ($mybb->input['action'] == 'editdraft' || $mybb->input['action'] == 'savedraft') && */
+		$thread = get_thread(intval($mybb->input['tid']));
+		if($thread['visible'] != -2 || $thread['uid'] != $mybb->user['uid']) // ensure that this is, indeed, a draft
+			unset($GLOBALS['thread']);
+	}
+	
+	// permissions check - ideally, should get MyBB to do this, but I see no easy way to implement it unfortunately
+	if($mybb->user['suspendposting'] == 1) return;
+	if($thread['fid']) $fid = $thread['fid'];
+	else $fid = intval($mybb->input['fid']);
+	$forum = get_forum($fid);
+	if(!$forum['fid'] || $forum['open'] == 0 || $forum['type'] != 'f') return;
+	
+	$forumpermissions = forum_permissions($fid);
+	if($forumpermissions['canview'] == 0) return;
+	if($current_page == 'newthread.php' && $forumpermissions['canpostthreads'] == 0) return;
+	elseif($current_page == 'editpost.php') {
+		if(!is_moderator($fid, 'caneditposts')) {
+			if($thread['closed'] == 1 || $forumpermissions['caneditposts'] == 0 || $mybb->user['uid'] != $thread['uid']) return;
+			if($mybb->settings['edittimelimit'] != 0 && $thread['dateline'] < (TIME_NOW-($mybb->settings['edittimelimit']*60))) return;
+		}
+	}
+	
+	if(!verify_post_check($mybb->input['my_post_key'], true)) return;
+	check_forum_password($forum['fid']);
+	
+	xthreads_upload_attachments();
+}
+
 function xthreads_upload_attachments() {
 	global $xta_cache, $threadfield_cache, $mybb, $db, $lang, $fid;
 	
