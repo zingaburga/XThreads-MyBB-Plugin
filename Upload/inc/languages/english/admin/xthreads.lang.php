@@ -203,7 +203,7 @@ $l['xthreads_opts'] = 'XThreads Options <span style="font-size: smaller;">(note 
 $l['xthreads_tplprefix'] = 'Template Prefix';
 $l['xthreads_tplprefix_desc'] = 'A template prefix allows you to use different templates for this forum.  For example, if you choose a prefix of <em>myforum_</em>, you could make a template named <em>myforum_header</em> and it will replace the <em>header</em> template for this forum.
 <br /><!-- more -->
-Multiple prefixes can be defined, separated by commas - XThreads will attempt to find a template using one of the prefixes in the order defined
+This field supports variables and conditionals - do note that these are evaluated quite early in the script (for caching reasons) before many variables get set.  Multiple prefixes can be defined, separated by commas - XThreads will attempt to find a template using one of the prefixes in the order defined, <em>after</em> variables and conditionals are evaluated.
 <br />This effect also applies to the <em>search_results_posts_post</em> and <em>search_results_threads_thread</em> templates, as well as the various <em>forumbit_</em>* and <em>portal_announcement</em>* templates.  Note that, for these special cases (excluding <em>forumbit_*</em> templates), multiple template prefixes will not be searched - only the first prefix will be used.';
 $l['xthreads_langprefix'] = 'Language File Prefix';
 $l['xthreads_langprefix_desc'] = 'This option will load additional language files based on the prefixes supplied (comma delimited if you wish to supply more than one prefix).

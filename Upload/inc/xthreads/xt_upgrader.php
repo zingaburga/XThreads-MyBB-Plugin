@@ -120,6 +120,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
 		`datatype` tinyint(3) not null default '.XTHREADS_DATATYPE_TEXT.'
 	)');
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` text not null');
 	
 	xthreads_buildtfcache();
 	

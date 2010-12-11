@@ -630,9 +630,11 @@ function xthreads_buildcache_forums() {
 	global $cache;
 	$forums = $cache->read('forums');
 	$xtforums = array();
+	$empty = array(); // just an empty array for references
 	foreach($forums as $fid => $forum) {
 		$xtforum = array();
-		//$xtforum['tplprefix'] = explode(',', $forum['xthreads_tplprefix']);
+		$xtforum['tplprefix'] = $forum['xthreads_tplprefix'];
+		xthreads_sanitize_eval($xtforum['tplprefix'], $empty);
 		$xtforum['langprefix'] = explode(',', $forum['xthreads_langprefix']);
 		
 		$xtforum['defaultfilter_tf'] = array();
@@ -659,7 +661,6 @@ function xthreads_buildcache_forums() {
 					$filter_array =& $xtforum['defaultfilter_tf'];
 			}
 			if(isset($filter_array)) {
-				$empty = array();
 				xthreads_sanitize_eval($v, $empty);
 				if($isarray)
 					$filter_array[$n][] = $v;
@@ -668,7 +669,7 @@ function xthreads_buildcache_forums() {
 			}
 		}
 		
-		unset($forum['xthreads_langprefix'], $forum['xthreads_defaultfilter']);
+		unset($forum['xthreads_tplprefix'], $forum['xthreads_langprefix'], $forum['xthreads_defaultfilter']);
 		if(!empty($xtforum)) $xtforums[$fid] = $xtforum;
 	}
 	
@@ -818,7 +819,7 @@ function xthreads_admin_forumedit() {
 		
 		
 		$inputs = array(
-			'tplprefix' => 'text_box',
+			'tplprefix' => 'text_area',
 			'langprefix' => 'text_box',
 			'grouping' => 'text_box',
 			'firstpostattop' => 'yes_no_radio',
@@ -845,8 +846,13 @@ function xthreads_admin_forumedit() {
 			}
 			elseif($type == 'text_box')
 				$html = $form->generate_text_box($name, $data[$name], array('id' => $name));
-			elseif($type == 'text_area')
-				$html = $form->generate_text_area($name, $data[$name], array('id' => $name));
+			elseif($type == 'text_area') {
+				if($name == 'xthreads_tplprefix')
+					// do a 2 row textarea
+					$html = $form->generate_text_area($name, $data[$name], array('id' => $name, 'rows' => 2));
+				else
+					$html = $form->generate_text_area($name, $data[$name], array('id' => $name));
+			}
 			elseif($type == 'yes_no_radio')
 				$html = $form->generate_yes_no_radio($name, ($data[$name] ? '1':'0'), true);
 			//elseif($type == 'check_box')
@@ -948,7 +954,7 @@ function xthreads_admin_forumcommit() {
 	*/
 	
 	$db->update_query('forums', array(
-		'xthreads_tplprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_tplprefix'])))),
+		'xthreads_tplprefix' => $db->escape_string($mybb->input['xthreads_tplprefix']),
 		'xthreads_langprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_langprefix'])))),
 		'xthreads_grouping' => intval(trim($mybb->input['xthreads_grouping'])),
 		'xthreads_firstpostattop' => intval(trim($mybb->input['xthreads_firstpostattop'])),

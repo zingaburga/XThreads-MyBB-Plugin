@@ -30,15 +30,13 @@ function xthreads_search() {
 		');
 	}
 	
-	global $cache, $plugins;
+	global $cache, $plugins, $forum_tpl_prefixes;
 	// cache templates - we've got not much choice but to cache all forums with custom template prefixes
 	$cachelist = '';
-	$forumcache = $cache->read('forums');
-	foreach($forumcache as &$forum) {
-		if($forum['xthreads_tplprefix'] !== '') {
-			list($pref) = explode(',', $forum['xthreads_tplprefix']);
-			$cachelist .= ($cachelist?',':'').$pref.'search_results_posts_post,'.$pref.'search_results_threads_thread';
-		}
+	$forum_tpl_prefixes = xthreads_get_tplprefixes(true);
+	foreach($forum_tpl_prefixes as $pref) {
+		$pref = $db->escape_string($pref);
+		$cachelist .= ($cachelist?',':'').$pref.'search_results_posts_post,'.$pref.'search_results_threads_thread';
 	}
 	if($cachelist !== '') $GLOBALS['templates']->cache($cachelist);
 	
@@ -74,8 +72,7 @@ function xthreads_search_result(&$data, $tplname) {
 		}
 	}
 	// template hack
-	list($pref) = explode(',', $forumcache[$data['fid']]['xthreads_tplprefix']);
-	xthreads_portalsearch_cache_hack($pref, $tplname);
+	xthreads_portalsearch_cache_hack($GLOBALS['forum_tpl_prefixes'][$data['fid']], $tplname);
 }
 function xthreads_search_result_post() {
 	xthreads_search_result($GLOBALS['post'], 'search_results_posts_post');
@@ -154,19 +151,17 @@ function xthreads_portal() {
 function xthreads_portal_announcement() {
 	static $doneinit = false;
 	
-	global $threadfield_cache, $announcement, $threadfields;
+	global $threadfield_cache, $announcement, $threadfields, $forum_tpl_prefixes;
 	
 	if(!$doneinit) {
 		$doneinit = true;
 		
-		global $forum;
 		// cache templates
 		$cachelist = '';
-		foreach($forum as &$f) {
-			if($f['xthreads_tplprefix'] !== '') {
-				list($pref) = explode(',', $f['xthreads_tplprefix']);
-				$cachelist .= ($cachelist?',':'').$pref.'portal_announcement,'.$pref.'portal_announcement_numcomments,'.$pref.'portal_announcement_numcomments_no';
-			}
+		$forum_tpl_prefixes = xthreads_get_tplprefixes(true, $GLOBALS['forum']);
+		foreach($forum_tpl_prefixes as $pref) {
+			$pref = $GLOBALS['db']->escape_string($pref);
+			$cachelist .= ($cachelist?',':'').$pref.'portal_announcement,'.$pref.'portal_announcement_numcomments,'.$pref.'portal_announcement_numcomments_no';
 		}
 		if($cachelist !== '') $GLOBALS['templates']->cache($cachelist);
 	}
@@ -194,7 +189,7 @@ function xthreads_portal_announcement() {
 		}
 	}
 	// template hack
-	list($tplprefix) = explode(',', $GLOBALS['forum'][$announcement['fid']]['xthreads_tplprefix']);
+	$tplprefix =& $forum_tpl_prefixes[$announcement['fid']];
 	xthreads_portalsearch_cache_hack($tplprefix, 'portal_announcement');
 	if(!xthreads_empty($tplprefix)) {
 		$tplname = $tplprefix.'portal_announcement_numcomments'.($announcement['replies']?'':'_no');
@@ -208,7 +203,7 @@ function xthreads_portal_announcement() {
 
 function xthreads_portalsearch_cache_hack($tplpref, $tplname) {
 	$tplcache =& $GLOBALS['templates']->cache;
-	if($tplpref !== '' && isset($tplcache[$tplpref.$tplname])) {
+	if(!xthreads_empty($tplpref) && isset($tplcache[$tplpref.$tplname])) {
 		if(!isset($tplcache['backup_'.$tplname.'_backup__']))
 			$tplcache['backup_'.$tplname.'_backup__'] = $tplcache[$tplname];
 		$tplcache[$tplname] =& $tplcache[$tplpref.$tplname];
@@ -216,7 +211,6 @@ function xthreads_portalsearch_cache_hack($tplpref, $tplname) {
 	elseif(isset($tplcache['backup_'.$tplname.'_backup__']))
 		$tplcache[$tplname] =& $tplcache['backup_'.$tplname.'_backup__'];
 }
-
 
 function xthreads_wol_patch(&$a) {
 	global $lang, $thread_fid_map;

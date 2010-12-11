@@ -564,10 +564,12 @@ function xthreads_tpl_forumbits(&$forum) {
 	
 	if(!$done) {
 		$done = true;
-		$templates->cache['__null__forumbit_depth1_cat'] = $templates->cache['__null__forumbit_depth2_cat'] = $templates->cache['__null__forumbit_depth2_forum'] = $templates->cache['__null__forumbit_depth3'] = ' ';
 		function xthreads_tpl_forumbits_tplget(&$obj, &$forum, $title, $eslashes, $htmlcomments) {
-			if($forum['xthreads_tplprefix'] !== '')
-				foreach(explode(',', $forum['xthreads_tplprefix']) as $p)
+			if($forum['xthreads_hideforum'])
+				return 'return "";';
+			global $forum_tpl_prefixes;
+			if(!empty($forum_tpl_prefixes[$forum['fid']]))
+				foreach($forum_tpl_prefixes[$forum['fid']] as &$p)
 					if(isset($obj->cache[$p.$title]) && !isset($obj->non_existant_templates[$p.$title])) {
 						$title = $p.$title;
 						break;
@@ -584,38 +586,38 @@ function xthreads_tpl_forumbits(&$forum) {
 				return parent::get($title, $eslashes, $htmlcomments);
 			}
 		');
-		$templates->xthreads_forumbits_curforum = array();
 	}
-	$templates->xthreads_forumbits_curforum[] =& $forum;
-	if($forum['xthreads_hideforum']) $forum['xthreads_tplprefix'] = '__null__';
 	
 	xthreads_set_threadforum_urlvars('forum', $forum['fid']);
 }
 
 function xthreads_global_forumbits_tpl() {
-	global $templatelist;
+	global $templatelist, $forum_tpl_prefixes;
 	// see what custom prefixes we have and cache
 	// I'm lazy, so just grab all the forum prefixes even if unneeded (in practice, difficult to filter out things properly anyway)
 	// TODO: perhaps make this smarter??
-	$prefixes = array();
-	foreach($GLOBALS['cache']->read('forums') as $f) {
-		if($f['xthreads_tplprefix'] !== '' && !$f['xthreads_hideforum']) {
-			$prefixes = array_merge($prefixes, explode(',', $f['xthreads_tplprefix']));
-		}
-	}
-	if(!empty($prefixes)) {
-		foreach($prefixes as &$pre) {
-			$templatelist .= ','.
-				$pre.'forumbit_depth1_cat,'.
-				$pre.'forumbit_depth1_cat_subforum,'.
-				$pre.'forumbit_depth1_forum_lastpost,'.
-				$pre.'forumbit_depth2_cat,'.
-				$pre.'forumbit_depth2_forum,'.
-				$pre.'forumbit_depth2_forum_lastpost,'.
-				$pre.'forumbit_depth3,'.
-				$pre.'forumbit_depth3_statusicon,'.
-				$pre.'forumbit_moderators,'.
-				$pre.'forumbit_subforums';
+	$forum_tpl_prefixes = xthreads_get_tplprefixes(false);
+	if(!empty($forum_tpl_prefixes)) {
+		$forumcache = $GLOBALS['cache']->read('forums');
+		foreach($forum_tpl_prefixes as $fid => &$prefs) {
+			if($forumcache[$fid]['xthreads_hideforum']) continue;
+			foreach($prefs as $pre) {
+				// essentially, we need to escape this to prevent SQL injection
+				// however, if we've taken over control over the templates engine, it'll already do the escaping for us, so don't double-escape
+				if(!isset($GLOBALS['templates']->xt_tpl_prefix))
+					$pre = $GLOBALS['db']->escape_string($pre);
+				$templatelist .= ','.
+					$pre.'forumbit_depth1_cat,'.
+					$pre.'forumbit_depth1_cat_subforum,'.
+					$pre.'forumbit_depth1_forum_lastpost,'.
+					$pre.'forumbit_depth2_cat,'.
+					$pre.'forumbit_depth2_forum,'.
+					$pre.'forumbit_depth2_forum_lastpost,'.
+					$pre.'forumbit_depth3,'.
+					$pre.'forumbit_depth3_statusicon,'.
+					$pre.'forumbit_moderators,'.
+					$pre.'forumbit_subforums';
+			}
 		}
 	}
 }

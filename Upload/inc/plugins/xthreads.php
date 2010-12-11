@@ -210,7 +210,7 @@ function xthreads_global() {
 		$xtforums = $cache->read('xt_forums');
 		$xtforum = $xtforums[$fid];
 		unset($xtforums);
-		if($forum['xthreads_tplprefix'] !== '') {
+		if($xtforum['tplprefix'] !== '') {
 			// this forum has a custom tpl prefix, hook into templates system
 			control_object($templates, '
 				function cache($templates) {
@@ -223,7 +223,7 @@ function xthreads_global() {
 				}
 			');
 			$templates->non_existant_templates = array();
-			$templates->xt_tpl_prefix = explode(',', $forum['xthreads_tplprefix']);
+			$templates->xt_tpl_prefix = array_map('trim', explode(',', eval_str($xtforum['tplprefix'])));
 		}
 		if(!empty($xtforum['langprefix'])) {
 			global $lang;
@@ -354,6 +354,25 @@ function xthreads_tpl_get(&$obj, &$t) {
 		$obj->cache($t);
 	}
 }
+
+// get template prefixes for multiple forums
+// returns an array (forums) of arrays (prefixes), unless $firstonly is true, in which case, it's an array of strings (first prefix)
+function &xthreads_get_tplprefixes($firstonly=true, &$forums=null) {
+	global $xtforums;
+	if(!is_array($xtforums))
+		$xtforums = $GLOBALS['cache']->read('xt_forums');
+	$ret = array();
+	foreach($xtforums as $fid => &$xtforum) {
+		if($xtforum['tplprefix'] === '') continue;
+		if($forums && !isset($forums[$fid])) continue;
+		$ret[$fid] = array_map('trim', explode(',', eval_str($xtforum['tplprefix'])));
+		if($firstonly) {
+			$ret[$fid] = $ret[$fid][0];
+		}
+	}
+	return $ret;
+}
+
 
 function xthreads_archive_breadcrumb() {
 	if($GLOBALS['action'] == 'thread' || $GLOBALS['action'] == 'forum')
