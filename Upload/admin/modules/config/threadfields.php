@@ -91,9 +91,9 @@ if($mybb->input['action'] == 'inline')
 {
 	$del = $delattach = $order = array();
 	$alterkeys = '';
-	$query = $db->simple_select('threadfields', 'field,allowfilter,inputtype');
+	$query = $db->simple_select('threadfields', 'field,allowfilter,inputtype,disporder');
 	while($field = $db->fetch_array($query)) {
-		$efn = $db->escape_string($field['field']);
+		$efn = $db->escape_string($field['field']); //paranoia
 		if($mybb->input['threadfields_mark_'.$field['field']]) {
 			$del[] = $efn;
 			if($field['allowfilter'])
@@ -102,8 +102,11 @@ if($mybb->input['action'] == 'inline')
 				$delattach[] = $efn;
 		}
 		elseif(!xthreads_empty($mybb->input['threadfields_order_'.$field['field']])) {
-			//$order[$field['field']] = intval($mybb->input['threadfields_order_'.$field['field']]);
-			$db->update_query('threadfields', array('disporder' => intval($mybb->input['threadfields_order_'.$field['field']])), 'field="'.$efn.'"');
+			$new_order = intval($mybb->input['threadfields_order_'.$field['field']]);
+			if($field['disporder'] != $new_order) {
+				$order[] = $efn;
+				$db->update_query('threadfields', array('disporder' => $new_order), 'field="'.$efn.'"');
+			}
 		}
 	}
 	$db->free_result($query);
@@ -119,11 +122,18 @@ if($mybb->input['action'] == 'inline')
 			xthreads_rm_attach_query('field IN ("'.implode('","', $delattach).'")');
 		}
 	}
-	// Log admin action
-	log_admin_action();
-	xthreads_buildtfcache();
-	flash_message($lang->success_threadfield_inline, 'success');
-	admin_redirect(xthreads_admin_url('config', 'threadfields'));
+	
+	if(empty($order) && empty($del)) {
+		// nothing updated
+		flash_message($lang->failed_threadfield_inline, 'error');
+		admin_redirect(xthreads_admin_url('config', 'threadfields'));
+	} else {
+		// Log admin action
+		log_admin_action(implode(', ', $order), implode(', ', $del));
+		xthreads_buildtfcache();
+		flash_message($lang->success_threadfield_inline, 'success');
+		admin_redirect(xthreads_admin_url('config', 'threadfields'));
+	}
 }
 
 if(!$mybb->input['action'])
@@ -622,7 +632,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			}
 			
 			// Log admin action
-			log_admin_action($new_tf['field'], $mybb->input['title']);
+			log_admin_action($new_tf['field'], htmlspecialchars_uni($mybb->input['title']));
 
 			xthreads_buildtfcache();
 

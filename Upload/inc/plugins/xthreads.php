@@ -357,7 +357,7 @@ function xthreads_tpl_get(&$obj, &$t) {
 
 // get template prefixes for multiple forums
 // returns an array (forums) of arrays (prefixes), unless $firstonly is true, in which case, it's an array of strings (first prefix)
-function &xthreads_get_tplprefixes($firstonly=true, &$forums=null) {
+function &xthreads_get_tplprefixes($firstonly=false, &$forums=null) {
 	global $xtforums;
 	if(!is_array($xtforums))
 		$xtforums = $GLOBALS['cache']->read('xt_forums');

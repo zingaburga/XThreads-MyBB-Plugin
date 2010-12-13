@@ -29,6 +29,8 @@ $plugins->add_hook('admin_config_mod_tools_edit_post_tool_commit', 'xthreads_adm
 
 $plugins->add_hook('admin_tools_recount_rebuild_start', 'xthreads_admin_rebuildthumbs');
 
+$plugins->add_hook('admin_tools_get_admin_log_action', 'xthreads_admin_logs');
+
 $plugins->add_hook('admin_load', 'xthreads_vercheck');
 if($GLOBALS['run_module'] == 'config' && $GLOBALS['action_file'] == 'plugins.php') {
 	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
@@ -1103,6 +1105,25 @@ function xthreads_admin_rebuildthumbs_show() {
 
 function xthreads_admin_url($cat, $module) {
 	return 'index.php?module='.$cat.($GLOBALS['mybb']->version_code >= 1500 ? '-':'/').$module;
+}
+
+function xthreads_admin_logs(&$a) {
+	global $lang;
+	if(!$lang->admin_log_config_threadfields_inline) $lang->load('xthreads');
+	if($a['lang_string'] == 'admin_log_config_threadfields_inline') {
+		// update non-legacy (>= v1.40) items
+		$data =& $a['logitem']['data'];
+		if($data[0] || $data[1]) {
+			$lang->__xthreads_log_inline = '';
+			if($data[0])
+				$lang->__xthreads_log_inline = $lang->sprintf($lang->admin_log_config_threadfields_inline_order, $data[0]);
+			if($data[1])
+				$lang->__xthreads_log_inline .= ($lang->__xthreads_log_inline ? $lang->admin_log_config_threadfields_inline_delim : '') . $lang->sprintf($lang->admin_log_config_threadfields_inline_del, $data[1]);
+			
+			$data = array();
+			$a['lang_string'] = '__xthreads_log_inline';
+		}
+	}
 }
 
 function xthreads_vercheck() {

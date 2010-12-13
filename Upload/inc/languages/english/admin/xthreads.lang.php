@@ -177,6 +177,7 @@ $l['threadfields_advanced_opts'] = 'Advanced Options';
 $l['success_updated_threadfield'] = 'Custom thread field updated successfully';
 $l['success_added_threadfield'] = 'Custom thread field added successfully';
 $l['success_threadfield_inline'] = 'Changes committed successfully';
+$l['failed_threadfield_inline'] = 'No changes were performed';
 
 $l['error_missing_title'] = 'Missing field title.';
 $l['error_missing_field'] = 'Missing field key.';
@@ -282,6 +283,12 @@ $l['xthreads_confirm_uninstall'] = 'Are you sure you wish to uninstall XThreads?
 $l['xthreads_orphancleanup_name'] = 'Prune XThreads Orphaned Attachments';
 $l['xthreads_orphancleanup_desc'] = 'Removes orphaned XThreads attachments more than one day old.  Orphaned attachments usually arise when users upload an attachment but decide not to post the thread.  Note that this does not affect MyBB\'s attachment system in any way.';
 
+$l['admin_log_config_threadfields_add'] = 'Added thread field <em>{1}</em> ({2})';
+$l['admin_log_config_threadfields_edit'] = 'Modified thread field <em>{1}</em> ({2})';
+$l['admin_log_config_threadfields_inline'] = 'Deleted or changed orderings of selected thread field(s)'; // legacy note
+$l['admin_log_config_threadfields_inline_del'] = 'Deleted thread field(s): {1}';
+$l['admin_log_config_threadfields_inline_order'] = 'Updated display order of thread field(s): {1}';
+$l['admin_log_config_threadfields_inline_delim'] = '; ';
 
 $l['xthreads_do_upgrade'] = 'You have uploaded a newer version of XThreads, v{1}, however the version currently installed is v{2}.  You may need to perform an upgrade for your board to be functional - to perform an upgrade, please <a href="{3}">click here</a>.';
 $l['xthreads_upgrade_done'] = 'XThreads successfully upgraded.';
