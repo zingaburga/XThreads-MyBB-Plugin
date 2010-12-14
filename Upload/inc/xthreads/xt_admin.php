@@ -637,7 +637,8 @@ function xthreads_buildcache_forums() {
 		$xtforum = array();
 		$xtforum['tplprefix'] = $forum['xthreads_tplprefix'];
 		xthreads_sanitize_eval($xtforum['tplprefix'], $empty);
-		$xtforum['langprefix'] = explode(',', $forum['xthreads_langprefix']);
+		$xtforum['langprefix'] = $forum['xthreads_langprefix'];
+		xthreads_sanitize_eval($xtforum['langprefix'], $empty);
 		
 		$xtforum['defaultfilter_tf'] = array();
 		$xtforum['defaultfilter_xt'] = array();
@@ -821,8 +822,8 @@ function xthreads_admin_forumedit() {
 		
 		
 		$inputs = array(
-			'tplprefix' => 'text_area',
-			'langprefix' => 'text_box',
+			'tplprefix' => 'text_area_2',
+			'langprefix' => 'text_area_2',
 			'grouping' => 'text_box',
 			'firstpostattop' => 'yes_no_radio',
 			'inlinesearch' => 'yes_no_radio',
@@ -848,13 +849,11 @@ function xthreads_admin_forumedit() {
 			}
 			elseif($type == 'text_box')
 				$html = $form->generate_text_box($name, $data[$name], array('id' => $name));
-			elseif($type == 'text_area') {
-				if($name == 'xthreads_tplprefix')
-					// do a 2 row textarea
-					$html = $form->generate_text_area($name, $data[$name], array('id' => $name, 'rows' => 2));
-				else
-					$html = $form->generate_text_area($name, $data[$name], array('id' => $name));
-			}
+			elseif($type == 'text_area_2')
+				// do a 2 row textarea
+				$html = $form->generate_text_area($name, $data[$name], array('id' => $name, 'rows' => 2));
+			elseif($type == 'text_area')
+				$html = $form->generate_text_area($name, $data[$name], array('id' => $name));
 			elseif($type == 'yes_no_radio')
 				$html = $form->generate_yes_no_radio($name, ($data[$name] ? '1':'0'), true);
 			//elseif($type == 'check_box')
@@ -957,7 +956,7 @@ function xthreads_admin_forumcommit() {
 	
 	$db->update_query('forums', array(
 		'xthreads_tplprefix' => $db->escape_string($mybb->input['xthreads_tplprefix']),
-		'xthreads_langprefix' => $db->escape_string(implode(',', array_map('trim', explode(',', $mybb->input['xthreads_langprefix'])))),
+		'xthreads_langprefix' => $db->escape_string($mybb->input['xthreads_langprefix']),
 		'xthreads_grouping' => intval(trim($mybb->input['xthreads_grouping'])),
 		'xthreads_firstpostattop' => intval(trim($mybb->input['xthreads_firstpostattop'])),
 		'xthreads_allow_blankmsg' => intval(trim($mybb->input['xthreads_allow_blankmsg'])),

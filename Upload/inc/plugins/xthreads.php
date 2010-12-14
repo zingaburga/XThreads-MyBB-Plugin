@@ -225,7 +225,7 @@ function xthreads_global() {
 			$templates->non_existant_templates = array();
 			$templates->xt_tpl_prefix = array_map('trim', explode(',', eval_str($xtforum['tplprefix'])));
 		}
-		if(!empty($xtforum['langprefix'])) {
+		if(!xthreads_empty($xtforum['langprefix'])) {
 			global $lang;
 			// this forum has a custom lang prefix, hook into lang system
 			control_object($lang, '
@@ -239,9 +239,9 @@ function xthreads_global() {
 					return parent::load($section, $isdatahandler, $supress_error);
 				}
 			');
-			$lang->__xt_lang_prefix = $xtforum['langprefix'];
+			$lang->__xt_lang_prefix = array_map('trim', explode(',', eval_str($xtforum['langprefix'])));
 			// load global lang messages that we couldn't before
-			foreach($lang->__xt_lang_prefix as &$pref) if($pref !== '') {
+			foreach($lang->__xt_lang_prefix as &$pref) if($pref !== '' && preg_match('~^[a-zA-Z0-9_]+$~', $pref)) {
 				$lang->__xt_load($pref.'global', false, true);
 				$lang->__xt_load($pref.'messages', false, true);
 			}

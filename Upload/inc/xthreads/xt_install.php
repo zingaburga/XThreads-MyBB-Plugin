@@ -121,7 +121,7 @@ function xthreads_install() {
 		'firstpostattop' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'inlinesearch' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'tplprefix' => 'text not null',
-		'langprefix' => 'varchar(255) not null default \'\'',
+		'langprefix' => 'text not null',
 		'allow_blankmsg' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'nostatcount' => xthreads_db_fielddef('tinyint').' not null default 0',
 		'threadsperpage' => xthreads_db_fielddef('smallint').' not null default 0',
