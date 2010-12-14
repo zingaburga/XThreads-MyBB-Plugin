@@ -519,12 +519,16 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			$tf_fw_cols = ' cols="'.intval($tf['fieldwidth']).'"';
 		}
 		
+		$using_default = false;
 		if(!isset($data)) // no threadfield data set for this thread
 			$defval = '';
 		elseif(isset($data[$k]))
 			$defval = $data[$k];
-		else
-			$defval = $tf['defaultval'];
+		else {
+			$defval = eval_str($tf['defaultval']);
+			// we don't want $defval to be an array for textual inputs, so split it later
+			$using_default = true;
+		}
 		
 		unset($defvals);
 		switch($tf['inputtype']) {
@@ -533,6 +537,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			case XTHREADS_INPUT_CHECKBOX:
 				$vals = array_map('htmlspecialchars_uni', $tf['vallist']);
 				if(!xthreads_empty($tf['multival'])) {
+					if($using_default)
+						$defval = explode("\n", str_replace("\r", '', $defval));
 					if(is_array($defval))
 						$defvals =& $defval;
 					else
