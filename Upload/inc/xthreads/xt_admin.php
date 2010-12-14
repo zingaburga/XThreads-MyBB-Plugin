@@ -437,6 +437,8 @@ ENDSTR
 function xthreads_buildtfcache() {
 	global $db, $cache;
 	
+	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
+	
 	$sanitise_fields_normal = array('VALUE', 'RAWVALUE');
 	$sanitise_fields_file = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
 	$sanitise_fields_none = array();
@@ -588,57 +590,19 @@ function xthreads_buildtfcache() {
 	$db->free_result($query);
 	$cache->update('threadfields', $cd);
 }
-// sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
-function xthreads_sanitize_eval(&$s, &$fields) {
-	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
-	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
-	$s = preg_replace(
-		array(
-			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((-\\>[a-zA-Z_][a-zA-Z_0-9]*|\\[(\'|\\\\"|)[a-zA-Z_ 0-9]+\\4\\])*)\\}~e',
-			'~\{\\\\\$forumurl\\\\\$\}~i',
-			'~\{\\\\\$forumurl\?\}~i',
-			'~\{\\\\\$threadurl\\\\\$\}~i',
-			'~\{\\\\\$threadurl\?\}~i'
-		), array(
-			'\'{$GLOBALS[\\\'$1\\\']\'.strtr(\'$2\', array(\'\\\\\\\\\\\'\' => \'\\\'\', \'\\\\\\\\\\\\\\\\"\' => \'\\\'\')).\'}\'', // rewrite double-quote to single quotes, cos it's faster
-			'{$GLOBALS[\'forumurl\']}',
-			'{$GLOBALS[\'forumurl_q\']}',
-			'{$GLOBALS[\'threadurl\']}',
-			'{$GLOBALS[\'threadurl_q\']}',
-		), strtr($s, array('\\' => '\\\\', '$' => '\\$', '"' => '\\"'))
-	);
-	
-	// replace conditionals
-	@include_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
-	if(function_exists('xthreads_phptpl_parsetpl')) {
-		xthreads_phptpl_parsetpl($s, $fields);
-	}
-	
-	// replace value tokens at the end
-	$do_value_repl = false;
-	$tr = array();
-	foreach($fields as &$f) {
-		$tr['{'.$f.'}'] = '{$vars[\''.$f.'\']}';
-		
-		if($f == 'VALUE') $do_value_repl = true;
-	}
-	if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '{$vars[\'$1$\'][$2]}', $s);
-	$s = strtr($s, $tr);
-}
-
 
 // build xt_forums cache from forums cache (also reduce size of forums cache)
 function xthreads_buildcache_forums() {
 	global $cache;
 	$forums = $cache->read('forums');
 	$xtforums = array();
-	$empty = array(); // just an empty array for references
+	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
 	foreach($forums as $fid => $forum) {
 		$xtforum = array();
 		$xtforum['tplprefix'] = $forum['xthreads_tplprefix'];
-		xthreads_sanitize_eval($xtforum['tplprefix'], $empty);
+		xthreads_sanitize_eval($xtforum['tplprefix']);
 		$xtforum['langprefix'] = $forum['xthreads_langprefix'];
-		xthreads_sanitize_eval($xtforum['langprefix'], $empty);
+		xthreads_sanitize_eval($xtforum['langprefix']);
 		
 		$xtforum['defaultfilter_tf'] = array();
 		$xtforum['defaultfilter_xt'] = array();
@@ -664,7 +628,7 @@ function xthreads_buildcache_forums() {
 					$filter_array =& $xtforum['defaultfilter_tf'];
 			}
 			if(isset($filter_array)) {
-				xthreads_sanitize_eval($v, $empty);
+				xthreads_sanitize_eval($v);
 				if($isarray)
 					$filter_array[$n][] = $v;
 				else

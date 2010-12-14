@@ -684,6 +684,17 @@ function xthreads_phptpl_iif($condition, $true)
 	return (isset($args[$i-1]) ? $args[$i-1] : '');
 }
 
+function xthreads_phptpl_eval_expr($s) {
+	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
+	return eval('return ('.xthreads_phptpl_expr_parse($s).');');
+}
+
+function xthreads_phptpl_eval_text($s) {
+	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
+	xthreads_sanitize_eval($s);
+	return eval_str($s);
+}
+
 // it's annoying that '0' is considered "empty" by PHP...
 function xthreads_empty(&$v) {
 	return empty($v) && $v !== '0';

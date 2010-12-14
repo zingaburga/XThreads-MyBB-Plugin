@@ -321,6 +321,9 @@ user_permissions
 usergroup_permissions
 validate_email_format
 
+;PHPTPL functions
+xthreads_phptpl_eval_expr
+xthreads_phptpl_eval_text
 
 ;mb_*
 ;ob_* ?
