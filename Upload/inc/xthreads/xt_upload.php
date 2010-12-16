@@ -30,6 +30,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	global $db, $mybb, $lang;
 	
 	$posthash = $db->escape_string($mybb->input['posthash']);
+	$tid = intval($tid); // may be possible for this to be null, if so, change to 0
 	$path = $mybb->settings['uploadspath'].'/xthreads_ul/';
 	
 	if(!$lang->xthreads_threadfield_attacherror) $lang->load('xthreads');
@@ -178,7 +179,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 			$md5check = ' OR md5hash="'.$db->escape_string($file_md5).'"';
 		else
 			$md5check = '';
-		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid', 'filename="'.$db->escape_string($attachment['name']).'" AND (md5hash IS NULL'.$md5check.') AND filesize='.$file_size.' AND (posthash="'.$posthash.'" OR (tid='.intval($tid).' AND tid!=0))'));
+		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid', 'filename="'.$db->escape_string($attachment['name']).'" AND (md5hash IS NULL'.$md5check.') AND filesize='.$file_size.' AND (posthash="'.$posthash.'" OR (tid='.$tid.' AND tid!=0))'));
 		if($prevattach['aid']) {
 			@unlink($attachment['tmp_name']);
 			// TODO: maybe return aid instead?
