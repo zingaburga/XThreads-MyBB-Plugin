@@ -240,10 +240,10 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	$attacharray = array(
 		'posthash' => $posthash,
 		'tid' => $tid,
-		'uid' => $mybb->user['uid'],
+		'uid' => intval($mybb->user['uid']),
 		'field' => $tf['field'],
-		'filename' => $attachment['name'],
-		'uploadmime' => $attachment['type'],
+		'filename' => strval($attachment['name']),
+		'uploadmime' => strval($attachment['type']),
 		'filesize' => $file_size,
 		'attachname' => $basename,
 		'indir' => $month_dir,

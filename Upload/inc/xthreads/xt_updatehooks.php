@@ -1195,8 +1195,9 @@ function xthreads_moderation_custom() {
 			$updates = array();
 			foreach($edits as $n => $v) {
 				// TODO: support variables/conditionals?
-				$v = trim(xthreads_str_ireplace(array('{value}', '{tid}'), array($thread[$n], $thread['tid']), $v));
-				if($v != $thread[$n]) {
+				if($v !== null)
+					$v = trim(xthreads_str_ireplace(array('{value}', '{tid}'), array($thread[$n], $thread['tid']), $v));
+				if($v !== $thread[$n]) {
 					// we'll do some basic validation for multival fields
 					if(!xthreads_empty($threadfields[$n]['multival'])) {
 						$d = "\n";
