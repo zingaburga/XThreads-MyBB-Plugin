@@ -1155,9 +1155,14 @@ function xthreads_moderation_custom() {
 	');
 	
 	// this function is executed before copy thread (yay!)
-	function xthreads_moderation_custom_do(&$tids, &$editstr) {
+	function xthreads_moderation_custom_do(&$tids, $editstr) {
 		$edits = array();
-		$threadfields = xthreads_gettfcache(); // grab all threadfields
+		
+		// caching stuff
+		static $threadfields = null;
+		if(!isset($threadfields))
+			$threadfields = xthreads_gettfcache(); // grab all threadfields
+		
 		foreach(explode("\n", str_replace("\r",'',$editstr)) as $editline) {
 			$editline = trim($editline);
 			list($n, $v) = explode('=', $editline, 2);

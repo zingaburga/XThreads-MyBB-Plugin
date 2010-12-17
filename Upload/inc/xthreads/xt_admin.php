@@ -584,6 +584,9 @@ function xthreads_buildtfcache() {
 	}
 	$db->free_result($query);
 	$cache->update('threadfields', $cd);
+	
+	// rebuild the forums cache too - there's a dependency because this can affect the filtering etc allows
+	xthreads_buildcache_forums();
 }
 
 // build xt_forums cache from forums cache (also reduce size of forums cache)

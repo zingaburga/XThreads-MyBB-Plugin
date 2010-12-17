@@ -117,13 +117,6 @@ if(XTHREADS_INSTALLED_VERSION < 1.33) {
 }
 
 if(XTHREADS_INSTALLED_VERSION < 1.40) {
-	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
-		`datatype` tinyint(3) not null default '.XTHREADS_DATATYPE_TEXT.'
-	)');
-	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` text not null');
-	
-	xthreads_buildtfcache();
-	
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_langprefix` text not null');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_defaultfilter` text not null');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_addfiltenable`');
@@ -133,7 +126,12 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	}
 	$cache->update_forums();
 	
-	xthreads_buildcache_forums();
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
+		`datatype` tinyint(3) not null default '.XTHREADS_DATATYPE_TEXT.'
+	)');
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` text not null');
+	
+	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 
 return true;
