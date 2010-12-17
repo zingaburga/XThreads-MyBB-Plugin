@@ -73,6 +73,9 @@
    <ul>
     <li><strong>title</strong> - displays the title given to the thread field</li>
     <li><strong>desc</strong> - displays the description given to the thread field</li>
+    <li><strong>num_values</strong> - displays the number of values stored in this thread - will always be <code>1</code> for non-multivalued fields, or <code>0</code> if no value entered</li>
+    <li><strong>num_values_friendly</strong> - formatted version of the above</li>
+    <li><strong>value</strong> - reference back to <code>$threadfields['<em>key</em>']</code>, unless the field is a multivalued field, in which case, this is an array of each individual value</li>
    </ul>
    
    <h2>Additional Template Variables</h2>

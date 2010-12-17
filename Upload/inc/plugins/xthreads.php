@@ -466,9 +466,11 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 			$threadfields_x = array();
 		$sx =& $threadfields_x[$tfinfo['field']];
 	} // otherwise, let the following line dummy the variable
-	$sx = array('title' => htmlspecialchars_uni($tfinfo['title']), 'desc' => htmlspecialchars_uni($tfinfo['desc']));
+	$sx = array('title' => htmlspecialchars_uni($tfinfo['title']), 'desc' => htmlspecialchars_uni($tfinfo['desc']), 'num_values' => 1, 'num_values_friendly' => my_number_format(1));
 	
 	if($s === '' || $s === null) { // won't catch file inputs, as they are integer type
+		$sx['num_values'] = 0;
+		$sx['num_values_friendly'] = my_number_format(0);
 		if(!xthreads_empty($tfinfo['blankval'])) $s = eval_str($tfinfo['blankval']);
 		return;
 	}
@@ -535,13 +537,19 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 					$vars[strtoupper($k)] =& $v;
 			$s['value'] = eval_str($dispfmt, $vars);
 		}
+		$sx['value'] =& $s;
 	}
 	else {
 		if(!xthreads_empty($tfinfo['multival'])) {
 			$vals = explode("\n", str_replace("\r", '', $s));
+			$i = 0;
+			$sx['value'] = array();
 			foreach($vals as &$v) {
 				xthreads_sanitize_disp_field($v, $tfinfo, $tfinfo['dispitemformat'], $mename);
+				$sx['value'][$i++] = $v;
 			}
+			$sx['num_values'] = $i;
+			$sx['num_values_friendly'] = my_number_format($i);
 			$s = implode($tfinfo['multival'], $vals);
 			if(!xthreads_empty($dispfmt)) {
 				$s = eval_str($dispfmt, array('VALUE' => $s));
@@ -549,6 +557,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 		}
 		else {
 			xthreads_sanitize_disp_field($s, $tfinfo, $dispfmt, $mename);
+			$sx['value'] =& $s;
 		}
 		
 	}
