@@ -132,6 +132,12 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` text not null');
 	
 	xthreads_buildtfcache(); // will also update XThreads forum cache
+	
+	// not _really_ necessary for XThreads, but we'll do it anyway for any
+	// plugin which decides to rely on the 'uid' column of xtattachments table
+	// and so that we don't end up stabbing ourselves in the foot later on
+	$db->write_query('UPDATE `'.$db->table_prefix.'xtattachments` a INNER JOIN `'.$db->table_prefix.'threads` t ON a.tid=t.tid SET a.uid=t.uid WHERE a.uid=0 AND a.tid!=0');
+	// obviously not entirely accurate (thread starter may not be uploader of file) but better than leaving it as a '0'
 }
 
 return true;
