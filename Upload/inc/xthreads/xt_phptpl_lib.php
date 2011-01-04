@@ -39,10 +39,10 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array())
 
 
 function xthreads_phptpl_expr_parse_fixstr_simple($match) {
-	return preg_replace('~\$GLOBALS\\[\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\]~', '$GLOBALS[$1]', $match[0]);
+	return preg_replace('~\$GLOBALS\\[\\s*\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\s*\\]~', '$GLOBALS[$1]', $match[0]);
 }
 function xthreads_phptpl_expr_parse_fixstr_complex($match) {
-	return preg_replace('~(?<!\{)\$GLOBALS\\[\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\]((-\\>[a-zA-Z_][a-zA-Z_0-9]*|\\[([\'"])?[a-zA-Z_ 0-9]+\\4\\])*)~', '{$0}', $match[0]);
+	return preg_replace('~(?<!\{)\$GLOBALS\\[\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\](((?:-\\>|\\:\\:)[a-zA-Z_][a-zA-Z_0-9]*|\\[\s*([\'"])?[ a-zA-Z_ 0-9]+\\4\s*\\])*)~', '{$0}', $match[0]);
 }
 
 function _xthreads_phptpl_expr_parse($str, $fields=array()) {
@@ -184,7 +184,7 @@ function xthreads_sanitize_eval(&$s, $fields=array()) {
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
 	$s = preg_replace(
 		array(
-			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((-\\>[a-zA-Z_][a-zA-Z_0-9]*|\\[(\'|\\\\"|)[a-zA-Z_ 0-9]+\\4\\])*)\\}~e',
+			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)(((?:-\\>|\\:\\:)[a-zA-Z_][a-zA-Z_0-9]*|\\[\s*(\'|\\\\"|)[ a-zA-Z_ 0-9]+\\4\s*\\])*)\\}~e',
 			'~\{\\\\\$forumurl\\\\\$\}~i',
 			'~\{\\\\\$forumurl\?\}~i',
 			'~\{\\\\\$threadurl\\\\\$\}~i',
