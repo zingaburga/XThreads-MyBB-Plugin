@@ -90,6 +90,7 @@ function xthreads_search_result_thread() {
 			$pagesstop = ceil($thread['posts'] / $forum['xthreads_postsperpage']);
 			if($pagesstop != $thread['pages']) { // small optimisation
 				$thread['pages'] = $pagestop;
+				$threadpages = $morelink = '';
 				if($pagestop > 4) {
 					$pagesstop = 4;
 					$page_link = get_thread_link($thread['tid'], $thread['pages']).$highlight;
