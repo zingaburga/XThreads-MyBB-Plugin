@@ -32,7 +32,7 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array())
 	
 	if(xthreads_allow_php()) {
 		$find[] = '#\<\?.+?(\?\>)#se';
-		$repl[] = 'xthreads_phptpl_evalphp(\'$0\', \'$1\')';
+		$repl[] = 'xthreads_phptpl_evalphp(\'$0\', \'$1\', $fields)';
 	}
 	$ourtpl = preg_replace($find, $repl, $ourtpl);
 }
@@ -142,10 +142,10 @@ function &xthreads_phptpl_get_allowed_funcs()
 	return $allowed_funcs;
 }
 
-function xthreads_phptpl_evalphp($str, $end)
+function xthreads_phptpl_evalphp($str, $end, $fields=array())
 {
 	return '".eval(\'ob_start(); ?>'
-		.strtr(xthreads_phptpl_expr_parse($str), array('\'' => '\\\'', '\\' => '\\\\'))
+		.strtr(_xthreads_phptpl_expr_parse($str, $fields), array('\'' => '\\\'', '\\' => '\\\\'))
 		.($end?'':'?>').'<?php return ob_get_clean();\')."';
 }
 
