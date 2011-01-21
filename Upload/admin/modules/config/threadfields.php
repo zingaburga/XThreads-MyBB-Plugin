@@ -310,7 +310,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$mybb->input['fileimage_maxdim'] = strtolower(trim($mybb->input['fileimage_maxdim']));
 		if(!xthreads_empty($mybb->input['formatmap'])) {
 			$fm = array();
-			foreach(explode("\n", str_replace("\r", '', $mybb->input['formatmap'])) as $map) {
+			$fms = str_replace("{\n}", "\r", str_replace("\r", '', $mybb->input['formatmap']));
+			foreach(explode("\n", $fms) as $map) {
+				$map = str_replace("\r", "\n", $map);
 				$p = strpos($map, '{|}');
 				if(!$p) continue; // can't be zero index either - blank display format used for that
 				$fmkey = substr($map, 0, $p);
@@ -1059,9 +1061,10 @@ xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_chan
 var fmtMapEditor = new xtOFEditor();
 fmtMapEditor.src = $('formatmap');
 fmtMapEditor.loadFunc = function(s) {
-	var a = s.replace("\r", "").split("\n");
+	var a = s.replace("\r", "").replace("{\n}", "\r").split("\n");
 	var data = [];
 	for(var i=0; i<a.length; i++) {
+		a[i] = a[i].replace("\r", "\n");
 		var p = a[i].indexOf("{|}");
 		if(p < 0) continue;
 		data.push([ a[i].substring(0, p), a[i].substring(p+3) ]);
@@ -1071,7 +1074,7 @@ fmtMapEditor.loadFunc = function(s) {
 fmtMapEditor.saveFunc = function(a) {
 	var ret = "";
 	for(var i=0; i<a.length; i++) {
-		ret += a[i].join("{|}") + "\n";
+		ret += a[i].join("{|}").replace("\n", "{\n}") + "\n";
 	}
 	return ret;
 };
