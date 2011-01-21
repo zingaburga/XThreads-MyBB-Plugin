@@ -713,24 +713,32 @@ function xthreads_admin_forumedit() {
 		global $view_options, $default_sort_by, $form, $forum_data;
 		if(count($view_options) != 3) return; // back out if things seem a little odd
 		// add our custom sortby options here
+		if($GLOBALS['mybb']->version_code >= 1500)
+			$default_sort_by['prefix'] = $lang->xthreads_sort_ext_prefix;
+		$default_sort_by['icon'] = $lang->xthreads_sort_ext_icon;
+		$default_sort_by['lastposter'] = $lang->xthreads_sort_ext_lastposter;
+		$default_sort_by['numratings'] = $lang->xthreads_sort_ext_numratings;
+		$default_sort_by['attachmentcount'] = $lang->xthreads_sort_ext_attachmentcount;
+		
 		$threadfield_cache = xthreads_gettfcache($forum_data['fid'] ? $forum_data['fid'] : -1);
-		if(empty($threadfield_cache)) return;
-		$changed = false;
-		foreach($threadfield_cache as &$tf) {
-			if($tf['inputtype'] == XTHREADS_INPUT_TEXTAREA) continue;
-			if(!$lang->xthreads_sort_threadfield_prefix) $lang->load('xthreads');
-			
-			$changed = true;
-			$itemname = $lang->xthreads_sort_threadfield_prefix.$tf['title'];
-			if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
-				foreach(array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads') as $tfan) {
-					$langvar = 'xthreads_sort_'.$tfan;
-					$default_sort_by['tfa_'.$tfan.'_'.$tf['field']] = $itemname.' ['.$lang->$langvar.']';
-				}
-			} else
-				$default_sort_by['tf_'.$tf['field']] = $itemname;
+		if(!empty($threadfield_cache)) {
+			//$changed = false;
+			foreach($threadfield_cache as &$tf) {
+				if($tf['inputtype'] == XTHREADS_INPUT_TEXTAREA) continue;
+				if(!$lang->xthreads_sort_threadfield_prefix) $lang->load('xthreads');
+				
+				//$changed = true;
+				$itemname = $lang->xthreads_sort_threadfield_prefix.$tf['title'];
+				if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
+					foreach(array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads') as $tfan) {
+						$langvar = 'xthreads_sort_'.$tfan;
+						$default_sort_by['tfa_'.$tfan.'_'.$tf['field']] = $itemname.' ['.$lang->$langvar.']';
+					}
+				} else
+					$default_sort_by['tf_'.$tf['field']] = $itemname;
+			}
 		}
-		if(!$changed) return;
+		//if(!$changed) return;
 		
 		// regenerate stuff
 		$view_options[1] = $lang->default_sort_by."<br />\n".$form->generate_select_box('defaultsortby', $default_sort_by, $forum_data['defaultsortby'], array('checked' => $forum_data['defaultsortby'], 'id' => 'defaultsortby'));

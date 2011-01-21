@@ -264,6 +264,11 @@ $l['xthreads_sort_filesize'] = 'file size';
 $l['xthreads_sort_uploadtime'] = 'upload time';
 $l['xthreads_sort_updatetime'] = 'update time';
 $l['xthreads_sort_downloads'] = 'no. downloads';
+$l['xthreads_sort_ext_prefix'] = 'Thread Prefix (not display style)';
+$l['xthreads_sort_ext_icon'] = 'Thread Icon (icon ID)';
+$l['xthreads_sort_ext_lastposter'] = 'Last Poster (username)';
+$l['xthreads_sort_ext_numratings'] = 'Number of Ratings';
+$l['xthreads_sort_ext_attachmentcount'] = 'Number of Attachments in Thread';
 
 $l['xthreads_modtool_edit_threadfields'] = 'Modify Custom Thread Field(s)';
 $l['xthreads_modtool_edit_threadfields_desc'] = 'You can use this option to modify XThreads\' custom thread fields when this tool is executed.  Specify each thread field you wish to edit on a separate line and assign to the thread field\'s key using = (equals sign).  The current value (before setting) of the field can be denoted by <code>{VALUE}</code>.  NOTE: values here are NOT validated, and permissions are NOT checked!  Example:

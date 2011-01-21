@@ -26,8 +26,8 @@ function xthreads_forumdisplay() {
 				$fields .= ', tfd.`'.$v['field'].'` AS `xthreads_'.$v['field'].'`';
 			
 			$sortjoin = '';
-			if(!empty($xthreads_forum_sort) && isset($xthreads_forum_sort['sortxtacol']))
-				$sortjoin = ' LEFT JOIN '.$db->table_prefix.'xtattachments xta ON tfd.`'.$xthreads_forum_sort['sortxtacol'].'`=xta.aid';
+			if(!empty($xthreads_forum_sort) && isset($xthreads_forum_sort['sortjoin']))
+				$sortjoin = ' LEFT JOIN '.$db->table_prefix.$xthreads_forum_sort['sortjoin'];
 			
 			$s = strtr($s, array(
 				'SELECT t.*, ' => 'SELECT t.*'.$fields.', ',
@@ -101,7 +101,7 @@ function xthreads_forumdisplay() {
 							't' => 'xta.',
 							'sortby' => $mybb->input['sortby'],
 							'sortfield' => '`'.$field.'`',
-							'sortxtacol' => $n
+							'sortjoin' => 'xtattachments xta ON tfd.`'.$n.'`=xta.aid'
 						);
 					}
 				}
@@ -111,6 +111,36 @@ function xthreads_forumdisplay() {
 		// Quick Thread integration
 		if(function_exists('quickthread_run'))
 			xthreads_forumdisplay_quickthread();
+	}
+	if(!isset($xthreads_forum_sort) && $mybb->input['sortby'] && in_array($mybb->input['sortby'], array('prefix', 'icon', 'lastposter', 'numratings', 'attachmentcount'))) {
+		global $xthreads_forum_sort;
+		switch($mybb->input['sortby']) {
+			case 'prefix': if($mybb->version_code >= 1500) {
+				$xthreads_forum_sort = array(
+					't' => 'p.',
+					'sortby' => $mybb->input['sortby'],
+					'sortfield' => $mybb->input['sortby']
+				);
+			} break;
+			case 'icon':
+				$xthreads_forum_sort = array(
+					't' => 't.',
+					'sortby' => $mybb->input['sortby'],
+					'sortfield' => $mybb->input['sortby'],
+					// we can't use the sort join because that assumes that thread fields exist... :/
+					//'sortfield' => 'name',
+					//'sortjoin' => 'icons i ON t.icon=i.iid'
+				);
+				break;
+			case 'lastposter':
+			case 'numratings':
+			case 'attachmentcount':
+				$xthreads_forum_sort = array(
+					't' => 't.',
+					'sortby' => $mybb->input['sortby'],
+					'sortfield' => $mybb->input['sortby']
+				);
+		}
 	}
 	$xt_filters = array();
 	//$enabled_xtf = explode(',', $forum['xthreads_addfiltenable']);
