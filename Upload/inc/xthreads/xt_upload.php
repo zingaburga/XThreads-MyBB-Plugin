@@ -111,7 +111,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	
 	if($tf['fileimage']) {
 		$img_dimensions = @getimagesize($attachment['tmp_name']);
-		if(empty($img_dimensions) || !in_array($img_dimensions[2], array(IMAGETYPE_GIF,IMAGETYPE_JPEG,IMAGETYPE_PNG,IMAGETYPE_WBMP))) {
+		if(empty($img_dimensions) || !in_array($img_dimensions[2], array(IMAGETYPE_GIF,IMAGETYPE_JPEG,IMAGETYPE_PNG))) {
 			@unlink($attachment['tmp_name']);
 			return array('error' => $lang->error_attachtype);
 		}
@@ -127,6 +127,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 				return array('error' => $lang->error_attachtype);
 			}
 		}
+		/*
 		// convert WBMP -> PNG (saves space, bandwidth and works with MyBB's thumbnail generator)
 		// unfortunately, although this is nice, we have a problem of filetype checking etc...
 		if($img_dimensions[2] == IMAGETYPE_WBMP) {
@@ -153,6 +154,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 				return array('error' => $lang->error_attachtype);
 			}
 		}
+		*/
 		// we won't actually bother checking MIME types - not a big issue anyway
 	}
 	
