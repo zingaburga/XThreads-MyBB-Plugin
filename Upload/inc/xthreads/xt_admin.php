@@ -288,6 +288,7 @@ return array(
 			'XTHREADS_UPLOAD_EXPIRE_TIME' => 3*3600,
 			'XTHREADS_UPLOAD_LARGEFILE_SIZE' => 10*1048576,
 			'XTHREADS_ALLOW_PHP_THREADFIELDS' => 2,
+			'XTHREADS_ATTACH_USE_QUERY' => 0,
 			
 			'COUNT_DOWNLOADS' => 2,
 			'CACHE_TIME' => 604800,
@@ -295,6 +296,10 @@ return array(
 		) as $name => $val) {
 			if(defined($name))
 				$val = constant($name);
+			// support legacy query string definition
+			elseif($name == 'XTHREADS_ATTACH_USE_QUERY' && defined('ARCHIVE_QUERY_STRINGS') && ARCHIVE_QUERY_STRINGS)
+				$val = ARCHIVE_QUERY_STRINGS;
+			
 			if(is_string($val))
 				// don't need to escape ' characters as we don't use them here
 				$val = '\''.$val.'\'';
@@ -380,7 +385,14 @@ $defines[XTHREADS_UPLOAD_LARGEFILE_SIZE] // in bytes, default is 10MB
 
 /**********  XTHREADS ATTACH DOWNLOAD  **********/
 /**
- * the following controls whether you wish to count downloads
+ * Use query string format in XThreads attachment URLs;
+ * This should only be enabled (set to 1) if your host doesn't support the standard URL format
+ */
+$defines[XTHREADS_ATTACH_USE_QUERY]
+
+
+/**
+ * The following controls whether you wish to count downloads
  *  if 0: is disabled, and the DB won't be queried at all
  *  if 1: downloads = number of requests made (MyBB style attachment download counting)
  *  if 2 [default]: will count download only when entire file is sent; in the case of segmented download, will only count if last segment is requested (and completed)
@@ -390,7 +402,7 @@ $defines[COUNT_DOWNLOADS]
 
 
 /**
- * the following is just the default cache expiry period for downloads, specified in seconds
+ * The following is just the default cache expiry period for downloads, specified in seconds
  * as XThreads changes the URL if a file is modified, you can safely use a very long cache expiry time
  * the default value is 1 week (604800 seconds)
  */
