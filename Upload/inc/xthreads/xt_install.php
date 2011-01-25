@@ -220,8 +220,17 @@ function xthreads_undo_template_edits() {
 	find_replace_templatesets('newthread', '#\\{\\$extra_threadfields\\}#', '', 0);
 	find_replace_templatesets('showthread', '#\\{\\$first_post\\}#', '', 0);
 	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$nullthreads\\}#', '', 0);
+	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$sort_by_prefix\\}#', '', 0);
+	find_replace_templatesets('forumdisplay_threadlist', "#\n?".preg_replace("#[\t\r\n]+#", '\\s*', preg_quote(XTHREADS_INSTALL_TPLADD_EXTRASORT))."#", '', 0);
+	find_replace_templatesets('forumdisplay_threadlist_sortrating', '#\\<option value="numratings" \\{\\$sortsel\\[\'numratings\'\\]\\}\\>\\{\\$lang-\\>sort_by_numratings\\}\\</option\\>#', '', 0);
 }
 
+define('XTHREADS_INSTALL_TPLADD_EXTRASORT', str_replace("\r", '',
+'					<option value="icon" {$sortsel[\'icon\']}>{$lang->sort_by_icon}</option>
+					<option value="lastposter" {$sortsel[\'lastposter\']}>{$lang->sort_by_lastposter}</option>
+					<option value="attachmentcount" {$sortsel[\'attachmentcount\']}>{$lang->sort_by_attachmentcount}</option>
+					{$xthreads_extra_sorting}'
+));
 function xthreads_activate() {
 	global $db, $cache, $lang;
 	$db->insert_query('tasks', array(
@@ -250,6 +259,9 @@ function xthreads_activate() {
 	find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
 	find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
 	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
+	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
+	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
+	find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
 }
 function xthreads_deactivate() {
 	global $db, $cache;

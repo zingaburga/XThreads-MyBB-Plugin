@@ -30,5 +30,11 @@ $l['xthreads_val_blank'] = '(Not set)';
 $l['xthreads_no_prefix'] = 'No Prefix';
 $l['xthreads_no_icon'] = 'No Icon';
 
+$l['sort_by_prefix'] = 'Sort by: Thread Prefix';
+$l['sort_by_icon'] = 'Sort by: Thread Icon';
+$l['sort_by_lastposter'] = 'Sort by: Last Post Author';
+$l['sort_by_numratings'] = 'Sort by: Number of Ratings';
+$l['sort_by_attachmentcount'] = 'Sort by: Number of Attachments';
+
 $l['task_xtaorphan_run_cleaned'] = 'The XThreads Orphaned Attachment Cleanup task successfully ran, and removed {1} orphaned file(s).';
 $l['task_xtaorphan_run_done'] = 'The XThreads Orphaned Attachment Cleanup task successfully ran, but nothing was cleaned.';

@@ -138,6 +138,14 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	// and so that we don't end up stabbing ourselves in the foot later on
 	$db->write_query('UPDATE `'.$db->table_prefix.'xtattachments` a INNER JOIN `'.$db->table_prefix.'threads` t ON a.tid=t.tid SET a.uid=t.uid WHERE a.uid=0 AND a.tid!=0');
 	// obviously not entirely accurate (thread starter may not be uploader of file) but better than leaving it as a '0'
+	
+	
+	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+	require_once MYBB_ROOT.'inc/xthreads/xt_install.php'; // grab XTHREADS_INSTALL_TPLADD_EXTRASORT define
+	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
+	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
+	find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
+	
 }
 
 return true;

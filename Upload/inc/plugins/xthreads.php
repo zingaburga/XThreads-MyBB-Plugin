@@ -7,6 +7,7 @@ define('XTHREADS_VERSION', 1.40);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
 
 
+$plugins->add_hook('forumdisplay_start', 'xthreads_forumdisplay_sortlang');
 $plugins->add_hook('forumdisplay_thread', 'xthreads_format_thread_date');
 $plugins->add_hook('showthread_start', 'xthreads_format_thread_date');
 $plugins->add_hook('global_start', 'xthreads_global', 5); // load this before most plugins so that they will utilise our modified system
@@ -113,6 +114,18 @@ function &xthreads_gettfcache($fid=0) {
 	return $tf;
 }
 
+
+// the additional sorter options - need to load lang file
+function xthreads_forumdisplay_sortlang() {
+	global $lang;
+	if(!$lang->sort_by_icon)
+		$lang->load('xthreads');
+	// prefix sort
+	if($GLOBALS['mybb']->version_code >= 1500) {
+		$tpl =& $GLOBALS['templates']->cache['forumdisplay_threadlist'];
+		$tpl = str_replace('{$xthreads_extra_sorting}', '<option value="prefix" {$sortsel[\'prefix\']}>{$lang->sort_by_prefix}</option>', $tpl);
+	}
+}
 
 function xthreads_format_thread_date() {
 	// since this is so useful, always format start time/date for each thread
