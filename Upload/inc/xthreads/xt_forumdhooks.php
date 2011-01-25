@@ -59,7 +59,7 @@ function xthreads_forumdisplay() {
 				$filters_set[$n]['active'] = array('' => 'filtertf_active');
 			}
 			
-			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n])) {
+			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n]) && xthreads_user_in_groups($tf['viewable_gids'])) {
 				$tf_filters[$n] = $mybb->input['filtertf_'.$n];
 				$use_default_filter = false;
 				// ignore blank inputs
@@ -80,7 +80,7 @@ function xthreads_forumdisplay() {
 			global $xthreads_forum_sort;
 			if(substr($mybb->input['sortby'], 0, 3) == 'tf_') {
 				$n = substr($mybb->input['sortby'], 3);
-				if(isset($threadfield_cache[$n]) && xthreads_empty($threadfield_cache[$n]['multival']) && $threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_FILE) {
+				if(isset($threadfield_cache[$n]) && xthreads_empty($threadfield_cache[$n]['multival']) && $threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_FILE && xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
 					if($threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_TEXTAREA) { // also disallow sorting by textarea inputs
 						$xthreads_forum_sort = array(
 							't' => 'tfd.',
@@ -96,7 +96,7 @@ function xthreads_forumdisplay() {
 				if($p) {
 					$field = strtolower(substr($mybb->input['sortby'], 4, $p-4));
 					$n = substr($mybb->input['sortby'], $p+1);
-					if(isset($threadfield_cache[$n]) && $threadfield_cache[$n]['inputtype'] == XTHREADS_INPUT_FILE && in_array($field, array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads'))) {
+					if(isset($threadfield_cache[$n]) && $threadfield_cache[$n]['inputtype'] == XTHREADS_INPUT_FILE && xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids']) && in_array($field, array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads'))) {
 						$xthreads_forum_sort = array(
 							't' => 'xta.',
 							'sortby' => $mybb->input['sortby'],
@@ -163,6 +163,10 @@ function xthreads_forumdisplay() {
 	if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
 		$tf_filters = $xtforum['defaultfilter_tf'];
 		foreach($tf_filters as $n => &$filter) {
+			if(!xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
+				unset($tf_filters[$n]);
+				continue;
+			}
 			if(is_array($filter))
 				$filter = array_map('urldecode', array_map('eval_str', $filter));
 			else
