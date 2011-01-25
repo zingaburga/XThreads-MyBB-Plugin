@@ -1156,6 +1156,7 @@ function xthreads_moderation_custom() {
 		if(!isset($threadfields))
 			$threadfields = xthreads_gettfcache(); // grab all threadfields
 		
+		require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
 		foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r",'',$editstr))) as $editline) {
 			$editline = trim(str_replace("\r", "\n", $editline));
 			list($n, $v) = explode('=', $editline, 2);
@@ -1165,12 +1166,13 @@ function xthreads_moderation_custom() {
 			if(!isset($threadfields[$n]) || $threadfields[$n]['inputtype'] == XTHREADS_INPUT_FILE) continue;
 			// we don't do much validation here as we trust admins, right?
 			
+			// this is just a prelim check (speed optimisation) - we'll need to check this again after evaluating conditionals
 			$upperv = strtoupper($v);
-			if($upperv != '{VALUE}') {
-				if(($upperv === '' || $upperv == 'NULL' || $upperv == 'NUL') && $threadfields[$n]['datatype'] != XTHREADS_DATATYPE_TEXT)
-					$edits[$n] = null;
-				else
-					$edits[$n] = $v;
+			if(($upperv === '' || $upperv == 'NULL' || $upperv == 'NUL') && $threadfields[$n]['datatype'] != XTHREADS_DATATYPE_TEXT)
+				$edits[$n] = null;
+			else {
+				$edits[$n] = $v;
+				xthreads_sanitize_eval($edits[$n], array('VALUE', 'TID')));
 			}
 		}
 		if(empty($edits)) return;
@@ -1187,9 +1189,16 @@ function xthreads_moderation_custom() {
 		while($thread = $db->fetch_array($query)) {
 			$updates = array();
 			foreach($edits as $n => $v) {
-				// TODO: support variables/conditionals?
-				if($v !== null)
-					$v = trim(xthreads_str_ireplace(array('{value}', '{tid}'), array($thread[$n], $thread['tid']), $v));
+				if($v !== null) {
+					// TODO: allowing conditionals direct access to multivals?
+					$v = trim(eval_str($v, array('VALUE' => $thread[$n], 'TID' => $thread['tid'])));
+					if($threadfields[$n]['datatype'] != XTHREADS_DATATYPE_TEXT) {
+						$upperv = strtoupper($v);
+						if($upperv == '' || $upperv == 'NULL' || $upperv == 'NUL')
+							$v = null;
+						// TODO: intval/floatval here?
+					}
+				}
 				if($v !== $thread[$n]) {
 					// we'll do some basic validation for multival fields
 					if(!xthreads_empty($threadfields[$n]['multival'])) {
