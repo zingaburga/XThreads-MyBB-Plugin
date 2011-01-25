@@ -477,22 +477,12 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 	
 	$dispfmt = $tfinfo['dispformat'];
 	
-	global $mybb;
-	if(!empty($tfinfo['viewable_gids'])) {
-		$ingroups = xthreads_get_user_usergroups($mybb->user);
-		$viewable = false;
-		foreach($tfinfo['viewable_gids'] as $gid)
-			if(isset($ingroups[$gid])) {
-				$viewable = true;
-				break;
-			}
-		if(!$viewable) {
-			$dispfmt = $tfinfo['unviewableval'];
-		}
+	if(!xthreads_user_in_groups($tfinfo['viewable_gids'])) {
+		$dispfmt = $tfinfo['unviewableval'];
 	}
 	
 	if($tfinfo['inputtype'] == XTHREADS_INPUT_FILE || ($tfinfo['inputtype'] == XTHREADS_INPUT_FILE_URL && !preg_match('~^[a-z]+\://~i', $s))) {
-		global $xta_cache;
+		global $xta_cache, $mybb;
 		// attached file
 		if(!$s) {
 			$s = array();
@@ -640,6 +630,20 @@ function &xthreads_get_user_usergroups(&$user) {
 		$ug = array();
 	$ug[$user['usergroup']] = 1;
 	return $ug;
+}
+
+// determines whether current user is in a list of groups
+// empty gids list implies all usergroups (so will always return true if this is the case)
+function xthreads_user_in_groups(&$gids) {
+	if(empty($gids)) return true;
+	
+	static $ingroups = null;
+	if(!isset($ingroups))
+		$ingroups = xthreads_get_user_usergroups($GLOBALS['mybb']->user);
+	foreach($gids as $gid)
+		if(isset($ingroups[$gid]))
+			return true;
+	return false;
 }
 
 // note, $tf isn't used for loading xtattachment cache - it's only there to simplify loop-logic

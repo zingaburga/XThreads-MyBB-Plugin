@@ -10,15 +10,7 @@ if(!defined('IN_MYBB'))
 function xthreads_filter_tfeditable(&$tf, $fid=0) {
 	foreach($tf as $k => &$v) {
 		if(!empty($v['editable_gids'])) {
-			$editable = false;
-			if(!isset($ingroups))
-				$ingroups = xthreads_get_user_usergroups($GLOBALS['mybb']->user);
-			foreach($v['editable_gids'] as $gid)
-				if(isset($ingroups[$gid])) {
-					$editable = true;
-					break;
-				}
-			if(!$editable)
+			if(!xthreads_user_in_groups($v['editable_gids']))
 				unset($tf[$k]);
 		}
 		elseif(($v['editable'] == XTHREADS_EDITABLE_MOD && !is_moderator($fid)) ||
