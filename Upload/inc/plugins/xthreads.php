@@ -123,7 +123,7 @@ function xthreads_forumdisplay_sortlang() {
 	// prefix sort
 	if($GLOBALS['mybb']->version_code >= 1500) {
 		$tpl =& $GLOBALS['templates']->cache['forumdisplay_threadlist'];
-		$tpl = str_replace('{$xthreads_extra_sorting}', '<option value="prefix" {$sortsel[\'prefix\']}>{$lang->sort_by_prefix}</option>', $tpl);
+		$tpl = str_replace('{$sort_by_prefix}', '<option value="prefix" {$sortsel[\'prefix\']}>{$lang->sort_by_prefix}</option>', $tpl);
 	}
 }
 
@@ -568,8 +568,8 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 
 function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 	$raw_v = $v;
-	if(isset($tfinfo['formatmap']) && isset($tfinfo['formatmap'][$v])) {
-		$v = eval_str($tfinfo['formatmap'][$v]); // not sanitized obviously
+	if(isset($tfinfo['formatmap']) && isset($tfinfo['formatmap'][($vnl = str_replace("\r", '', $v))])) {
+		$v = eval_str($tfinfo['formatmap'][$vnl]); // not sanitized obviously
 	} else {
 		$type = $tfinfo['sanitize'];
 		$v = xthreads_sanitize_disp_string($type, $v, $parser_opts, $mename);
@@ -681,13 +681,16 @@ function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 	}
 }
 function xthreads_get_xta_url(&$xta) {
+	$delim = '/';
+	if(defined('XTHREADS_ATTACH_USE_QUERY') && XTHREADS_ATTACH_USE_QUERY == 2)
+		$delim = '|';
 	if(isset($xta['md5hash'])) {
 		$md5hash = $xta['md5hash'];
 		if(isset($md5hash{15}) && !isset($md5hash{16})) {
 			$md5hash = bin2hex($md5hash);
 		} elseif(!isset($md5hash{31}) || isset($md5hash{32}))
 			$md5hash = '';
-		if($md5hash) $md5hash .= '/';
+		if($md5hash) $md5hash .= $delim;
 	} else
 		$md5hash = '';
 	$updatetime = $xta['updatetime'];
@@ -699,7 +702,7 @@ function xthreads_get_xta_url(&$xta) {
 		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') === false) || stripos(SAPI_NAME, 'cgi') !== false || defined('XTHREADS_ATTACH_USE_QUERY') || defined('ARCHIVE_QUERY_STRINGS'));
 	// yes, above is copied from the archive
 	
-	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).'/'.$md5hash.rawurlencode($xta['filename']);
+	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).$delim.$md5hash.rawurlencode($xta['filename']);
 }
 
 function xthreads_phptpl_iif($condition, $true)

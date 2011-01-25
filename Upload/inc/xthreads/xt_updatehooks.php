@@ -1125,7 +1125,7 @@ function xthreads_moderation() {
 	control_object($GLOBALS['db'], '
 		function simple_select($table, $fields="*", $conditions="", $options=array()) {
 			static $done=false;
-			if(!$done && $table == "modtools" && $fields == "tid, type, name, description" && substr($conditions, 0, 4) == "tid=" && empty($options)) {
+			if(!$done && $table == "modtools" && substr($conditions, 0, 4) == "tid=" && empty($options)) {
 				$done = true;
 				xthreads_moderation_custom();
 			}
@@ -1172,7 +1172,7 @@ function xthreads_moderation_custom() {
 				$edits[$n] = null;
 			else {
 				$edits[$n] = $v;
-				xthreads_sanitize_eval($edits[$n], array('VALUE', 'TID')));
+				xthreads_sanitize_eval($edits[$n], array('VALUE', 'TID'));
 			}
 		}
 		if(empty($edits)) return;

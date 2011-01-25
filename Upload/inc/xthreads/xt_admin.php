@@ -298,7 +298,7 @@ return array(
 				$val = constant($name);
 			// support legacy query string definition
 			elseif($name == 'XTHREADS_ATTACH_USE_QUERY' && defined('ARCHIVE_QUERY_STRINGS') && ARCHIVE_QUERY_STRINGS)
-				$val = ARCHIVE_QUERY_STRINGS;
+				$val = 1;
 			
 			if(is_string($val))
 				// don't need to escape ' characters as we don't use them here
@@ -386,7 +386,10 @@ $defines[XTHREADS_UPLOAD_LARGEFILE_SIZE] // in bytes, default is 10MB
 /**********  XTHREADS ATTACH DOWNLOAD  **********/
 /**
  * Use query string format in XThreads attachment URLs;
- * This should only be enabled (set to 1) if your host doesn't support the standard URL format
+ * This should only be enabled if your host doesn't support the standard URL format
+ *  if 0: default URL structure (if Apache webserver running in CGI)
+ *  if 1: force use of query string (ex: xthreads_attach.php?file=xx_xxxx_xxxxxxxx/file.zip)
+ *  if 2: force use of query string and use non-slash delimeters (ex: xthreads_attach.php?file=xx_xxxx_xxxxxxxx|file.zip)
  */
 $defines[XTHREADS_ATTACH_USE_QUERY]
 
