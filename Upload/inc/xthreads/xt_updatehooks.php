@@ -1140,7 +1140,7 @@ function xthreads_moderation_custom() {
 	
 	control_object($GLOBALS['custommod'], '
 		function execute_thread_moderation($thread_options, $tids) {
-			if($thread_options[\'deletethread\'] != 1 && !xthreads_empty($thread_options[\'edit_threadfields\']))
+			if($thread_options[\'deletethread\'] != 1)
 				xthreads_moderation_custom_do($tids, $thread_options[\'edit_threadfields\']);
 			return parent::execute_thread_moderation($thread_options, $tids);
 		}
@@ -1148,6 +1148,7 @@ function xthreads_moderation_custom() {
 	
 	// this function is executed before copy thread (yay!)
 	function xthreads_moderation_custom_do(&$tids, $editstr) {
+		if(!$editstr) return;
 		$edits = array();
 		
 		// caching stuff
@@ -1155,8 +1156,8 @@ function xthreads_moderation_custom() {
 		if(!isset($threadfields))
 			$threadfields = xthreads_gettfcache(); // grab all threadfields
 		
-		foreach(explode("\n", str_replace("\r",'',$editstr)) as $editline) {
-			$editline = trim($editline);
+		foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r",'',$editstr))) as $editline) {
+			$editline = trim(str_replace("\r", "\n", $editline));
 			list($n, $v) = explode('=', $editline, 2);
 			if(!isset($v)) continue;
 			
