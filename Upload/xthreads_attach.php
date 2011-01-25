@@ -102,7 +102,7 @@ function do_processing() {
 	}
 
 	// maybe disallow \:*?"<>| in filenames, but then, they're valid *nix names...
-	if(!preg_match('~^/([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})/([0-9a-fA-F]{32}/)?([^/]*)(/thumb([0-9]+x[0-9]+))?$~', $_SERVER['PATH_INFO'], $match)) {
+	if(!preg_match('~^[/|]([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})[/|]([0-9a-fA-F]{32}[/|])?([^/]*)([/|]thumb([0-9]+x[0-9]+))?$~', $_SERVER['PATH_INFO'], $match)) {
 		header('HTTP/1.1 400 Bad Request');
 		die('Received malformed request string.');
 	}
