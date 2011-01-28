@@ -1076,10 +1076,10 @@ xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_chan
 var fmtMapEditor = new xtOFEditor();
 fmtMapEditor.src = $('formatmap');
 fmtMapEditor.loadFunc = function(s) {
-	var a = s.replace("\r", "").replace("{\n}", "\r").split("\n");
+	var a = s.replace(/\r/g, "").replace(/{\n}/g, "\r").split("\n");
 	var data = [];
 	for(var i=0; i<a.length; i++) {
-		a[i] = a[i].replace("\r", "\n");
+		a[i] = a[i].replace(/\r/g, "\n");
 		var p = a[i].indexOf("{|}");
 		if(p < 0) continue;
 		data.push([ a[i].substring(0, p), a[i].substring(p+3) ]);
@@ -1089,7 +1089,7 @@ fmtMapEditor.loadFunc = function(s) {
 fmtMapEditor.saveFunc = function(a) {
 	var ret = "";
 	for(var i=0; i<a.length; i++) {
-		ret += a[i].join("{|}").replace("\n", "{\n}") + "\n";
+		ret += a[i].join("{|}").replace(/\n/g, "{\n}") + "\n";
 	}
 	return ret;
 };
