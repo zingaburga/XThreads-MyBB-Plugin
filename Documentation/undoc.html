@@ -112,7 +112,14 @@
    <ul>
     <li><strong>editpost</strong> and <strong>newthread</strong> - adds <code>{$extra_threadfields}</code> to the template, which just displays any added thread fields</li>
     <li><strong>showthread</strong> - inserts <code>{$first_post}</code> before <code>{$posts}</code>; in XThreads, it's possible to customise the first post differently from other posts</li>
-    <li><strong>forumdisplay_threadlist</strong> - inserts <code>{$nullthreads}</code> after <code>{$threads}</code>; this is just for display &quot;null threads&quot; if thread grouping is used</li>
+    <li><strong>forumdisplay_threadlist</strong>
+     <ul>
+      <li>insert <code>{$nullthreads}</code> after <code>{$threads}</code>; this is just for display &quot;null threads&quot; if thread grouping is used</li>
+      <li>insert <code>{$sort_by_prefix}</code> before the first option in the sorter listbox - this is to give the option to sort threads by thread prefix</li>
+      <li>from the above, some other sorting options are added below the Sort By: Views option in the listbox</li>
+     </ul>
+    </li>
+    <li><strong>forumdisplay_threadlist_sortrating</strong> - similar to the above, inserts a sort by number of ratings option to the sorter listbox</li>
    </ul>
    <h3>Added Templates</h3>
    <ul>
