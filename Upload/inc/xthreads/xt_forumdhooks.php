@@ -599,8 +599,12 @@ function xthreads_tpl_forumbits(&$forum) {
 	if(!$done) {
 		$done = true;
 		function xthreads_tpl_forumbits_tplget(&$obj, &$forum, $title, $eslashes, $htmlcomments) {
-			if($forum['xthreads_hideforum'])
+			if($forum['xthreads_hideforum']) {
+				// alternate the bgcolor if applicable (so we get no net change)
+				if($title == 'forumbit_depth1_cat' || $title == 'forumbit_depth2_cat' || $title == 'forumbit_depth2_forum')
+					$GLOBALS['bgcolor'] = alt_trow();
 				return 'return "";';
+			}
 			global $forum_tpl_prefixes;
 			if(!empty($forum_tpl_prefixes[$forum['fid']]))
 				foreach($forum_tpl_prefixes[$forum['fid']] as &$p)
