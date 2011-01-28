@@ -19,13 +19,25 @@ xtOFEditor.prototype = {
 	winOpen: false,
 	unsaved: false,
 	oldFormSubmit: null,
+	selectFirstBox: false,
 	
 	initialize: function(){},
 	
 	init: function() {
-		this.src.readOnly = true;
 		this.src.onclick = this.open.bind(this);
-		//this.src.onkeypress = this.open.bind(this);
+		this.src.onkeypress = function(e) {
+			if(!e) return true; // weird IE bug
+			var key = 0;
+			if(window.event) // IE
+				key = e.keyCode;
+			else
+				key = e.which;
+			
+			if(key)
+				this.open();
+			return true;
+		}.bind(this);
+		this.src.readOnly = true;
 		
 		if(this.src.form && !window.opera) {
 			if(this.src.form.onsubmit)
@@ -141,6 +153,7 @@ xtOFEditor.prototype = {
 		frm.onsubmit = this.save.bind(this);
 		//this.window.onbeforeunload = this.beforeClose.bind(this);
 		Event.observe(this.window, "beforeunload", this.beforeClose.bind(this));
+		this.selectFirstBox = true; // select first textbox added
 		for(i=0; i<data.length; i++)
 			this.addEditLine(data[i]);
 		
@@ -170,6 +183,11 @@ xtOFEditor.prototype = {
 			var updatFunc = function() {
 				this.inputOnChange(input);
 			}.bind(this);
+			if(this.selectFirstBox) {
+				this.selectFirstBox = false;
+				input.focus();
+				input.select();
+			}
 			Event.observe(input, "change", updatFunc);
 		}
 	},
