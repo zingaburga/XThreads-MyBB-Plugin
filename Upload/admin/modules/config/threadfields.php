@@ -1043,6 +1043,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			$('textmask').value = textmaskMapping[maskName];
 		textmaskSelectUpdated();
 	};
+	$('textmask_select').onkeypress = function(e) {
+		$('textmask_select').onchange();
+		return true;
+	};
 	function textmaskSelectUpdated() {
 		var maskName = $('textmask_select').options[$('textmask_select').selectedIndex].value;
 		var d = (maskName != "custom");
