@@ -620,10 +620,10 @@ function xthreads_buildcache_forums() {
 		$xtforum['defaultfilter_tf'] = array();
 		$xtforum['defaultfilter_xt'] = array();
 		unset($threadfield_cache);
-		foreach(explode("\n", str_replace("\r", '', $forum['xthreads_defaultfilter'])) as $filter) {
-			list($n, $v) = explode('=', $filter, 2);
+		foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r", '', $forum['xthreads_defaultfilter']))) as $filter) {
+			list($n, $v) = explode('=', str_replace("\r", "\n", $filter), 2);
 			if(!isset($v)) continue;
-			$n = urldecode($n);
+			//$n = urldecode($n); // - this is not necessary, since $n can never contain newlines or = signs
 			$isarray = false;
 			if($p = strrpos($n, '[')) {
 				$n = substr($n, 0, $p);
@@ -878,6 +878,46 @@ function xthreads_admin_forumedit() {
 		$form_container->output_row($lang->xthreads_cust_wolstr, xthreads_admin_forumedit_get_description('xthreads_cust_wolstr'), '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$wolhtml.'</table>');
 		
 		$form_container->end();
+		
+		// Open Field Editor for the default filter thingy
+?><script type="text/javascript" src="jscripts/xtofedit.js?xtver=<?php echo XTHREADS_VERSION; ?>"></script>
+<script type="text/javascript">
+<!--
+xtOFEditorLang.confirmFormSubmit = "<?php echo $lang->xthreads_js_confirm_form_submit; ?>";
+xtOFEditorLang.windowTitle = "<?php echo $lang->xthreads_js_edit_value; ?>";
+xtOFEditorLang.saveButton = "<?php echo $lang->xthreads_js_save_changes; ?>";
+xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_changes; ?>";
+
+var defFltEditor = new xtOFEditor();
+defFltEditor.src = $('xthreads_defaultfilter');
+defFltEditor.loadFunc = function(s) {
+	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
+	var data = [];
+	for(var i=0; i<a.length; i++) {
+		a[i] = a[i].replace(/\r/g, "\n");
+		var p = a[i].indexOf("=");
+		if(p < 0) continue;
+		data.push([ a[i].substring(0, p), a[i].substring(p+1) ]);
+	}
+	return data;
+};
+defFltEditor.saveFunc = function(a) {
+	var ret = "";
+	for(var i=0; i<a.length; i++) {
+		ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
+	}
+	return ret;
+};
+defFltEditor.fields = [
+	{title: "<?php echo $lang->xthreads_js_defaultfilter_field; ?>", width: '45%', elemFunc: defFltEditor.textBoxFunc},
+	{title: "<?php echo $lang->xthreads_js_defaultfilter_value; ?>", width: '55%', elemFunc: defFltEditor.textAreaFunc}
+];
+
+defFltEditor.copyStyles=true;
+defFltEditor.init();
+
+//-->
+</script><?php
 	}
 }
 

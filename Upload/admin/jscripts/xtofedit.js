@@ -27,6 +27,7 @@ xtOFEditor.prototype = {
 		this.src.onclick = this.open.bind(this);
 		this.src.onkeypress = function(e) {
 			if(!e) return true; // weird IE bug
+			if(e.ctrlKey || e.altKey) return true;
 			var key = 0;
 			if(window.event) // IE
 				key = e.keyCode;
@@ -263,6 +264,14 @@ xtOFEditor.prototype = {
 		}
 	},
 	
+	// create a text box in a cell
+	textBoxFunc: function(c) {
+		var o = appendNewChild(c, "input");
+		o.type = "text";
+		o.className = "text_input";
+		o.style.width = '100%';
+		return o;
+	},
 	// create a text area in a cell
 	textAreaFunc: function(c) {
 		var o = appendNewChild(c, "textarea");

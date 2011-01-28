@@ -168,16 +168,16 @@ function xthreads_forumdisplay() {
 				continue;
 			}
 			if(is_array($filter))
-				$filter = array_map('urldecode', array_map('eval_str', $filter));
+				$filter = array_map('eval_str', $filter);
 			else
-				$filter = urldecode(eval_str($filter));
+				$filter = eval_str($filter);
 		}
 		$xt_filters = $xtforum['defaultfilter_xt'];
 		foreach($xt_filters as $n => &$filter) {
 			if(is_array($filter))
-				$filter = array_map('urldecode', array_map('eval_str', $filter));
+				$filter = array_map('eval_str', $filter);
 			else
-				$filter = urldecode(eval_str($filter));
+				$filter = eval_str($filter);
 		}
 	}
 	//unset($enabled_xtf);
