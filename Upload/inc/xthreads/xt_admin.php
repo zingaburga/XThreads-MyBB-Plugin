@@ -836,9 +836,9 @@ function xthreads_admin_forumedit() {
 				$html = $form->generate_text_box($name, $data[$name], array('id' => $name));
 			elseif($type == 'text_area_2')
 				// do a 2 row textarea
-				$html = $form->generate_text_area($name, $data[$name], array('id' => $name, 'rows' => 2));
+				$html = $form->generate_text_area($name, $data[$name], array('id' => $name, 'rows' => 2, 'style' => 'font-family: monospace'));
 			elseif($type == 'text_area')
-				$html = $form->generate_text_area($name, $data[$name], array('id' => $name));
+				$html = $form->generate_text_area($name, $data[$name], array('id' => $name, 'style' => 'font-family: monospace'));
 			elseif($type == 'yes_no_radio')
 				$html = $form->generate_yes_no_radio($name, ($data[$name] ? '1':'0'), true);
 			//elseif($type == 'check_box')
@@ -989,7 +989,7 @@ function xthreads_admin_modtool() {
 		} else {
 			$val =& $GLOBALS['thread_options']['edit_threadfields'];
 		}
-		$GLOBALS['form_container']->output_row($lang->xthreads_modtool_edit_threadfields, $lang->xthreads_modtool_edit_threadfields_desc, $GLOBALS['form']->generate_text_area('edit_threadfields', $val, array('id' => 'edit_threadfields')));
+		$GLOBALS['form_container']->output_row($lang->xthreads_modtool_edit_threadfields, $lang->xthreads_modtool_edit_threadfields_desc, $GLOBALS['form']->generate_text_area('edit_threadfields', $val, array('id' => 'edit_threadfields', 'style' => 'font-family: monospace')));
 		$GLOBALS['plugins']->add_hook('admin_formcontainer_output_row', 'xthreads_admin_modtool_4');
 	}
 	function xthreads_admin_modtool_4(&$args) {

@@ -276,6 +276,7 @@ xtOFEditor.prototype = {
 	textAreaFunc: function(c) {
 		var o = appendNewChild(c, "textarea");
 		o.style.width = '100%';
+		o.style.fontFamily = "monospace";
 		return o;
 	}
 };

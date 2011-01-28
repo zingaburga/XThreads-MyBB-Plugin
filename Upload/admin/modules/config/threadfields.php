@@ -715,7 +715,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	make_form_row('fieldwidth', 'text_box');
 	make_form_row('fieldheight', 'text_box');
 	make_form_row('vallist', 'text_area');
-	make_form_row('formhtml', 'text_area');
+	make_form_row('formhtml', 'text_area', array('style' => 'font-family: monospace'));
 	make_form_row('fileexts', 'text_box');
 	
 	if(!is_int(2147483648)) // detect 32-bit PHP
@@ -795,9 +795,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	make_form_row('fileimage_maxdim', 'text_box');
 	unset($data['fileimage_mindim'], $data['fileimage_maxdim']);
 	make_form_row('fileimgthumbs', 'text_box');
-	make_form_row('blankval', 'text_area');
-	make_form_row('defaultval', 'text_area');
-	make_form_row('dispformat', 'text_area');
+	make_form_row('blankval', 'text_area', array('style' => 'font-family: monospace'));
+	make_form_row('defaultval', 'text_area', array('style' => 'font-family: monospace'));
+	make_form_row('dispformat', 'text_area', array('style' => 'font-family: monospace'));
 	make_form_row('datatype', 'select_box', array(
 		XTHREADS_DATATYPE_TEXT => $lang->threadfields_datatype_text,
 		XTHREADS_DATATYPE_INT => $lang->threadfields_datatype_int,
@@ -812,7 +812,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	$lang->threadfields_multival .= ' <em>*</em>';
 	make_form_row('multival', 'text_box');
 	$lang->threadfields_multival = substr($lang->threadfields_multival, 0, -11);
-	make_form_row('dispitemformat', 'text_area');
+	make_form_row('dispitemformat', 'text_area', array('style' => 'font-family: monospace'));
 	make_form_row('textmask', 'text_box');
 	
 	if(!is_array($data['formatmap'])) {
@@ -827,11 +827,11 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			$fmtxt .= $k.'{|}'.$v."\n";
 		$data['formatmap'] =& $fmtxt;
 	}
-	make_form_row('formatmap', 'text_area');
+	make_form_row('formatmap', 'text_area', array('style' => 'font-family: monospace'));
 	if($data['viewable_gids'] && !is_array($data['viewable_gids']))
 		$data['viewable_gids'] = array_map('intval',array_map('trim',explode(',', $data['viewable_gids'])));
 	$form_container->output_row($lang->threadfields_viewable_gids, $lang->threadfields_viewable_gids_desc, xt_generate_group_select('viewable_gids[]', $data['viewable_gids'], array('multiple' => true, 'size' => 5, 'id' => 'viewable_gids')), 'viewable_gids', array(), array('id' => 'row_viewable_gids'));
-	make_form_row('unviewableval', 'text_area');
+	make_form_row('unviewableval', 'text_area', array('style' => 'font-family: monospace'));
 	make_form_row('hideedit', 'yes_no_radio');
 	$form_container->end();
 	if($update)
@@ -1123,8 +1123,11 @@ function make_form_row($n, $it, $opts=array(), $html_append='') {
 		else
 			$html = $form->$it($n, $opts, $data[$n], array('id' => $n));
 	}
-	else
-		$html = $form->$it($n, $data[$n], array('id' => $n));
+	else {
+		// reuse our handy $opts array :P
+		$opts['id'] = $n;
+		$html = $form->$it($n, $data[$n], $opts);
+	}
 	
 	$form_container->output_row($lang->$lang_n, $lang->$lang_d, $html.$html_append, $n, array(), array('id' => 'row_'.$n));
 
