@@ -932,7 +932,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML; ?>")
 				$('sanitize').selectedIndex++;
 		} else if(textIn) {
-			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML_NO; ?>")
+			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML_NL; ?>")
 				$('sanitize').selectedIndex--;
 		}
 	}).apply($('inputtype'));
