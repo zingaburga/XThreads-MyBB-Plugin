@@ -857,15 +857,30 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		var fileIn = (si == <?php echo XTHREADS_INPUT_FILE; ?> || si == <?php echo XTHREADS_INPUT_FILE_URL; ?>);
 		e = checkboxIn; // forced
 		
-		xt_visi('row_multival_enable', checkboxIn || (
+		var datatypeText = ($('datatype').options[$('datatype').selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>");
+		xt_visi('row_multival_enable', checkboxIn || ((
 			(si != <?php echo XTHREADS_INPUT_RADIO; ?> && !fileIn)
-			&& $('datatype').options[$('datatype').selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>"
+			&& datatypeText)
 		));
 		
 		if(!e) e = ($('multival_enable_yes').checked && $('row_multival_enable').style.display != 'none');
 		xt_visi('row_multival', e);
 		xt_visi('row_dispitemformat', e);
-		xt_visi('row_datatype', !e && !checkboxIn && !fileIn);
+		datatypeVisible = (!e && !checkboxIn && !fileIn);
+		xt_visi('row_datatype', datatypeVisible);
+		
+		// hide some sanitise options (if browser supports it)
+		var sanitizeOptShow = ((datatypeVisible && !datatypeText) ? 'none' : '');
+		for(i in $('sanitize').options) {
+			var optItem = $('sanitize').options[i];
+			if(!optItem) continue; // fix IE6 bug
+			if(optItem.value == "<?php echo XTHREADS_SANITIZE_HTML_NL; ?>" || optItem.value == "<?php echo XTHREADS_SANITIZE_NONE; ?>") {
+				// our target
+				if(sanitizeOptShow == 'none' && $('sanitize').selectedIndex == i)
+					$('sanitize').selectedIndex = 0;
+				optItem.style.display = sanitizeOptShow;
+			}
+		}
 	}
 	$('multival_enable_yes').onclick = xt_multival_enable;
 	$('multival_enable_no').onclick = xt_multival_enable;
