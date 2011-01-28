@@ -879,45 +879,7 @@ function xthreads_admin_forumedit() {
 		
 		$form_container->end();
 		
-		// Open Field Editor for the default filter thingy
-?><script type="text/javascript" src="jscripts/xtofedit.js?xtver=<?php echo XTHREADS_VERSION; ?>"></script>
-<script type="text/javascript">
-<!--
-xtOFEditorLang.confirmFormSubmit = "<?php echo $lang->xthreads_js_confirm_form_submit; ?>";
-xtOFEditorLang.windowTitle = "<?php echo $lang->xthreads_js_edit_value; ?>";
-xtOFEditorLang.saveButton = "<?php echo $lang->xthreads_js_save_changes; ?>";
-xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_changes; ?>";
-
-var defFltEditor = new xtOFEditor();
-defFltEditor.src = $('xthreads_defaultfilter');
-defFltEditor.loadFunc = function(s) {
-	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
-	var data = [];
-	for(var i=0; i<a.length; i++) {
-		a[i] = a[i].replace(/\r/g, "\n");
-		var p = a[i].indexOf("=");
-		if(p < 0) continue;
-		data.push([ a[i].substring(0, p), a[i].substring(p+1) ]);
-	}
-	return data;
-};
-defFltEditor.saveFunc = function(a) {
-	var ret = "";
-	for(var i=0; i<a.length; i++) {
-		ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
-	}
-	return ret;
-};
-defFltEditor.fields = [
-	{title: "<?php echo $lang->xthreads_js_defaultfilter_field; ?>", width: '45%', elemFunc: defFltEditor.textBoxFunc},
-	{title: "<?php echo $lang->xthreads_js_defaultfilter_value; ?>", width: '55%', elemFunc: defFltEditor.textAreaFunc}
-];
-
-defFltEditor.copyStyles=true;
-defFltEditor.init();
-
-//-->
-</script><?php
+		xthreads_admin_common_ofe('xthreads_defaultfilter');
 	}
 }
 
@@ -1027,7 +989,12 @@ function xthreads_admin_modtool() {
 		} else {
 			$val =& $GLOBALS['thread_options']['edit_threadfields'];
 		}
-		$GLOBALS['form_container']->output_row($lang->xthreads_modtool_edit_threadfields, $lang->xthreads_modtool_edit_threadfields_desc, $GLOBALS['form']->generate_text_area('edit_threadfields', $val));
+		$GLOBALS['form_container']->output_row($lang->xthreads_modtool_edit_threadfields, $lang->xthreads_modtool_edit_threadfields_desc, $GLOBALS['form']->generate_text_area('edit_threadfields', $val, array('id' => 'edit_threadfields')));
+		$GLOBALS['plugins']->add_hook('admin_formcontainer_output_row', 'xthreads_admin_modtool_4');
+	}
+	function xthreads_admin_modtool_4(&$args) {
+		$GLOBALS['plugins']->remove_hook('admin_formcontainer_output_row', 'xthreads_admin_modtool_4');
+		xthreads_admin_common_ofe('edit_threadfields');
 	}
 }
 
@@ -1048,7 +1015,50 @@ function xthreads_admin_modtool_commit() {
 	$db->update_query('modtools', array('threadoptions' => $db->escape_string(serialize($thread_options))), 'tid='.$tid);
 }
 
-// TODO: special formatting mappings
+
+// just because both the ModTools and Default Thread Filter fields use a very similar OFE...
+function xthreads_admin_common_ofe($fieldname) {
+	global $lang;
+	if(!$lang->xthreads_js_confirm_form_submit) $lang->load('xthreads');
+?><script type="text/javascript" src="jscripts/xtofedit.js?xtver=<?php echo XTHREADS_VERSION; ?>"></script>
+<script type="text/javascript">
+<!--
+xtOFEditorLang.confirmFormSubmit = "<?php echo $lang->xthreads_js_confirm_form_submit; ?>";
+xtOFEditorLang.windowTitle = "<?php echo $lang->xthreads_js_edit_value; ?>";
+xtOFEditorLang.saveButton = "<?php echo $lang->xthreads_js_save_changes; ?>";
+xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_changes; ?>";
+
+var ofEditor = new xtOFEditor();
+ofEditor.src = $('<?php echo $fieldname; ?>');
+ofEditor.loadFunc = function(s) {
+	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
+	var data = [];
+	for(var i=0; i<a.length; i++) {
+		a[i] = a[i].replace(/\r/g, "\n");
+		var p = a[i].indexOf("=");
+		if(p < 0) continue;
+		data.push([ a[i].substring(0, p), a[i].substring(p+1) ]);
+	}
+	return data;
+};
+ofEditor.saveFunc = function(a) {
+	var ret = "";
+	for(var i=0; i<a.length; i++) {
+		ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
+	}
+	return ret;
+};
+ofEditor.fields = [
+	{title: "<?php echo $lang->xthreads_js_defaultfilter_field; ?>", width: '45%', elemFunc: ofEditor.textBoxFunc},
+	{title: "<?php echo $lang->xthreads_js_defaultfilter_value; ?>", width: '55%', elemFunc: ofEditor.textAreaFunc}
+];
+
+ofEditor.copyStyles=true;
+ofEditor.init();
+
+//-->
+</script><?php
+}
 
 
 
