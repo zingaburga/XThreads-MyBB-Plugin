@@ -337,9 +337,6 @@ function do_processing() {
 	
 } do_processing();
 
-if($range_start)
-	fseek($fp, $range_start);
-
 // kill unneeded variables - save memory as this PHP thread may last a while on the server especially for larger downloads
 unset($_REQUEST, $_COOKIE, $_SERVER);
 /* $keepvars = array('keepvars'=>1, 'k'=>1, 'v'=>1, 'GLOBALS'=>1, 'fp'=>1, 'fsize'=>1, 'range_start'=>1, 'range_end'=>1, 'thumb'=>1, 'match'=>1);
@@ -352,22 +349,45 @@ unset($keepvars, $k, $v); */
 
 if(LOAD_SESSION) unset($mybb, $db); // TODO: maybe also unload other vars
 
+if(!function_exists('stream_copy_to_stream')) {
+	function stream_copy_to_stream($source, $dest, $maxlength=0, $offset=0) {
+		if($offset)
+			fseek($source, $offset, SEEK_CUR);
+		$copied = 0;
+		while(!feof($source) && (!$maxlength || $copied < $maxlength)) {
+			$len = 16384;
+			if($maxlength) $len = min($maxlength-$copied, $len);
+			$data = fread($source, $len);
+			$copied += strlen($data);
+			fwrite($dest, $data);
+		}
+		return $copied;
+	}
+}
+
+//if($range_start)
+//	fseek($fp, $range_start);
+$fout = fopen('php://output', 'wb');
+
 if($range_end == $fsize-1) {
-	unset($range_start, $range_end, $fsize);
-	while(!feof($fp)) echo fread($fp, 16384);
+	unset($range_end, $fsize);
+	stream_copy_to_stream($fp, $fout, 0, $range_start);
+	//while(!feof($fp)) echo fread($fp, 16384);
 	if(isset($aid)) increment_downloads($aid);
 } else {
 	$bytes = $range_end - $range_start + 1;
-	unset($thumb, $aid, $range_start, $range_end, $fsize);
+	unset($thumb, $aid, $range_end, $fsize);
+	stream_copy_to_stream($fp, $fout, $bytes, $range_start);
+	/* unset($thumb, $aid, $range_start, $range_end, $fsize);
 	while(!feof($fp) && $bytes > 0) {
 		$bufsize = min($bytes, 16384);
 		echo fread($fp, $bufsize);
 		$bytes -= $bufsize;
-	}
+	} */
 }
 
 fclose($fp);
-
+fclose($fout);
 
 
 function increment_downloads($aid) {
