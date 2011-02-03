@@ -12,14 +12,14 @@ function xthreads_info() {
 	global $lang;
 	$lang->load('xthreads');
 	return array(
-		'name'			=> '<span style="color: green;">'.$lang->xthreads_name.'</span>',
-		'description'	=> $lang->xthreads_desc,
-		'website'		=> 'http://mybbhacks.zingaburga.com/',
-		'author'		=> 'ZiNgA BuRgA',
-		'authorsite'	=> 'http://zingaburga.com/',
-		'version'		=> xthreads_format_version_number(XTHREADS_VERSION),
-		'compatibility'	=> '14*,15*,16*',
-		'guid'			=> ''
+		'name'          => '<span style="color: #008000;">'.$lang->xthreads_name.'</span>',
+		'description'   => $lang->xthreads_desc,
+		'website'       => 'http://mybbhacks.zingaburga.com/',
+		'author'        => 'ZiNgA BuRgA',
+		'authorsite'    => 'http://zingaburga.com/',
+		'version'       => xthreads_format_version_number(XTHREADS_VERSION),
+		'compatibility' => '14*,15*,16*',
+		'guid'          => ''
 	);
 }
 

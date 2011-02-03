@@ -10,10 +10,95 @@ function xthreads_showthread() {
 	$threadfields = array();
 	if(!isset($threadfield_cache))
 		$threadfield_cache = xthreads_gettfcache($GLOBALS['fid']);
+	
 	if(!empty($threadfield_cache)) {
 		// just do an extra query to grab the threadfields
 		$threadfields = $db->fetch_array($db->simple_select('threadfields_data', '`'.implode('`,`', array_keys($threadfield_cache)).'`', 'tid='.$thread['tid']));
 		if(!isset($threadfields)) $threadfields = array();
+	}
+	
+	/*
+	global $mybb;
+	if($mybb->input['action'] == 'xtnext' || $mybb->input['action'] == 'xtprev') {
+		global $db;
+		$add_join = false;
+		
+		$nf = 'lastpost';
+		switch($mybb->input['order']) {
+			case 'subject':
+			case 'replies':
+			case 'views':
+				$nf = $mybb->input['order'];
+				break;
+			
+			case 'starter':  $nf = 'username'; break;
+			case 'started':  $nf = 'dateline'; break;
+			case 'rating': // this is f***ing slow, but then, that's the best MyBB can do
+				unset($nf);
+				$nextfield = 'IF(t.numratings=0, 0, t.totalratings / t.numratings)';
+				$curval = ($thread['numratings'] ? $thread['totalratings'] / $thread['numratings'] : 0);
+				break;
+			
+			// more XThreads sort options
+			// TODO: prefix, icon
+			
+			case 'lastposter':
+			case 'numratings':
+			case 'attachmentcount':
+				$nf = $mybb->input['order'];
+				break;
+			
+			
+			default:
+				// TODO: threadfields sorting
+				if(substr($mybb->input['order'], 0, 3) == 'tf_') {
+					$add_join = true;
+					
+				} elseif(substr($mybb->input['order'], 0, 4) == 'tfa_') {
+					$add_join = true;
+					
+				}
+				break;
+			
+		}
+		if(isset($nf)) {
+			if($add_join) {
+				$nextfield = 'tfd.`'.$nf.'`';
+				$curval = $threadfields[$nf];
+			} else {
+				$nextfield = 't.'.$nf;
+				$curval = $thread[$nf];
+			}
+		}
+		if(is_string($curval))
+			$curval = '"'.$db->escape_string($curval).'"';
+		$cond = $nextfield.($mybb->input['action']=='xtprev' ? '<':'>').$curval;
+		
+		// TODO: additional filtering
+		
+		$cond .= ' AND t.fid='.$thread['fid'].' AND t.visible=1 AND t.closed NOT LIKE "moved|%"';
+		$order_dir = ($mybb->input['action'] == 'xtprev' ? 'desc':'asc');
+		
+		$join = '';
+		if($add_join)
+			$join = 'LEFT JOIN '.$db->table_prefix.'threadfields_data tfd ON t.tid=tfd.tid';
+		$query = $db->query('
+			SELECT t.tid FROM '.$db->table_prefix.'threads t
+			'.$join.'
+			WHERE '.$cond.'
+			ORDER BY '.$nextfield.' '.$order_dir.', t.tid '.$order_dir.'
+			LIMIT 1
+		');
+		$nexttid = $db->fetch_field($query, 'tid');
+		if(!$nexttid)
+			error($GLOBALS['lang']->error_nonextoldest);
+		
+		header('Location: '.htmlspecialchars_decode(get_thread_link($nexttid)));
+		exit;
+	}
+	*/
+	
+	if(!empty($threadfield_cache)) {
 		foreach($threadfield_cache as $k => &$v) {
 			xthreads_get_xta_cache($v, $thread['tid']);
 			xthreads_sanitize_disp($threadfields[$k], $v, $thread['username']);

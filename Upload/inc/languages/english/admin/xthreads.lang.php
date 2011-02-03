@@ -1,7 +1,7 @@
 <?php
 
 $l['xthreads_name'] = 'XThreads';
-$l['xthreads_desc'] = 'eXtend your Threads with extra fields.';
+$l['xthreads_desc'] = 'eXtend yee Threads';
 
 $l['xthreads_rebuildxtathumbs'] = 'Rebuild XThreads Attachment Thumbnails';
 $l['xthreads_rebuildxtathumbs_desc'] = 'This will rebuild thumbnails for images uploaded using the XThreads attachment system (custom thread fields with image uploads).';

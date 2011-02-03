@@ -83,6 +83,7 @@
    <ul>
     <li>Thread/forum URL variables through <code>{$forumurl}</code>, <code>{$forumurl_q}</code>, <code>{$threadurl}</code> and <code>{$threadurl_q}</code> (the <code>_q</code> variants append a <code>?</code> or <code>&amp;amp;</code> depending on the context of the URL).  Example: <code>&lt;a href=&quot;{$forumurl?}filtertf_myfield=something&quot;&gt;filter by something&lt;/a&gt;</code></li>
     <li>Thread start date is evaluated in a variable through <code>{$thread['threaddate']}</code> and <code>{$thread['threadtime']}</code>; available in forumdisplay/showthread/search</li>
+    <li>Input field code in <em>editpost</em> (first post only) and <em>newthread</em>; this is useful if you wish to customise the input fields on those pages and have <em>Hide Input Field</em> setting enabled for the fields.  Use <code>{$tfinput['<span class="token1">key</span>']}</code> for the HTML of the input field, and <code>{$tfinputrow['<span class="token1">key</span>']}</code> for the HTML of the input field, including the table row markup.</li>
    </ul>
    
    <h2>Other</h2>
