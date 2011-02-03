@@ -639,6 +639,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 				}
 				
 				$fileinput = '<input type="file" class="fileupload"'.$tfname.$tf_fw_size.$tabindex.' id="xthreads_'.$tf['field'].'" />';
+				if($tf['filemaxsize'])
+					$fileinput = '<input type="hidden" name="MAX_FILE_SIZE" value="'.$tf['filemaxsize'].'" />'.$fileinput.'<input type="hidden" name="MAX_FILE_SIZE" value="0" />';
 				if(XTHREADS_ALLOW_URL_FETCH) {
 					// TODO: test if this environment can really fetch URLs
 					// no =& because we change $input_url potentially
