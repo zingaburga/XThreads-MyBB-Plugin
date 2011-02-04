@@ -92,8 +92,12 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 			elseif($v['multival'] && (
 					($input_is_array = is_array($mybb->input['xthreads_'.$k])) || ($v['inputtype'] == XTHREADS_INPUT_TEXT || $v['inputtype'] == XTHREADS_INPUT_TEXTAREA)
 			)) {
-				if(!$input_is_array)
-					$mybb->input['xthreads_'.$k] = explode(($v['inputtype'] == XTHREADS_INPUT_TEXTAREA ? "\n":','), str_replace("\r", '', $mybb->input['xthreads_'.$k]));
+				if(!$input_is_array) {
+					$tr = array("\r" => '');
+					if($v['inputtype'] == XTHREADS_INPUT_TEXT)
+						$tr["\n"] = '';
+					$mybb->input['xthreads_'.$k] = explode(($v['inputtype'] == XTHREADS_INPUT_TEXTAREA ? "\n":','), strtr($mybb->input['xthreads_'.$k], $tr));
+				}
 				$inval = array_unique(array_map('trim', $mybb->input['xthreads_'.$k]));
 				foreach($inval as $valkey => &$val)
 					if(xthreads_empty($val)) unset($inval[$valkey]);
