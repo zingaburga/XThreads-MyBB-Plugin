@@ -137,7 +137,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 						}
 					}
 					// we'll apply datatype restrictions before testing textmask
-					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', xthreads_convert_str_to_datatype($val, $v['datatype']))) {
+					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', (string)xthreads_convert_str_to_datatype($val, $v['datatype']))) {
 						$errors[] = array('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
 						break;
 					}
@@ -181,10 +181,7 @@ function xthreads_input_posthandler_insert(&$ph) {
 			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric($ph->data['xthreads_'.$k]))
 				$xtaupdates[] = $ph->data['xthreads_'.$k];
 			
-			if($v['datatype'] != XTHREADS_DATATYPE_TEXT && $ph->data['xthreads_'.$k] === '')
-				$updates[$k] = null;
-			else
-				$updates[$k] = xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']);
+			$updates[$k] = xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']);
 		}
 	}
 	
@@ -214,9 +211,10 @@ function xthreads_input_posthandler_insert(&$ph) {
 }
 
 function xthreads_convert_str_to_datatype($s, $type) {
+	if($type == XTHREADS_DATATYPE_TEXT) return $s;
+	$sl = strtoupper($s);
+	if($s === '' || $sl === 'NULL' || $sl === 'NUL') return null;
 	switch($type) {
-		case XTHREADS_DATATYPE_TEXT:
-			return $s;
 		case XTHREADS_DATATYPE_INT:
 		case XTHREADS_DATATYPE_BIGINT:
 			return intval($s);
