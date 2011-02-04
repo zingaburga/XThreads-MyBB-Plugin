@@ -24,6 +24,9 @@ xtOFEditor.prototype = {
 	initialize: function(){},
 	
 	init: function() {
+		// this is broken in Firefox 4 beta - if we have it, bail
+		if(/Firefox\/4\./.test(navigator.userAgent)) return;
+		
 		this.src.onclick = this.open.bind(this);
 		this.src.onkeypress = function(e) {
 			if(!e) return true; // weird IE bug
