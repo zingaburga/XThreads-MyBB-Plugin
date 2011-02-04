@@ -350,13 +350,13 @@ unset($keepvars, $k, $v); */
 if(LOAD_SESSION) unset($mybb, $db); // TODO: maybe also unload other vars
 
 if(!function_exists('stream_copy_to_stream')) {
-	function stream_copy_to_stream($source, $dest, $maxlength=0, $offset=0) {
+	function stream_copy_to_stream($source, $dest, $maxlength=-1, $offset=0) {
 		if($offset)
 			fseek($source, $offset, SEEK_CUR);
 		$copied = 0;
-		while(!feof($source) && (!$maxlength || $copied < $maxlength)) {
+		while(!feof($source) && ($maxlength == -1 || $copied < $maxlength)) {
 			$len = 16384;
-			if($maxlength) $len = min($maxlength-$copied, $len);
+			if($maxlength > -1) $len = min($maxlength-$copied, $len);
 			$data = fread($source, $len);
 			$copied += strlen($data);
 			fwrite($dest, $data);
@@ -365,20 +365,21 @@ if(!function_exists('stream_copy_to_stream')) {
 	}
 }
 
-//if($range_start)
-//	fseek($fp, $range_start);
-$fout = fopen('php://output', 'wb');
+$fout = fopen('php://output', 'wb'); // this call shouldn't fail, right?
+
+if($range_start)
+	fseek($fp, $range_start);
 
 if($range_end == $fsize-1) {
-	unset($range_end, $fsize);
-	stream_copy_to_stream($fp, $fout, 0, $range_start);
+	unset($range_start, $range_end, $fsize);
+	stream_copy_to_stream($fp, $fout);
 	//while(!feof($fp)) echo fread($fp, 16384);
 	if(isset($aid)) increment_downloads($aid);
 } else {
 	$bytes = $range_end - $range_start + 1;
-	unset($thumb, $aid, $range_end, $fsize);
-	stream_copy_to_stream($fp, $fout, $bytes, $range_start);
-	/* unset($thumb, $aid, $range_start, $range_end, $fsize);
+	unset($aid, $range_start, $range_end, $fsize);
+	stream_copy_to_stream($fp, $fout, $bytes);
+	/* unset($aid, $range_start, $range_end, $fsize);
 	while(!feof($fp) && $bytes > 0) {
 		$bufsize = min($bytes, 16384);
 		echo fread($fp, $bufsize);

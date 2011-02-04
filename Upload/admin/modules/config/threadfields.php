@@ -723,6 +723,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	// PHP upload limits
 	$upload_max_filesize = @ini_get('upload_max_filesize');
 	$post_max_size = @ini_get('post_max_size');
+	// TODO: maybe also pull in [ file_uploads, max_file_uploads, max_input_time ] ?
 	if($upload_max_filesize || $post_max_size) {
 		$lang->threadfields_filemaxsize_desc .= '<br /><br />'.$lang->threadfields_filemaxsize_desc_phplimit;
 		if(!$lang->limit_upload_max_filesize)

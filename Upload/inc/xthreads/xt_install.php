@@ -3,7 +3,8 @@
 if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
-if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2) {
+// don't add hooks if we've included this file for other reasons
+if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2 && isset($plugins) && is_object($plugins)) {
 	$plugins->add_hook('admin_config_plugins_activate_commit', 'xthreads_plugins_phptpl_activate');
 	$plugins->add_hook('admin_config_plugins_deactivate_commit', 'xthreads_plugins_phptpl_deactivate');
 }
