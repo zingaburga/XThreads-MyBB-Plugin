@@ -37,7 +37,10 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	
 	if(is_array($attachment)) {
 		if(isset($attachment['error']) && $attachment['error']) {
-			if($attachment['error'] >= 1 && $attachment['error'] <= 7) {
+			if($attachment['error'] == 2) {
+				return array('error' => $lang->sprintf($lang->xthreads_xtaerr_error_attachsize, round($tf['filemaxsize']/1024, 2)));
+			}
+			elseif($attachment['error'] >= 1 && $attachment['error'] <= 7) {
 				$langvar = 'error_uploadfailed_php'.$attachment['error'];
 				$langstr = $lang->$langvar;
 			}
@@ -304,7 +307,7 @@ function xthreads_validate_attachment(&$attachment, &$tf) {
 		return $lang->error_uploadfailed;
 	}
 	if($tf['filemaxsize'] && $attachment['size'] > $tf['filemaxsize']) {
-		return $lang->sprintf($lang->error_attachsize, round($tf['filemaxsize']/1024, 2));
+		return $lang->sprintf($lang->xthreads_xtaerr_error_attachsize, round($tf['filemaxsize']/1024, 2));
 	}
 	if($tf['fileexts']) {
 		$ext = strtolower(get_extension($attachment['name']));
@@ -500,7 +503,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		if($result === null) {
 			// aborted - most likely from early termination
 			if($ret['size'] && $max_size && $ret['size'] > $max_size) {
-				$ret['error'] = $lang->sprintf($lang->error_attachsize, round($max_size/1024, 2));
+				$ret['error'] = $lang->sprintf($lang->xthreads_xtaerr_error_attachsize, round($max_size/1024, 2));
 			}
 			elseif($GLOBALS['xtfurl_magicchecked'] == 'invalid') { // this also covers extension check
 				$ret['error'] = $lang->error_attachtype;
