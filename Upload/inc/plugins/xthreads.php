@@ -699,7 +699,7 @@ function xthreads_get_xta_url(&$xta) {
 	static $use_qstr = null;
 	// to use query strings, or not to use; that is the question...
 	if(!isset($use_qstr))
-		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') === false) || stripos(SAPI_NAME, 'cgi') !== false || defined('XTHREADS_ATTACH_USE_QUERY') || defined('ARCHIVE_QUERY_STRINGS'));
+		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') === false) || stripos(SAPI_NAME, 'cgi') !== false || (defined('XTHREADS_ATTACH_USE_QUERY') && XTHREADS_ATTACH_USE_QUERY) || defined('ARCHIVE_QUERY_STRINGS'));
 	// yes, above is copied from the archive
 	
 	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).$delim.$md5hash.rawurlencode($xta['filename']);

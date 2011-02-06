@@ -1044,7 +1044,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			$('textmask').value = textmaskMapping[maskName];
 		textmaskSelectUpdated();
 	};
-	$('textmask_select').onkeypress = $('textmask_select').onkeydown = function(e) {
+	$('textmask_select').onkeypress = $('textmask_select').onkeydown = $('textmask_select').onkeyup = function(e) {
 		$('textmask_select').onchange();
 		return true;
 	};
