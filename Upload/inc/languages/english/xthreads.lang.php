@@ -1,6 +1,7 @@
 <?php
 
 $l['postdata_threadfield_required'] = 'Value for &quot;{1}&quot; is required.';
+$l['postdata_threadfield_cant_set'] = 'Sorry, you cannot set that value for &quot;{1}&quot;.';
 $l['postdata_threadfield_toolong'] = 'Value for &quot;{1}&quot; may not exceed {2} characters.';
 $l['postdata_threadfield_invalidvalue'] = 'Invalid value supplied for &quot;{1}&quot;.';
 $l['xthreads_threadfield_attacherror'] = 'Error attaching file for &quot;{1}&quot;; <em>{2}</em>';

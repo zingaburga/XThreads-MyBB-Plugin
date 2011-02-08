@@ -20,6 +20,13 @@ function xthreads_filter_tfeditable(&$tf, $fid=0) {
 	}
 }
 
+function xthreads_tfvalue_settable(&$tf, &$val) {
+	if(empty($tf['editable_values'])) return true;
+	$cv = (string)xthreads_convert_str_to_datatype($val, $tf['datatype']);
+	$allow_groups = $tf['editable_values'][$cv];
+	return (!isset($allow_groups)
+		|| (!xthreads_empty($allow_groups) && xthreads_user_in_groups($allow_groups)));
+}
 
 function xthreads_input_posthandler_postvalidate(&$ph) {
 	// determine if first post
@@ -125,6 +132,12 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				else
 					$inval_list = array($inval); // &$inval generates recursion for some odd reason at times
 				foreach($inval_list as &$val) {
+					// check usergroup perms for values
+					if(!xthreads_tfvalue_settable($v, $val)) {
+						$errors[] = array('threadfield_cant_set', htmlspecialchars_uni($v['title']));
+						break;
+					}
+					
 					if(xthreads_empty($val)) continue; // means that if the field wasn't set and isn't a necessary field, ignore it
 					if($v['maxlen'] && my_strlen($val) > $v['maxlen']) {
 						$errors[] = array('threadfield_toolong', array(htmlspecialchars_uni($v['title']), $v['maxlen']));
@@ -567,6 +580,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 					$tf_fh = ' size="5"';
 				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].(!xthreads_empty($tf['multival']) ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
 				foreach($vals as &$val) {
+					if(!xthreads_tfvalue_settable($tf, $val)) continue;
 					$selected = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' selected="selected"':'');
 					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
 						$tfinput[$k] .= '<option value="" style="font-style: italic;"'.$selected.'>'.$lang->xthreads_val_blank.'</option>';
@@ -581,6 +595,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			case XTHREADS_INPUT_RADIO:
 				$tftype = ($tf['inputtype'] == XTHREADS_INPUT_RADIO ? 'radio':'checkbox');
 				foreach($vals as &$val) {
+					if(!xthreads_tfvalue_settable($tf, $val)) continue;
 					$checked = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' checked="checked"':'');
 					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
 						$tfinput[$k] .= '<label style="display: block; font-style: italic;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value=""'.$checked.$tabindex.' />'.$lang->xthreads_val_blank.'</label>';
