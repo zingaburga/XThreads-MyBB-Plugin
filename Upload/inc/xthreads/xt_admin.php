@@ -289,6 +289,7 @@ return array(
 			'XTHREADS_UPLOAD_LARGEFILE_SIZE' => 10*1048576,
 			'XTHREADS_ALLOW_PHP_THREADFIELDS' => 2,
 			'XTHREADS_ATTACH_USE_QUERY' => 0,
+			'XTHREADS_MODIFY_TEMPLATES' => true,
 			
 			'COUNT_DOWNLOADS' => 2,
 			'CACHE_TIME' => 604800,
@@ -436,6 +437,10 @@ $defines[PROXY_REDIR_HEADER_PREFIX]
  */
 $defines[XTHREADS_ALLOW_PHP_THREADFIELDS]
 
+/**
+ * This switch can be used to disable automatic template editing XThreads performs (will no longer call find_replace_templatesets())
+ */
+$defines[XTHREADS_MODIFY_TEMPLATES]
 
 
 

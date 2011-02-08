@@ -9,6 +9,10 @@ if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2 && isset($plugins) && is_object($plugins
 	$plugins->add_hook('admin_config_plugins_deactivate_commit', 'xthreads_plugins_phptpl_deactivate');
 }
 
+// if you don't wish to have XThreads modify any templates, set this value to true
+// note that once you have XThreads installed, this will be stored in cache/xthreads.php instead
+@define('XTHREADS_MODIFY_TEMPLATES', true);
+
 function xthreads_info() {
 	global $lang;
 	$lang->load('xthreads');
@@ -251,25 +255,28 @@ function xthreads_activate() {
 	));
 	$cache->update_tasks();
 	
-	// prevent doubling of template edits
-	xthreads_undo_template_edits();
-	// following original in the _install() function, as these variables aren't evaluated when deactivated
-	// but putting them here has the advantage of allowing users to redo template edits with new themes
-	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
-	find_replace_templatesets('editpost', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
-	find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
-	find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
-	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
-	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
-	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
-	find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
+	if(XTHREADS_MODIFY_TEMPLATES) {
+		// prevent doubling of template edits
+		xthreads_undo_template_edits();
+		// following original in the _install() function, as these variables aren't evaluated when deactivated
+		// but putting them here has the advantage of allowing users to redo template edits with new themes
+		require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+		find_replace_templatesets('editpost', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
+		find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
+		find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
+		find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
+		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
+		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
+		find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
+	}
 }
 function xthreads_deactivate() {
 	global $db, $cache;
 	$db->delete_query('tasks', 'file="xtaorphan_cleanup"');
 	$cache->update_tasks();
 	
-	xthreads_undo_template_edits();
+	if(XTHREADS_MODIFY_TEMPLATES)
+		xthreads_undo_template_edits();
 }
 
 function xthreads_uninstall() {

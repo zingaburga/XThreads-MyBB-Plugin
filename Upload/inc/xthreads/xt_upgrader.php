@@ -5,6 +5,10 @@ if(!defined('IN_MYBB'))
 
 if(!defined('XTHREADS_INSTALLED_VERSION')) return false;
 
+// if you don't wish to have XThreads modify any templates, set this value to true
+// note that once you have XThreads installed (v1.41 or later), this will be stored in cache/xthreads.php instead
+@define('XTHREADS_MODIFY_TEMPLATES', true);
+
 // even if there are no upgrade actions to be run for a particular upgrade, we'll get the user into the habbit of running the upgrader
 
 global $db, $cache;
@@ -19,10 +23,10 @@ if(XTHREADS_INSTALLED_VERSION < 1.1) {
 	)');
 }
 
+require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
 if(XTHREADS_INSTALLED_VERSION < 1.2) {
-	
-	require MYBB_ROOT.'inc/adminfunctions_templates.php';
-	find_replace_templatesets('forumdisplay_searchforum_inline', '#\\</form\\>#', '{$xthreads_forum_filter_form}</form>');
+	if(XTHREADS_MODIFY_TEMPLATES)
+		find_replace_templatesets('forumdisplay_searchforum_inline', '#\\</form\\>#', '{$xthreads_forum_filter_form}</form>');
 	
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'xtattachments` MODIFY COLUMN `md5hash` binary(16) default null');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
@@ -139,13 +143,12 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	$db->write_query('UPDATE `'.$db->table_prefix.'xtattachments` a INNER JOIN `'.$db->table_prefix.'threads` t ON a.tid=t.tid SET a.uid=t.uid WHERE a.uid=0 AND a.tid!=0');
 	// obviously not entirely accurate (thread starter may not be uploader of file) but better than leaving it as a '0'
 	
-	
-	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
-	require_once MYBB_ROOT.'inc/xthreads/xt_install.php'; // grab XTHREADS_INSTALL_TPLADD_EXTRASORT define
-	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
-	find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
-	find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
-	
+	if(XTHREADS_MODIFY_TEMPLATES) {
+		require_once MYBB_ROOT.'inc/xthreads/xt_install.php'; // grab XTHREADS_INSTALL_TPLADD_EXTRASORT define
+		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
+		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
+		find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
+	}
 }
 
 return true;
