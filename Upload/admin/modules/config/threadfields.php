@@ -318,10 +318,13 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$fmkey = substr($map, 0, $p);
 				if(isset($fm[$fmkey])) {
 					$errors[] = $lang->sprintf($lang->error_dup_formatmap, htmlspecialchars_uni($fmkey));
+					unset($fm);
+					break;
 				}
 				$fm[$fmkey] = substr($map, $p+3);
 			}
-			$mybb->input['formatmap'] = serialize($fm);
+			if(isset($fm))
+				$mybb->input['formatmap'] = serialize($fm);
 		}
 		
 		if(is_array($mybb->input['forums'])) {
@@ -353,6 +356,28 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		} else {
 			$mybb->input['editable'] = min_max(intval($mybb->input['editable']), XTHREADS_EDITABLE_ALL, XTHREADS_EDITABLE_NONE);
 			$mybb->input['editable_gids'] = '';
+		}
+		
+		if(!xthreads_empty($mybb->input['editable_values'])) {
+			$ev = array();
+			$evs = str_replace("{\n}", "\r", str_replace("\r", '', $mybb->input['editable_values']));
+			foreach(explode("\n", $evs) as $editable_value) {
+				$editable_value = str_replace("\r", "\n", $editable_value);
+				$p = strpos($editable_value, '{|}');
+				if($p === false) continue;
+				$evkey = substr($editable_value, 0, $p);
+				if(isset($ev[$evkey])) {
+					$errors[] = $lang->sprintf($lang->error_dup_editable_value, htmlspecialchars_uni($evkey));
+					unset($ev);
+					break;
+				}
+				$ev[$evkey] = array_unique(array_map('intval', explode(',', substr($editable_value, $p+3))));
+				// remove '0' element
+				if(($zerorm = array_search(0, $ev[$evkey])) !== false)
+					unset($ev[$evkey][$zerorm]);
+			}
+			if(isset($ev))
+				$mybb->input['editable_values'] = serialize($ev);
 		}
 		
 		if(is_array($mybb->input['viewable_gids'])) {
@@ -825,10 +850,23 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$fmtxt = '';
 		foreach($data['formatmap'] as $k => &$v)
 			// don't need to htmlspecialchar - it'll be done for us
-			$fmtxt .= $k.'{|}'.$v."\n";
+			$fmtxt .= str_replace("\n", "{\n}", $k.'{|}'.$v)."\n";
 		$data['formatmap'] =& $fmtxt;
 	}
 	make_form_row('formatmap', 'text_area', array('style' => 'font-family: monospace'));
+	if(!is_array($data['editable_values'])) {
+		$ev = @unserialize($data['editable_values']);
+		if(is_array($ev))
+			$data['editable_values'] =& $ev;
+	}
+	if(is_array($data['editable_values'])) {
+		$evtxt = '';
+		foreach($data['editable_values'] as $k => &$v)
+			// don't need to htmlspecialchar - it'll be done for us
+			$evtxt .= str_replace("\n", "{\n}", $k).'{|}'.implode(',', $v)."\n";
+		$data['editable_values'] =& $evtxt;
+	}
+	make_form_row('editable_values', 'text_area', array('style' => 'font-family: monospace'));
 	if($data['viewable_gids'] && !is_array($data['viewable_gids']))
 		$data['viewable_gids'] = array_map('intval',array_map('trim',explode(',', $data['viewable_gids'])));
 	$form_container->output_row($lang->threadfields_viewable_gids, $lang->threadfields_viewable_gids_desc, xt_generate_group_select('viewable_gids[]', $data['viewable_gids'], array('multiple' => true, 'size' => 5, 'id' => 'viewable_gids')), 'viewable_gids', array(), array('id' => 'row_viewable_gids'));
@@ -914,6 +952,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		xt_visi('row_allowfilter', !fileIn && !textAreaIn);
 		xt_visi('row_formatmap', !fileIn);
+		xt_visi('row_editable_values', !fileIn);
 		xt_visi('row_defaultval', !pureFileIn);
 		
 		xt_visi('row_textmask', textIn || si == <?php echo XTHREADS_INPUT_CUSTOM; ?>);
@@ -1106,6 +1145,45 @@ fmtMapEditor.fields = [
 
 fmtMapEditor.copyStyles=true;
 fmtMapEditor.init();
+
+var editValEditor = new xtOFEditor();
+editValEditor.src = $('editable_values');
+editValEditor.loadFunc = function(s) {
+	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
+	var data = [];
+	for(var i=0; i<a.length; i++) {
+		a[i] = a[i].replace(/\r/g, "\n");
+		var p = a[i].indexOf("{|}");
+		if(p < 0) continue;
+		data.push([ a[i].substring(0, p), a[i].substring(p+3).split(",") ]);
+	}
+	return data;
+};
+editValEditor.saveFunc = function(a) {
+	var ret = "";
+	for(var i=0; i<a.length; i++) {
+		ret += a[i][0].replace(/\n/g, "{\n}") + "{|}" + a[i][1].join(",") + "\n";
+	}
+	return ret;
+};
+editValEditor.fields = [
+	{title: "<?php echo $lang->xthreads_js_formatmap_from; ?>", width: '50%', elemFunc: editValEditor.textAreaFunc},
+	{title: "<?php echo $lang->xthreads_js_editable_values_groups; ?>", width: '50%', elemFunc: function(c) {
+		var o = appendNewChild(c, "select");
+		o.multiple = true;
+		o.size = 3;
+		o.style.width = '100%';
+		o.innerHTML = '<?php
+			foreach($GLOBALS['cache']->read('usergroups') as $group) {
+				echo '<option value="'.$group['gid'].'">'.htmlspecialchars_uni(strip_tags($group['title'])).'</option>';
+			}
+		?>';
+		return o;
+	}}
+];
+
+editValEditor.copyStyles=true;
+editValEditor.init();
 
 //-->
 </script><?php

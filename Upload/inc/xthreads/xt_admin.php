@@ -119,6 +119,10 @@ function &xthreads_threadfields_props() {
 			'default' => '',
 			'inputtype' => 'group_select',
 		),
+		'editable_values' => array(
+			'db_type' => 'text',
+			'default' => '',
+		),
 		'viewable_gids' => array(
 			'db_size' => 255,
 			'default' => '',
@@ -473,6 +477,7 @@ function xthreads_buildtfcache() {
 			case XTHREADS_INPUT_FILE:
 			case XTHREADS_INPUT_FILE_URL:
 				unset(
+					$tf['editable_values'],
 					$tf['dispitemformat'],
 					$tf['formatmap'],
 					$tf['textmask'],
@@ -577,6 +582,13 @@ function xthreads_buildtfcache() {
 			if($tf['ignoreblankfilter'] && !empty($tf['vallist'])) {
 				$tf['ignoreblankfilter'] = !in_array('', $tf['vallist']);
 			}
+		}
+		
+		if(!xthreads_empty($tf['editable_values'])) {
+			if($tf['editable'] == XTHREADS_EDITABLE_NONE)
+				unset($tf['editable_values']);
+			else
+				$tf['editable_values'] = @unserialize($tf['editable_values']);
 		}
 		
 		// sanitise eval'd stuff

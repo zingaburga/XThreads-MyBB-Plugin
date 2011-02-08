@@ -183,7 +183,7 @@ xtOFEditor.prototype = {
 			cell.style.verticalAlign = "top";
 			var input = this.fields[i].elemFunc(cell);
 			if(data[i])
-				input.value = data[i];
+				this.setValue(input, data[i]);
 			var updatFunc = function() {
 				this.inputOnChange(input);
 			}.bind(this);
@@ -202,7 +202,8 @@ xtOFEditor.prototype = {
 			cell = row.childNodes[i];
 			if(cell.nodeName.toUpperCase() != "TD") continue;
 			for(j=0; j<cell.childNodes.length; j++)
-				if(cell.childNodes[j].value) {
+				var val = this.getValue(cell.childNodes[j]);
+				if(val && (val.length === null || val.length > 0)) {
 					return false;
 				}
 		}
@@ -243,8 +244,9 @@ xtOFEditor.prototype = {
 			for(var iCell=0; iCell<row.childNodes.length; iCell++) {
 				var cell = row.childNodes[iCell];
 				if(!cell || !cell.nodeName || cell.nodeName.toUpperCase() != "TD") continue;
-				datum.push(cell.childNodes[0].value);
-				if(cell.childNodes[0].value) isBlank = false;
+				var val = this.getValue(cell.childNodes[0]);
+				datum.push(val);
+				if(val && (val.length === null || val.length > 0)) isBlank = false;
 			}
 			if(!isBlank)
 				data.push(datum);
@@ -265,6 +267,29 @@ xtOFEditor.prototype = {
 		else {
 			this.winOpen = false;
 		}
+	},
+	
+	getValue: function(o) {
+		if(o.multiple && o.options) {
+			var ret = [];
+			var i;
+			for(i=0; i<o.options.length; i++) {
+				if(o.options[i].selected)
+					ret.push(o.options[i].value);
+			}
+			return ret;
+		} else
+			return o.value;
+	},
+	
+	setValue: function(o, v) {
+		if(o.multiple && o.options) {
+			var i;
+			for(i=0; i<o.options.length; i++) {
+				o.options[i].selected = (v.indexOf(o.options[i].value) != -1);
+			}
+		} else
+			o.value = v;
 	},
 	
 	// create a text box in a cell

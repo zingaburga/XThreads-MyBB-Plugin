@@ -135,8 +135,6 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	)');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `xthreads_tplprefix` text not null');
 	
-	xthreads_buildtfcache(); // will also update XThreads forum cache
-	
 	// not _really_ necessary for XThreads, but we'll do it anyway for any
 	// plugin which decides to rely on the 'uid' column of xtattachments table
 	// and so that we don't end up stabbing ourselves in the foot later on
@@ -151,4 +149,11 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 	}
 }
 
+if(XTHREADS_INSTALLED_VERSION < 1.41) {
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
+		`editable_values` text not null
+	)');
+	xthreads_buildtfcache(); // will also update XThreads forum cache
+	
+}
 return true;

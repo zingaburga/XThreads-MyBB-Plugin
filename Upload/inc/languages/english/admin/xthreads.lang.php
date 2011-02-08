@@ -44,6 +44,9 @@ $l['threadfields_editable'] = 'Editable by / Required Field?';
 $l['threadfields_editable_desc'] = 'Specify who is allowed to modify the value of this field.  Can also be used to set whether this field is required to be filled out or not.  Note that a required field implies that everyone can edit this field.';
 $l['threadfields_editable_gids'] = 'Editable by Usergroups';
 $l['threadfields_editable_gids_desc'] = 'Specify which usergroups are allowed to edit this field.';
+$l['threadfields_editable_values'] = 'Settable Value Permissions';
+$l['threadfields_editable_values_desc'] = 'Here, you can restrict values particular usergroups can set for this field.  Put separate values on separate lines, and separate values and usergroups with the three characters <code>{|}</code>.  Separate multiple groups with commas.  Example: <code>special value{|}1,2,3</code> - the value <em>special value</em> can only be set by users in groups (ID) 1, 2 or 3.
+<br />Note that when editing a thread, if a thread has a value already set to a value the editing user cannot set, the user will not be forced to change the value.';
 $l['threadfields_viewable_gids'] = 'Viewable by Usergroups';
 $l['threadfields_viewable_gids_desc'] = 'You can specify usergroups which can view the value of this field.  Selecting none means it is viewable to all usergroups.  Note that filtering and sorting by this thread field is affected by this setting.';
 $l['threadfields_unviewableval'] = 'Unviewable Value';
@@ -186,6 +189,7 @@ $l['error_missing_field'] = 'Missing field key.';
 $l['error_bad_old_field'] = 'Non-existent previous field key specified.';
 $l['error_invalid_inputtype'] = 'Invalid input type specified.';
 $l['error_dup_formatmap'] = 'Duplicate formatting definition for value <em>{1}</em> found.';
+$l['error_dup_editable_value'] = 'Duplicate value permission definition for value <em>{1}</em> found.';
 $l['error_bad_textmask'] = 'Bad regular expression used for Text Mask. PHP returned <em>{1}</em>';
 $l['error_require_valllist'] = 'Select/checkbox/radiobutton input types must have a defined (non-empty) Value List.';
 $l['error_require_multival_delimiter'] = 'No multiple value delimiter defined (tip, you can set this to be a space).';
@@ -281,8 +285,9 @@ $l['xthreads_js_edit_value'] = 'Edit Value';
 $l['xthreads_js_save_changes'] = 'Save Changes';
 $l['xthreads_js_close_save_changes'] = 'Do you wish to save changes before closing this window?';
 
-$l['xthreads_js_formatmap_from'] = 'Value';
+$l['xthreads_js_formatmap_from'] = 'Value'; // also used for editable values
 $l['xthreads_js_formatmap_to'] = 'Displayed Output';
+$l['xthreads_js_editable_values_groups'] = 'Editable by Groups';
 $l['xthreads_js_defaultfilter_field'] = 'Field';
 $l['xthreads_js_defaultfilter_value'] = 'Value';
 
