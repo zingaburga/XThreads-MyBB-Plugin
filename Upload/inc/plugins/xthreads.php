@@ -3,9 +3,8 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.40);
+define('XTHREADS_VERSION', 1.41);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
-
 
 $plugins->add_hook('forumdisplay_start', 'xthreads_forumdisplay_sortlang');
 $plugins->add_hook('forumdisplay_thread', 'xthreads_format_thread_date');
