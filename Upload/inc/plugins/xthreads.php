@@ -12,6 +12,8 @@ $plugins->add_hook('showthread_start', 'xthreads_format_thread_date');
 $plugins->add_hook('global_start', 'xthreads_global', 5); // load this before most plugins so that they will utilise our modified system
 $plugins->add_hook('archive_start', 'xthreads_archive_breadcrumb');
 
+xthreads_preglobal();
+
 //$plugins->add_hook('global_end', 'xthreads_fix_stats');
 $plugins->add_hook('global_end', 'xthreads_handle_uploads');
 
@@ -153,9 +155,10 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 }
 
 
-function xthreads_global() {
-	global $current_page, $mybb, $templatelist, $templates;
-	switch($current_page) {
+function xthreads_preglobal() {
+	if(!defined('THIS_SCRIPT')) return;
+	global $mybb;
+	switch(THIS_SCRIPT) {
 		case 'misc.php':
 			if($mybb->input['action'] != 'rules') break;
 		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
@@ -179,21 +182,18 @@ function xthreads_global() {
 				$thread = get_thread($tid);
 				if($thread['fid']) {
 					$fid = $thread['fid'];
-					xthreads_set_threadforum_urlvars('thread', $thread['tid']); // since it's convenient...
+					$set_thread_urlvar = $thread['tid'];
 				}
 			}
-			if($fid || $current_page == 'polls.php') break;
+			if($fid || THIS_SCRIPT == 'polls.php') break;
 			
 		case 'editpost.php':
 			if($pid = intval($mybb->input['pid'])) {
 				$post = get_post($pid);
 				if($post['fid']) {
 					$fid = $post['fid'];
-					xthreads_set_threadforum_urlvars('thread', $post['tid']); // since it's convenient...
+					$set_thread_urlvar = $post['tid'];
 				}
-			}
-			if($fid) {
-				$templatelist .= ',editpost_first';
 			}
 			break;
 		
@@ -206,22 +206,40 @@ function xthreads_global() {
 				// note, $fid can be 0, for invalid aid, or announcement applying to all forums
 			}
 			break;
-			
-		case 'index.php':
-			// we're only here for the forumbit fix
-			$fid = 0;
-			break;
 		default: return;
 	}
 	
 	$fid = intval($fid);
 	
 	if($fid) {
-		global $forum, $cache, $xtforum;
+		global $forum, $cache, $xtforum, $xt_fid;
 		$forum = get_forum($fid);
 		$xtforums = $cache->read('xt_forums');
 		$xtforum = $xtforums[$fid];
 		unset($xtforums);
+		$xt_fid = $fid;
+		
+		// TODO: custom URL stuffs here
+	}
+	
+	if(isset($set_thread_urlvar)) {
+		xthreads_set_threadforum_urlvars('thread', $set_thread_urlvar); // since it's convenient...
+	}
+}
+
+function xthreads_global() {
+	global $current_page, $mybb, $templatelist, $templates, $xt_fid;
+	
+	if($current_page == 'index.php' || $current_page == 'forumdisplay.php') {
+		global $plugins;
+		require_once MYBB_ROOT.'inc/xthreads/xt_forumdhooks.php';
+		$plugins->add_hook('forumdisplay_start', 'xthreads_forumdisplay');
+		$plugins->add_hook('build_forumbits_forum', 'xthreads_tpl_forumbits');
+		xthreads_global_forumbits_tpl();
+	}
+	
+	if($xt_fid) {
+		global $forum, $xtforum;
 		if($xtforum['tplprefix'] !== '') {
 			// this forum has a custom tpl prefix, hook into templates system
 			control_object($templates, '
@@ -303,6 +321,7 @@ function xthreads_global() {
 					$templatelist .= ',threadfields_inputrow';
 			break;
 			case 'editpost.php':
+				$templatelist .= ',editpost_first';
 			case 'newthread.php':
 				$templatelist .= ',threadfields_inputrow';
 			break;
@@ -310,20 +329,13 @@ function xthreads_global() {
 		
 		// hide breadcrumb business
 		if($current_page != 'printthread.php') {
-			xthreads_breadcrumb_hack($fid);
+			xthreads_breadcrumb_hack($xt_fid);
 		} else {
 			// printthread needs some whacky attention
 			$GLOBALS['plugins']->add_hook('printthread_start', 'xthreads_breadcrumb_hack_printthread', 10, MYBB_ROOT.'inc/xthreads/xt_mischooks.php');
 		}
 		
 		xthreads_set_threadforum_urlvars('forum', $forum['fid']);
-	}
-	if($current_page == 'index.php' || $current_page == 'forumdisplay.php') {
-		global $plugins;
-		require_once MYBB_ROOT.'inc/xthreads/xt_forumdhooks.php';
-		$plugins->add_hook('forumdisplay_start', 'xthreads_forumdisplay');
-		$plugins->add_hook('build_forumbits_forum', 'xthreads_tpl_forumbits');
-		xthreads_global_forumbits_tpl();
 	}
 }
 

@@ -14,8 +14,15 @@ if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2 && isset($plugins) && is_object($plugins
 @define('XTHREADS_MODIFY_TEMPLATES', true);
 
 function xthreads_info() {
-	global $lang;
+	global $lang, $mybb;
 	$lang->load('xthreads');
+	
+	// cause the built-in compatibility checker sucks ballz (min supported version is 1.4.2)
+	if($mybb->version_code < 1402)
+		$compatibility = '141*,15*,16*'; // make it incompatible
+	else
+		$compatibility = '14*,15*,16*';
+	
 	return array(
 		'name'          => '<span style="color: #008000;">'.$lang->xthreads_name.'</span>',
 		'description'   => $lang->xthreads_desc,
@@ -23,7 +30,7 @@ function xthreads_info() {
 		'author'        => 'ZiNgA BuRgA',
 		'authorsite'    => 'http://zingaburga.com/',
 		'version'       => xthreads_format_version_number(XTHREADS_VERSION),
-		'compatibility' => '14*,15*,16*',
+		'compatibility' => $compatibility,
 		'guid'          => ''
 	);
 }
