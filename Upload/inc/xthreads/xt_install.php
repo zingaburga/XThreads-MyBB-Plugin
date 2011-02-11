@@ -23,7 +23,7 @@ function xthreads_info() {
 	else
 		$compatibility = '14*,15*,16*';
 	
-	return array(
+	$info = array(
 		'name'          => '<span style="color: #008000;">'.$lang->xthreads_name.'</span>',
 		'description'   => $lang->xthreads_desc,
 		'website'       => 'http://mybbhacks.zingaburga.com/',
@@ -32,6 +32,12 @@ function xthreads_info() {
 		'version'       => xthreads_format_version_number(XTHREADS_VERSION),
 		'compatibility' => $compatibility,
 		'guid'          => ''
+	);
+	return array(
+		'name'          => '</strong><small style="font-family: Tempus Sans ITC, Lucida Calligraphy, Harrington, Comic Sans MS, Some other less-readable goofy font, Serif"><a href="'.$info['website'].'">'.$info['name'].'</a> v'.$info['version'].', '.$info['description'].'<!-- ',
+		'author'        => '--><i><small>',
+		'compatibility' => $info['compatibility'],
+		'guid'          => $info['guid']
 	);
 }
 
