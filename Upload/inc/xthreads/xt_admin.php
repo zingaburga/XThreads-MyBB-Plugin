@@ -3,8 +3,6 @@
 if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
-//define('XTHREADS_THREADFILTER_SQL_STRICT', 1);
-
 $plugins->add_hook('admin_tools_cache_start', 'xthreads_admin_cachehack');
 $plugins->add_hook('admin_tools_cache_rebuild', 'xthreads_admin_cachehack');
 //$plugins->add_hook('admin_tools_recount_rebuild_start', 'xthreads_admin_statshack');
@@ -443,6 +441,7 @@ $defines[XTHREADS_ALLOW_PHP_THREADFIELDS]
 
 /**
  * This switch can be used to disable automatic template editing XThreads performs (will no longer call find_replace_templatesets())
+ * This is only really useful if you enabled this before XThreads was installed (edit define in inc/xthreads/xt_install.php)
  */
 $defines[XTHREADS_MODIFY_TEMPLATES]
 
@@ -801,6 +800,7 @@ function xthreads_admin_forumedit() {
 				'xthreads_grouping' => 0,
 				'xthreads_firstpostattop' => 0,
 				'xthreads_inlinesearch' => 0,
+				'xthreads_fdcolspan_offset' => 0,
 				'xthreads_threadsperpage' => 0,
 				'xthreads_postsperpage' => 0,
 				'xthreads_force_postlayout' => '',
@@ -829,6 +829,7 @@ function xthreads_admin_forumedit() {
 			'grouping' => 'text_box',
 			'firstpostattop' => 'yes_no_radio',
 			'inlinesearch' => 'yes_no_radio',
+			'fdcolspan_offset' => 'text_box',
 			'threadsperpage' => 'text_box',
 			'postsperpage' => 'text_box',
 			'force_postlayout' => array('' => 'none', 'horizontal' => 'horizontal', 'classic' => 'classic'),
@@ -860,7 +861,7 @@ function xthreads_admin_forumedit() {
 				$html = $form->generate_yes_no_radio($name, ($data[$name] ? '1':'0'), true);
 			//elseif($type == 'check_box')
 			//	$html = $form->generate_check_box($name, 1, $);
-			$form_container->output_row($lang->$name, $description, $html);
+			$form_container->output_row($lang->$name, $description, $html, $name);
 		}
 		
 		/*
@@ -966,6 +967,7 @@ function xthreads_admin_forumcommit() {
 		'xthreads_allow_blankmsg' => intval(trim($mybb->input['xthreads_allow_blankmsg'])),
 		'xthreads_nostatcount' => intval(trim($mybb->input['xthreads_nostatcount'])),
 		'xthreads_inlinesearch' => intval(trim($mybb->input['xthreads_inlinesearch'])),
+		'xthreads_fdcolspan_offset' => intval(trim($mybb->input['xthreads_fdcolspan_offset'])),
 		'xthreads_threadsperpage' => intval(trim($mybb->input['xthreads_threadsperpage'])),
 		'xthreads_postsperpage' => intval(trim($mybb->input['xthreads_postsperpage'])),
 		'xthreads_force_postlayout' => trim($mybb->input['xthreads_force_postlayout']),

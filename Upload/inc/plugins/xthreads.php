@@ -220,6 +220,8 @@ function xthreads_preglobal() {
 		$xt_fid = $fid;
 		
 		// TODO: custom URL stuffs here
+		// main problem is inter-forum URLs (ie forumbit stuffs, breadcrumbs etc)
+		// also, search URLs for threads/posts
 	}
 	
 	if(isset($set_thread_urlvar)) {

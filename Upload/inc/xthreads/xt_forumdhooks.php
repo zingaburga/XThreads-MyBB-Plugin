@@ -295,6 +295,18 @@ function xthreads_forumdisplay() {
 		
 	}
 	
+	if($forum['xthreads_fdcolspan_offset']) {
+		control_object($GLOBALS['cache'], '
+			function read($name, $hard=false) {
+				static $done=false;
+				if(!$done && $name == "posticons" && isset($GLOBALS["colspan"])) {
+					$done = true;
+					$GLOBALS["colspan"] += $GLOBALS["foruminfo"]["xthreads_fdcolspan_offset"];
+				}
+				return parent::read($name, $hard);
+			}
+		');
+	}
 }
 
 // Quick Thread integration function

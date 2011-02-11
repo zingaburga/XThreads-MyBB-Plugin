@@ -150,6 +150,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.40) {
 }
 
 if(XTHREADS_INSTALLED_VERSION < 1.41) {
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_fdcolspan_offset` smallint(6) not null default 0');
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
 		`editable_values` text not null
 	)');

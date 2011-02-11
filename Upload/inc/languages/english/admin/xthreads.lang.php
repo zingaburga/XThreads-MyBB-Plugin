@@ -223,6 +223,8 @@ $l['xthreads_firstpostattop_desc'] = 'Shows the first post at the top of every p
 <br /><!-- more -->Tip: you can use the <em>postbit_first*</em> templates as opposed to the <em>postbit*</em> templates to get a different look for the first post.  On the <em>showthread</em> template, the first post is separated into the <code>{$first_post}</code> variable.  Also, the template <em>showthread_noreplies</em> is used in the <code>{$posts}</code> variable if there are no replies to the thread.';
 $l['xthreads_inlinesearch'] = 'Enable XThreads\' Inline Forum Search';
 $l['xthreads_inlinesearch_desc'] = 'Replaces the search box on the forumdisplay page with XThreads\' inline search system, ignoring the search permission set for this forum.  This allows the search to display threads the same way as forumdisplay does.  The downside is that this may cause additional server load.';
+$l['xthreads_fdcolspan_offset'] = 'Offset forumdisplay {$colspan}';
+$l['xthreads_fdcolspan_offset_desc'] = 'If non-zero, will increase the value of the <code>{$colspan}</code> variable in the <em>forumdisplay_threadlist</em> template by specified amount (negative values accepted).  May be useful for adding additional columns on the forumdisplay page.';
 $l['xthreads_threadsperpage'] = 'Override Threads Per Page';
 $l['xthreads_threadsperpage_desc'] = 'If non-zero, overrides the default and user chosen threads per page setting for forumdisplay.';
 $l['xthreads_postsperpage'] = 'Override Posts Per Page';
