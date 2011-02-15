@@ -156,9 +156,12 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 
 
 function xthreads_preglobal() {
-	if(!defined('THIS_SCRIPT')) return;
 	global $mybb;
-	switch(THIS_SCRIPT) {
+	if(defined('THIS_SCRIPT'))
+		$current_page = THIS_SCRIPT;
+	else
+		$current_page = my_strtolower(basename($_SERVER['PHP_SELF'])); // MyBB < 1.4.2
+	switch($current_page) {
 		case 'misc.php':
 			if($mybb->input['action'] != 'rules') break;
 		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
@@ -185,7 +188,7 @@ function xthreads_preglobal() {
 					$set_thread_urlvar = $thread['tid'];
 				}
 			}
-			if($fid || THIS_SCRIPT == 'polls.php') break;
+			if($fid || $current_page == 'polls.php') break;
 			
 		case 'editpost.php':
 			if($pid = intval($mybb->input['pid'])) {
