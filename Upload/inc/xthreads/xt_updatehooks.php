@@ -71,7 +71,26 @@ function xthreads_input_posthandler_validate(&$ph, $update=false) {
 	$lang->load('xthreads');
 	
 	$data = array();
-	$errors = xthreads_input_validate($data, $threadfield_cache, $update);
+	$update_tid = false;
+	if($update) { // try to retrieve tid
+		if($ph->data['tid']) $update_tid = $ph->data['tid'];
+		elseif($ph->tid) $update_tid = $ph->tid;
+		elseif($ph->data['pid']) $pid = $ph->data['pid'];
+		elseif($ph->pid) $pid = $ph->pid;
+		else { // start trying global vars
+			global $tid, $thread, $post, $pid;
+			if($thread['tid']) $update_tid = $thread['tid'];
+			elseif($post['tid']) $update_tid = $post['tid'];
+			elseif($tid) $update_tid = $tid;
+			// elseif($pid) will automatically go below
+		}
+		
+		if(isset($pid) && $pid) {
+			$p = get_post($pid);
+			$update_tid = $p['tid'];
+		}
+	}
+	$errors = xthreads_input_validate($data, $threadfield_cache, $update_tid);
 	foreach($errors as &$error)
 		call_user_func_array(array($ph, 'set_error'), $error);
 	
@@ -134,8 +153,24 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				foreach($inval_list as &$val) {
 					// check usergroup perms for values
 					if(!xthreads_tfvalue_settable($v, $val)) {
-						$errors[] = array('threadfield_cant_set', htmlspecialchars_uni($v['title']));
-						break;
+						// if updating, double-check for current value
+						$settable = false;
+						if($update) {
+							static $tfd_cache=null;
+							if(!isset($tfd_cache)) $tfd_cache = array();
+							if(!isset($tfd_cache[$update])) { // we should only ever have one thread, but we'll be flexible...
+								global $db;
+								$tfd_cache[$update] = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$update));
+							}
+							$tfd =& $tfd_cache[$update];
+							
+							if($val == $tfd[$k])
+								$settable = true;
+						}
+						if(!$settable) {
+							$errors[] = array('threadfield_cant_set', htmlspecialchars_uni($v['title']));
+							break;
+						}
 					}
 					
 					if(xthreads_empty($val)) continue; // means that if the field wasn't set and isn't a necessary field, ignore it
@@ -335,12 +370,11 @@ function xthreads_inputdisp() {
 		foreach($mybb->input as $k => &$v)
 			if(substr($k, 0, 9) == 'xthreads_')
 				$recvfields[substr($k, 9)] =& $v;
-		_xthreads_input_generate($recvfields, $fid);
+		_xthreads_input_generate($recvfields, $fid, $thread['tid']);
 	}
 	elseif($editpost || ($mybb->input['action'] == 'editdraft' && $thread['tid'])) {
-		global $db;
-		$fields = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$thread['tid']));
-		_xthreads_input_generate($fields, $fid);
+		$blank = array();
+		_xthreads_input_generate($blank, $fid, $thread['tid']);
 	}
 	else { // newthread.php
 		$blank = array();
@@ -374,7 +408,7 @@ function xthreads_inputdisp() {
 		
 		$threadfields = array();
 		$threadfield_cache = xthreads_gettfcache($fid); // don't use global cache as that will probably have been cleared of uneditable fields
-		$errors = xthreads_input_validate($threadfields, $threadfield_cache, $editpost);
+		$errors = xthreads_input_validate($threadfields, $threadfield_cache, ($editpost ? $thread['tid'] : false));
 		// don't validate here if on editpost, as MyBB will do it later (does a full posthandler validate call)
 		// unfortunately, this method has the side effect of running our validation function twice :( [but not a big issue I guess]
 		if($editpost || empty($errors)) {
@@ -496,17 +530,28 @@ function xthreads_editpost_first_tplhack() {
 }
 
 // TODO: merge this function into ...
-function _xthreads_input_generate(&$data, $fid) {
+function _xthreads_input_generate(&$data, $fid, $tid=0) {
 	global $threadfield_cache;
 	if(!isset($threadfield_cache))
 		$threadfield_cache = xthreads_gettfcache($fid);
 	xthreads_filter_tfeditable($threadfield_cache, $fid); // NOTE: modifies the global tfcache!
-	xthreads_input_generate($data, $threadfield_cache, $fid);
+	xthreads_input_generate($data, $threadfield_cache, $fid, $tid);
 }
 
-function xthreads_input_generate(&$data, &$threadfields, $fid) {
+function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 	global $tfinput, $tfinputrow, $extra_threadfields, $lang, $xthreads_threadin_tabindex_shift;
 	if(!$lang->xthreads_attachfile) $lang->load('xthreads');
+	
+	// if a thread ID is supplied, grab the current values
+	if($tid) {
+		static $tfd_cache=null;
+		if(!isset($tfd_cache)) $tfd_cache = array();
+		if(!isset($tfd_cache[$tid])) { // we should only ever have one thread, but we'll be flexible...
+			global $db;
+			$tfd_cache[$tid] = $db->fetch_array($db->simple_select('threadfields_data', '*', 'tid='.$tid));
+		}
+		$tfd =& $tfd_cache[$tid];
+	}
 	
 	$tfinput = $tfinputrow = array();
 	$extra_threadfields = '';
@@ -531,6 +576,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			$defval = '';
 		elseif(isset($data[$k]))
 			$defval = $data[$k];
+		elseif($tid) // currently set value
+			$defval = $tfd[$k];
 		else {
 			$defval = eval_str($tf['defaultval']);
 			// we don't want $defval to be an array for textual inputs, so split it later
@@ -580,7 +627,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 					$tf_fh = ' size="5"';
 				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].(!xthreads_empty($tf['multival']) ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
 				foreach($vals as &$val) {
-					if(!xthreads_tfvalue_settable($tf, $val)) continue;
+					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
 					$selected = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' selected="selected"':'');
 					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
 						$tfinput[$k] .= '<option value="" style="font-style: italic;"'.$selected.'>'.$lang->xthreads_val_blank.'</option>';
@@ -595,7 +642,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid) {
 			case XTHREADS_INPUT_RADIO:
 				$tftype = ($tf['inputtype'] == XTHREADS_INPUT_RADIO ? 'radio':'checkbox');
 				foreach($vals as &$val) {
-					if(!xthreads_tfvalue_settable($tf, $val)) continue;
+					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
 					$checked = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' checked="checked"':'');
 					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
 						$tfinput[$k] .= '<label style="display: block; font-style: italic;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value=""'.$checked.$tabindex.' />'.$lang->xthreads_val_blank.'</label>';
