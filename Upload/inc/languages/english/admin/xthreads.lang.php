@@ -2,6 +2,7 @@
 
 $l['xthreads_name'] = 'XThreads';
 $l['xthreads_desc'] = 'now taking up less space in your ACP plugins list.';
+$l['xthreads_install_and_activate'] = 'Install &amp; activate this bad boy';
 
 $l['xthreads_rebuildxtathumbs'] = 'Rebuild XThreads Attachment Thumbnails';
 $l['xthreads_rebuildxtathumbs_desc'] = 'This will rebuild thumbnails for images uploaded using the XThreads attachment system (custom thread fields with image uploads).';
