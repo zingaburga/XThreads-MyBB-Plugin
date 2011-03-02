@@ -157,4 +157,8 @@ if(XTHREADS_INSTALLED_VERSION < 1.41) {
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 	
 }
+if(XTHREADS_INSTALLED_VERSION < 1.42) {
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `defaultsortby` varchar(255) NOT NULL default \'\'');
+	
+}
 return true;

@@ -200,6 +200,8 @@ function xthreads_install() {
 		if($afe == 'uid') continue; // we won't remove this from the above array
 		$db->write_query('ALTER TABLE `'.$db->table_prefix.'threads` ADD KEY `xthreads_'.$afe.'` (`'.$afe.'`)', true);
 	}
+	// increase size of sorting column
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `defaultsortby` varchar(255) NOT NULL default \'\'');
 	$cache->update_forums();
 	xthreads_buildcache_forums();
 	
@@ -407,6 +409,10 @@ function xthreads_uninstall() {
 					DROP COLUMN '.implode(', DROP COLUMN ', $fields));
 		}
 	}
+	
+	// remove any custom default sorts and reduce size of sorting column back to original
+	$db->update_query('forums', array('defaultsortby' => ''), 'defaultsortby LIKE "tf_%" OR defaultsortby LIKE "tfa_%"');
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `defaultsortby` varchar(10) NOT NULL default \'\'');
 	$cache->update_forums();
 	
 	xthreads_delete_datacache('threadfields');
