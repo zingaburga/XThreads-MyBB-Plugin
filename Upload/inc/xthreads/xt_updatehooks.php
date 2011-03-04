@@ -20,7 +20,7 @@ function xthreads_filter_tfeditable(&$tf, $fid=0) {
 	}
 }
 
-function xthreads_tfvalue_settable(&$tf, &$val) {
+function xthreads_tfvalue_settable(&$tf, $val) {
 	if(empty($tf['editable_values'])) return true;
 	$cv = (string)xthreads_convert_str_to_datatype($val, $tf['datatype']);
 	$allow_groups = $tf['editable_values'][$cv];
