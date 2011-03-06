@@ -12,7 +12,7 @@ $plugins->add_hook('showthread_start', 'xthreads_format_thread_date');
 $plugins->add_hook('global_start', 'xthreads_global', 5); // load this before most plugins so that they will utilise our modified system
 $plugins->add_hook('archive_start', 'xthreads_archive_breadcrumb');
 
-xthreads_preglobal();
+//xthreads_preglobal();
 
 //$plugins->add_hook('global_end', 'xthreads_fix_stats');
 $plugins->add_hook('global_end', 'xthreads_handle_uploads');
@@ -155,7 +155,7 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 }
 
 
-function xthreads_preglobal() {
+/* function xthreads_preglobal() {
 	global $mybb;
 	if(defined('THIS_SCRIPT'))
 		$current_page = THIS_SCRIPT;
@@ -212,7 +212,7 @@ function xthreads_preglobal() {
 		default: return;
 	}
 	
-	$fid = intval($fid);
+	$fid = intval($fid); // paranoia
 	
 	if($fid) {
 		global $forum, $cache, $xtforum, $xt_fid;
@@ -230,10 +230,10 @@ function xthreads_preglobal() {
 	if(isset($set_thread_urlvar)) {
 		xthreads_set_threadforum_urlvars('thread', $set_thread_urlvar); // since it's convenient...
 	}
-}
+} */
 
 function xthreads_global() {
-	global $current_page, $mybb, $templatelist, $templates, $xt_fid;
+	global $current_page, $mybb, $templatelist, $templates;
 	
 	if($current_page == 'index.php' || $current_page == 'forumdisplay.php') {
 		global $plugins;
@@ -243,8 +243,64 @@ function xthreads_global() {
 		xthreads_global_forumbits_tpl();
 	}
 	
-	if($xt_fid) {
-		global $forum, $xtforum;
+	switch($current_page) {
+		case 'misc.php':
+			if($mybb->input['action'] != 'rules') break;
+		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
+			$fid = intval($mybb->input['fid']);
+			if($fid) break;
+			
+		case 'polls.php':
+			switch($mybb->input['action']) {
+				case 'editpoll':
+				case 'do_editpoll':
+				case 'showresults':
+				case 'vote':
+				case 'do_undovote':
+					// no cached poll getting function, dupe a query then...
+					global $db;
+					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.intval($mybb->input['pid'])), 'tid');
+			}
+			// fall through
+		case 'showthread.php': case 'newreply.php': case 'ratethread.php': case 'sendthread.php': case 'printthread.php':
+			if(isset($tid) || $tid = intval($mybb->input['tid'])) {
+				$thread = get_thread($tid);
+				if($thread['fid']) {
+					$fid = $thread['fid'];
+					$set_thread_urlvar = $thread['tid'];
+				}
+			}
+			if($fid || $current_page == 'polls.php') break;
+			
+		case 'editpost.php':
+			if($pid = intval($mybb->input['pid'])) {
+				$post = get_post($pid);
+				if($post['fid']) {
+					$fid = $post['fid'];
+					$set_thread_urlvar = $post['tid'];
+				}
+			}
+			break;
+		
+		case 'announcements.php':
+			if($aid = intval($mybb->input['aid'])) {
+				// unfortunately MyBB doesn't have a cache for announcements
+				// so we can have fun and double query!
+				global $db;
+				$fid = $db->fetch_field($db->simple_select('announcements', 'fid', 'aid='.$aid), 'fid');
+				// note, $fid can be 0, for invalid aid, or announcement applying to all forums
+			}
+			break;
+		default: return;
+	}
+	$fid = intval($fid); // paranoia
+	
+	if($fid) {
+		global $forum, $cache, $xtforum;
+		$forum = get_forum($fid);
+		$xtforums = $cache->read('xt_forums');
+		$xtforum = $xtforums[$fid];
+		unset($xtforums);
 		if($xtforum['tplprefix'] !== '') {
 			// this forum has a custom tpl prefix, hook into templates system
 			control_object($templates, '
@@ -334,13 +390,16 @@ function xthreads_global() {
 		
 		// hide breadcrumb business
 		if($current_page != 'printthread.php') {
-			xthreads_breadcrumb_hack($xt_fid);
+			xthreads_breadcrumb_hack($fid);
 		} else {
 			// printthread needs some whacky attention
 			$GLOBALS['plugins']->add_hook('printthread_start', 'xthreads_breadcrumb_hack_printthread', 10, MYBB_ROOT.'inc/xthreads/xt_mischooks.php');
 		}
 		
 		xthreads_set_threadforum_urlvars('forum', $forum['fid']);
+	}
+	if(isset($set_thread_urlvar)) {
+		xthreads_set_threadforum_urlvars('thread', $set_thread_urlvar); // since it's convenient...
 	}
 }
 
