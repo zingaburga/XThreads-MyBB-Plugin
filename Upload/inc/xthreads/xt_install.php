@@ -85,7 +85,7 @@ function xthreads_install() {
 	
 	switch($dbtype) {
 		case 'mysql':
-			$create_table_suffix = ' TYPE=MyISAM'.$create_table_suffix;
+			$create_table_suffix = ' ENGINE=MyISAM'.$create_table_suffix;
 			$auto_increment = ' auto_increment';
 		break;
 		case 'sqlite':
