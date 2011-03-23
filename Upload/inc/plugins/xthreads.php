@@ -736,7 +736,7 @@ function xthreads_user_in_groups(&$gids) {
 
 // note, $tf isn't used for loading xtattachment cache - it's only there to simplify loop-logic
 function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
-	if(!$tids) return;
+	//if(!$tids) return;
 	// our special query needed to get download info across
 	static $done_attach_dl_count = false;
 	if(!$done_attach_dl_count && $tf['inputtype'] == XTHREADS_INPUT_FILE || $tf['inputtype'] == XTHREADS_INPUT_FILE_URL) {

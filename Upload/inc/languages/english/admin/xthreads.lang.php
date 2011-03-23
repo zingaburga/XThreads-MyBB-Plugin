@@ -239,7 +239,7 @@ $l['xthreads_hideforum'] = 'Hide Forum';
 $l['xthreads_hideforum_desc'] = 'If yes, will hide this forum on your index and forumdisplay pages.
 <br /><!-- more -->This is slightly different to disabling the Can View Forum permission in that this does not affect permissions, it just merely hides it from display (so, for example, you could put a link to it in your main menu).';
 $l['xthreads_hidebreadcrumb'] = 'Hide Forum in Breadcrumb Trail';
-$l['xthreads_hidebreadcrumb_desc'] = 'If yes, will hide this forum in the forum breadcrumb <strong>trail</strong> (it will still appear in the breadcrumb if it\'s the active forum).';
+$l['xthreads_hidebreadcrumb_desc'] = 'If yes, will hide <u>this</u> forum in the forum breadcrumb <strong>trail</strong> (it will still appear in the breadcrumb if it\'s the active forum).';
 $l['xthreads_allow_blankmsg'] = 'Allow Blank Post Message';
 $l['xthreads_allow_blankmsg_desc'] = 'If yes, new threads in this forum will not require a message to be entered.';
 $l['xthreads_nostatcount'] = 'Don\'t include this forum\'s threads/posts in global forum statistics';
