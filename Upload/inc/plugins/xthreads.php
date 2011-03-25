@@ -739,7 +739,7 @@ function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 	//if(!$tids) return;
 	// our special query needed to get download info across
 	static $done_attach_dl_count = false;
-	if(!$done_attach_dl_count && $tf['inputtype'] == XTHREADS_INPUT_FILE || $tf['inputtype'] == XTHREADS_INPUT_FILE_URL) {
+	if(!$done_attach_dl_count && ($tf['inputtype'] == XTHREADS_INPUT_FILE || $tf['inputtype'] == XTHREADS_INPUT_FILE_URL)) {
 		$done_attach_dl_count = true;
 		
 		global $xta_cache, $db;
