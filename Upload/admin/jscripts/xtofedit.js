@@ -24,7 +24,8 @@ xtOFEditor.prototype = {
 	initialize: function(){},
 	
 	init: function() {
-		// this is broken in Firefox 4 beta - if we have it, bail
+		// this is broken in Firefox 4 - if we have it, bail
+		// see bug: https://bugzilla.mozilla.org/show_bug.cgi?id=637644
 		if(/Firefox\/4\./.test(navigator.userAgent)) return;
 		
 		this.src.onclick = this.open.bind(this);
