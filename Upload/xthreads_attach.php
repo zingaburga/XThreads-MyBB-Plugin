@@ -11,8 +11,8 @@
 
 /**
  * if disabled, MyBB core will not be loaded
- ***** DO NOT CHANGE THIS! *****
  * the original idea was to perform permission checking, but I have not decided to implement this; file downloads probably still work with it turned on, however, there isn't any reason to do this
+ * may be useful to enable if you need data from the core though
  */
 define('LOAD_SESSION', false);
 // need session class, mybb class, db class
@@ -31,7 +31,6 @@ if(LOAD_SESSION) {
 	
 	// TODO: disable calling send_page_headers()
 	
-	// TODO: user perms
 	// TODO: maybe do online for WOL
 }
 else {
@@ -150,7 +149,14 @@ function do_processing() {
 		exit;
 	}
 
-	global $fp, $fsize, $range_start, $range_end;
+	global $fp, $fsize, $range_start, $range_end, $plugins;
+	if(is_object($plugins)) {
+		$evalcode = '';
+		$evalcode = $plugins->run_hooks('xthreads_attachment_before_headers', $evalcode);
+		if($evalcode)
+			eval($evalcode);
+		unset($evalcode);
+	}
 	
 	if(!PROXY_REDIR_HEADER_PREFIX) {
 		$fp = fopen($fn, 'rb');
@@ -365,6 +371,8 @@ if(!function_exists('stream_copy_to_stream')) {
 	}
 }
 
+if(is_object($plugins)) $plugins->run_hooks('xthreads_attachment_before_download');
+
 $fout = fopen('php://output', 'wb'); // this call shouldn't fail, right?
 
 if($range_start)
@@ -428,6 +436,10 @@ function increment_downloads($aid) {
 	$db->connect($config['database']);
 	$db->set_table_prefix(TABLE_PREFIX);
 	$db->type = $config['database']['type'];
+	
+	if(is_object($GLOBALS['plugins'])) {
+		$GLOBALS['plugins']->run_hooks('xthreads_attachment_increment_dlcount', $aid);
+	}
 	
 	// so we do all the above just to run an update query :P
 	$db->write_query('UPDATE '.$db->table_prefix.'xtattachments SET downloads=downloads+1 WHERE aid='.intval($aid), 1);

@@ -1,7 +1,10 @@
 <?php
 
 function task_xtaorphan_cleanup(&$task) {
-	global $db, $lang;
+	global $db, $lang, $plugins;
+	if(is_object($plugins))
+		$plugins->run_hooks('xthreads_task_xtacleanup', $task);
+	
 	// clean out orphaned xtattachments more than 1 day old
 	require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 	$count = xthreads_rm_attach_query('tid=0 AND uploadtime<'.(TIME_NOW-86400));

@@ -89,6 +89,7 @@ if($mybb->input['action'] == 'edit')
 
 if($mybb->input['action'] == 'inline')
 {
+	$plugins->run_hooks('admin_config_threadfields_inline');
 	$del = $delattach = $order = array();
 	$alterkeys = '';
 	$query = $db->simple_select('threadfields', 'field,allowfilter,inputtype,disporder');
@@ -111,6 +112,7 @@ if($mybb->input['action'] == 'inline')
 	}
 	$db->free_result($query);
 	if(!empty($del)) {
+		$plugins->run_hooks('admin_config_threadfields_inline_delete');
 		$db->delete_query('threadfields', 'field IN ("'.implode('","', $del).'")');
 		$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields_data` DROP COLUMN `'.implode('`, DROP COLUMN `', $del).'`'.$alterkeys);
 		
@@ -123,6 +125,7 @@ if($mybb->input['action'] == 'inline')
 		}
 	}
 	
+	$plugins->run_hooks('admin_config_threadfields_inline_end');
 	if(empty($order) && empty($del)) {
 		// nothing updated
 		flash_message($lang->failed_threadfield_inline, 'error');
