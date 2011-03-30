@@ -1291,6 +1291,28 @@ function xthreads_moderation_custom() {
 	}
 }
 
+function xthreads_purge_draft() {
+	global $mybb, $db;
+	if(!$mybb->input['deletedraft']) return;
+	// unfortunately, we need to grab a list of all the valid tids
+	$tidin = '';
+	foreach($mybb->input['deletedraft'] as $id => &$val) {
+		if($val == 'thread')
+			$tidin .= ($tidin===''?'':',') . intval($id);
+	}
+	
+	if(!$tidin) return;
+	$query = $db->simple_select('threads', 'tid', 'tid IN ('.$tidin.') AND visible=-2 AND uid='.$mybb->user['uid']);
+	$tidin = '';
+	while($tid = $db->fetch_field($query, 'tid'))
+		$tidin .= ($tidin==''?'':',') . $tid;
+	$db->free_result($query);
+	
+	if(!$tidin) return;
+	$db->delete_query('threadfields_data', 'tid IN ('.$tidin.')');
+	xthreads_rm_attach_query('tid IN ('.$tidin.')');
+}
+
 // because MyBB's str_ireplace workaround is buggy...
 function xthreads_str_ireplace($find, $replace, $subject) {
 	if(str_ireplace('a','b','A') == 'A') { // buggy workaround
