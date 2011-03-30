@@ -1390,7 +1390,12 @@ function xthreads_db_replace($table, $insert, $where) {
 
 // try to update, if unsuccessful, will run replace query
 function xthreads_db_update_replace($table, $update, $idname, $idval) {
-	$where = '`'.$idname.'`='.xthreads_db_escape($idval);
+	if($GLOBALS['db']->type == 'pgsql')
+		$fd = '"';
+	else
+		$fd = '`';
+	
+	$where = $fd.$idname.$fd.'='.xthreads_db_escape($idval);
 	xthreads_db_update($table, $update, $where);
 	if($GLOBALS['db']->affected_rows() == 0) {
 		$update[$idname] = $idval;
