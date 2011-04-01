@@ -14,7 +14,7 @@ if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2 && isset($plugins) && is_object($plugins
 @define('XTHREADS_MODIFY_TEMPLATES', true);
 
 function xthreads_info() {
-	global $lang, $mybb;
+	global $lang, $mybb, $plugins;
 	$lang->load('xthreads');
 	
 	$info = array(
@@ -27,6 +27,9 @@ function xthreads_info() {
 		'compatibility' => '14*,15*,16*',
 		'guid'          => ''
 	);
+	if(is_object($plugins)) {
+		$info = $plugins->run_hooks('xthreads_info_needs_moar_pimpin', $info);
+	}
 	if($mybb->input['action']) // not main plugins page
 		return $info;
 	
@@ -78,7 +81,8 @@ function xthreads_is_installed() {
 }
 
 function xthreads_install() {
-	global $db, $cache;
+	global $db, $cache, $plugins;
+	$plugins->run_hooks('xthreads_install_start');
 	$create_table_suffix = $db->build_create_table_collation();
 	
 	$dbtype = xthreads_db_type();
@@ -244,6 +248,7 @@ Put your stuff here
 		$db->update_query('adminoptions', array('permissions' => $db->escape_string(serialize($perms))), 'uid='.$adminopt['uid']);
 	}
 	$db->free_result($query);
+	$plugins->run_hooks('xthreads_install_end');
 }
 
 function xthreads_insert_templates($new_templates, $set=-1) {
@@ -282,7 +287,8 @@ define('XTHREADS_INSTALL_TPLADD_EXTRASORT', str_replace("\r", '',
 					{$xthreads_extra_sorting}'
 ));
 function xthreads_activate() {
-	global $db, $cache, $lang;
+	global $db, $cache, $lang, $plugins;
+	$plugins->run_hooks('xthreads_activate_start');
 	$db->insert_query('tasks', array(
 		'title' => $db->escape_string($lang->xthreads_orphancleanup_name),
 		'description' => $db->escape_string($lang->xthreads_orphancleanup_desc),
@@ -314,18 +320,21 @@ function xthreads_activate() {
 		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
 		find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
 	}
+	$plugins->run_hooks('xthreads_activate_end');
 }
 function xthreads_deactivate() {
-	global $db, $cache;
+	global $db, $cache, $plugins;
+	$plugins->run_hooks('xthreads_deactivate_start');
 	$db->delete_query('tasks', 'file="xtaorphan_cleanup"');
 	$cache->update_tasks();
 	
 	if(XTHREADS_MODIFY_TEMPLATES)
 		xthreads_undo_template_edits();
+	$plugins->run_hooks('xthreads_deactivate_end');
 }
 
 function xthreads_uninstall() {
-	global $db, $cache, $mybb;
+	global $db, $cache, $mybb, $plugins;
 	
 	if($mybb->input['no']) {
 		admin_redirect(xthreads_admin_url('config', 'plugins'));
@@ -338,6 +347,8 @@ function xthreads_uninstall() {
 		exit;
 	} else
 		unset($mybb->input['confirm_uninstall']);
+	
+	$plugins->run_hooks('xthreads_uninstall_start');
 	
 	$query = $db->simple_select('adminoptions', 'uid,permissions');
 	while($adminopt = $db->fetch_array($query)) {
@@ -432,6 +443,7 @@ function xthreads_uninstall() {
 		}
 	}
 	
+	$plugins->run_hooks('xthreads_uninstall_end');
 }
 
 function xthreads_delete_datacache($key) {
