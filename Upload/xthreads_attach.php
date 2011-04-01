@@ -172,8 +172,8 @@ function do_processing() {
 		if(isset($_SERVER['HTTP_RANGE']) && ($p = strpos($_SERVER['HTTP_RANGE'], '='))) {
 			$rangestr = substr($_SERVER['HTTP_RANGE'], $p+1);
 			$p = strpos($rangestr, '-');
-			$ostart = intval(substr($rangestr, 0, $p));
-			$oend = intval(substr($rangestr, $p+1));
+			$ostart = (int)substr($rangestr, 0, $p);
+			$oend = (int)substr($rangestr, $p+1);
 			
 			if($oend && $oend < $range_end && $oend > $range_start)
 				$range_end = $oend;
@@ -402,7 +402,7 @@ fclose($fout);
 function increment_downloads($aid) {
 	// if DB is loaded, use it
 	if(is_object(@$GLOBALS['db'])) {
-		$GLOBALS['db']->write_query('UPDATE '.$db->table_prefix.'xtattachments SET downloads=downloads+1 WHERE aid='.intval($aid), 1);
+		$GLOBALS['db']->write_query('UPDATE '.$db->table_prefix.'xtattachments SET downloads=downloads+1 WHERE aid='.(int)$aid, 1);
 		return;
 	}
 	
@@ -442,7 +442,7 @@ function increment_downloads($aid) {
 	}
 	
 	// so we do all the above just to run an update query :P
-	$db->write_query('UPDATE '.$db->table_prefix.'xtattachments SET downloads=downloads+1 WHERE aid='.intval($aid), 1);
+	$db->write_query('UPDATE '.$db->table_prefix.'xtattachments SET downloads=downloads+1 WHERE aid='.(int)$aid, 1);
 	$db->close();
 	unset($db, $GLOBALS['mybb']);
 }

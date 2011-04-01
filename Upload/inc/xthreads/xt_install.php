@@ -148,9 +148,9 @@ function xthreads_install() {
 				if($prop['datatype'] == 'string')
 					$query .= ' default \''.$db->escape_string($prop['default']).'\'';
 				elseif($prop['datatype'] == 'double')
-					$query .= ' default '.floatval($prop['default']);
+					$query .= ' default '.(float)$prop['default'];
 				else
-					$query .= ' default '.intval($prop['default']);
+					$query .= ' default '.(int)$prop['default'];
 			}
 			if($field == 'field' && $dbtype == 'sqlite')
 				$query .= ' PRIMARY KEY';

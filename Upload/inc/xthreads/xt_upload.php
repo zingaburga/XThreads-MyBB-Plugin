@@ -14,12 +14,12 @@ function &upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $t
 	static $done_flood_check = false;
 	if($uid && !$done_flood_check && $attacharray['aid']) {
 		$done_flood_check = true;
-		xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
+		xthreads_rm_attach_query('tid=0 AND uid='.(int)$uid.' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
 		// we'll do an extra query to get around the issue of delete queries not supporting offsets
 		global $db;
-		$cutoff = $db->fetch_field($db->simple_select('xtattachments', 'uploadtime', 'tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME), array('order_by' => 'uploadtime', 'order_dir' => 'desc', 'limit' => 1, 'limit_start' => XTHREADS_UPLOAD_FLOOD_NUMBER)), 'uploadtime');
+		$cutoff = $db->fetch_field($db->simple_select('xtattachments', 'uploadtime', 'tid=0 AND uid='.(int)$uid.' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME), array('order_by' => 'uploadtime', 'order_dir' => 'desc', 'limit' => 1, 'limit_start' => XTHREADS_UPLOAD_FLOOD_NUMBER)), 'uploadtime');
 		if($cutoff)
-			xthreads_rm_attach_query('tid=0 AND uid='.intval($uid).' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' AND uploadtime <= '.$cutoff);
+			xthreads_rm_attach_query('tid=0 AND uid='.(int)$uid.' AND aid != '.$attacharray['aid'].' AND uploadtime > '.(TIME_NOW-XTHREADS_UPLOAD_FLOOD_TIME).' AND uploadtime <= '.$cutoff);
 	}
 	
 	return $attacharray;
@@ -30,7 +30,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	global $db, $mybb, $lang;
 	
 	$posthash = $db->escape_string($mybb->input['posthash']);
-	$tid = intval($tid); // may be possible for this to be null, if so, change to 0
+	$tid = (int)$tid; // may be possible for this to be null, if so, change to 0
 	$path = $mybb->settings['uploadspath'].'/xthreads_ul/';
 	
 	if(!$lang->xthreads_threadfield_attacherror) $lang->load('xthreads');
@@ -175,7 +175,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	}
 	
 	if($update_attachment) {
-		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid,attachname,indir,md5hash', 'aid='.intval($update_attachment)));
+		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid,attachname,indir,md5hash', 'aid='.(int)$update_attachment));
 		if(!$prevattach['aid']) $update_attachment = false;
 	} else {
 		// Check if attachment already uploaded
@@ -245,7 +245,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	$attacharray = array(
 		'posthash' => $posthash,
 		'tid' => $tid,
-		'uid' => intval($mybb->user['uid']),
+		'uid' => (int)$mybb->user['uid'],
 		'field' => $tf['field'],
 		'filename' => strval($attachment['name']),
 		'uploadmime' => strval($attachment['type']),
@@ -347,8 +347,8 @@ function &xthreads_build_thumbnail($thumbdims, $aid, $filename, $path, $month_di
 		foreach($thumbdims as &$dims) {
 			$p = strpos($dims, 'x');
 			if(!$p) continue;
-			$w = intval(substr($dims, 0, $p));
-			$h = intval(substr($dims, $p+1));
+			$w = (int)substr($dims, 0, $p);
+			$h = (int)substr($dims, $p+1);
 			
 			$destname = basename(substr($filename, 0, -6).$w.'x'.$h.'.thumb');
 			
@@ -412,14 +412,14 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 				} elseif(preg_match('~^[0-7]+$~', $part)) {
 					$part = octdec($part);
 				} else {
-					$part = intval($part);
+					$part = (int)$part;
 				}
 			}
 			elseif(!is_numeric($part)) {
 				$modify = false;
 				break;
 			} else
-				$part = intval($part); // converts stuff like 000 into 0, although above should do that
+				$part = (int)$part; // converts stuff like 000 into 0, although above should do that
 		}
 		if($modify) $purl['host'] = implode('.', $parts);
 	}

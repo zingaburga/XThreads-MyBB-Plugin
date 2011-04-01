@@ -5,7 +5,7 @@ if(!defined('IN_MYBB'))
 function xthreads_forumdisplay() {
 	global $db, $threadfield_cache, $fid, $mybb, $tf_filters, $xt_filters, $filters_set, $xthreads_forum_filter_form, $xthreads_forum_filter_args;
 	// the position of the "forumdisplay_start" hook is kinda REALLY annoying...
-	$fid = intval($mybb->input['fid']);
+	$fid = (int)$mybb->input['fid'];
 	if($fid < 1 || !($forum = get_forum($fid))) return;
 	
 	$threadfield_cache = xthreads_gettfcache($fid);
@@ -190,7 +190,7 @@ function xthreads_forumdisplay() {
 		if(is_array($filter))
 			$filter = array_map('intval', $filter);
 		else
-			$filter = intval($filter);
+			$filter = (int)$filter;
 		
 		xthreads_forumdisplay_filter_input('filterxt_'.$n, $filter, $filters_set['__xt_'.$n]);
 		
@@ -470,7 +470,7 @@ function xthreads_forumdisplay_filter() {
 				$qstr = '`'.$db->escape_string($field).'` IN ('.implode(',', array_map('intval', $val)).')';
 			}
 			else {
-				$qstr = '`'.$db->escape_string($field).'` = '.intval($val);
+				$qstr = '`'.$db->escape_string($field).'` = '.(int)$val;
 			}
 			$q .= ' AND t.'.$qstr;
 			$tvisibleonly .= ' AND t.'.$qstr;

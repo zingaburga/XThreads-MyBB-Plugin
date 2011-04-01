@@ -103,7 +103,7 @@ if($mybb->input['action'] == 'inline')
 				$delattach[] = $efn;
 		}
 		elseif(!xthreads_empty($mybb->input['threadfields_order_'.$field['field']])) {
-			$new_order = intval($mybb->input['threadfields_order_'.$field['field']]);
+			$new_order = (int)($mybb->input['threadfields_order_'.$field['field']]);
 			if($field['disporder'] != $new_order) {
 				$order[] = $efn;
 				$db->update_query('threadfields', array('disporder' => $new_order), 'field="'.$efn.'"');
@@ -302,7 +302,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			if($prop['datatype'] == 'string')
 				$mybb->input[$field] = trim($mybb->input[$field]);
 			else
-				$mybb->input[$field] = intval($mybb->input[$field]);
+				$mybb->input[$field] = (int)$mybb->input[$field];
 		}
 		$mybb->input['textmask'] = str_replace("\x0", '', $mybb->input['textmask']);
 		$mybb->input['filemaxsize'] = xthreads_size_to_bytes($mybb->input['filemaxsize']);
@@ -357,7 +357,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			else
 				$mybb->input['editable'] = XTHREADS_EDITABLE_NONE; // no group ids selected
 		} else {
-			$mybb->input['editable'] = min_max(intval($mybb->input['editable']), XTHREADS_EDITABLE_ALL, XTHREADS_EDITABLE_NONE);
+			$mybb->input['editable'] = min_max((int)$mybb->input['editable'], XTHREADS_EDITABLE_ALL, XTHREADS_EDITABLE_NONE);
 			$mybb->input['editable_gids'] = '';
 		}
 		
@@ -394,7 +394,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			if(!$mybb->input['viewable_gids']) $mybb->input['viewable_gids'] = '';
 		}
 		
-		$mybb->input['sanitize'] = min_max(intval($mybb->input['sanitize']), XTHREADS_SANITIZE_HTML, XTHREADS_SANITIZE_NONE);
+		$mybb->input['sanitize'] = min_max((int)$mybb->input['sanitize'], XTHREADS_SANITIZE_HTML, XTHREADS_SANITIZE_NONE);
 		//if($mybb->input['sanitize'] == XTHREADS_SANITIZE_PARSER) {
 			$parser_opts = array(
 				'parser_nl2br' => XTHREADS_SANITIZE_PARSER_NL2BR,
@@ -409,7 +409,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				if($mybb->input[$opt])
 					$mybb->input['sanitize'] |= $n;
 		//}
-		$mybb->input['inputtype'] = min_max(intval($mybb->input['inputtype']), XTHREADS_INPUT_TEXT, XTHREADS_INPUT_CUSTOM);
+		$mybb->input['inputtype'] = min_max((int)$mybb->input['inputtype'], XTHREADS_INPUT_TEXT, XTHREADS_INPUT_CUSTOM);
 		
 		if(xthreads_empty($mybb->input['title']))		$errors[] = $lang->error_missing_title;
 		if(xthreads_empty($mybb->input['newfield']))	$errors[] = $lang->error_missing_field;

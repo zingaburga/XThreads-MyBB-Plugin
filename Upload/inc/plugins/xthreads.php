@@ -166,7 +166,7 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 		case 'misc.php':
 			if($mybb->input['action'] != 'rules') break;
 		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
-			$fid = intval($mybb->input['fid']);
+			$fid = (int)($mybb->input['fid']);
 			if($fid) break;
 			
 		case 'polls.php':
@@ -178,11 +178,11 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 				case 'do_undovote':
 					// no cached poll getting function, dupe a query then...
 					global $db;
-					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.intval($mybb->input['pid'])), 'tid');
+					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.(int)($mybb->input['pid'])), 'tid');
 			}
 			// fall through
 		case 'showthread.php': case 'newreply.php': case 'ratethread.php': case 'sendthread.php': case 'printthread.php':
-			if(isset($tid) || $tid = intval($mybb->input['tid'])) {
+			if(isset($tid) || $tid = (int)($mybb->input['tid'])) {
 				$thread = get_thread($tid);
 				if($thread['fid']) {
 					$fid = $thread['fid'];
@@ -192,7 +192,7 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 			if($fid || $current_page == 'polls.php') break;
 			
 		case 'editpost.php':
-			if($pid = intval($mybb->input['pid'])) {
+			if($pid = (int)($mybb->input['pid'])) {
 				$post = get_post($pid);
 				if($post['fid']) {
 					$fid = $post['fid'];
@@ -202,7 +202,7 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 			break;
 		
 		case 'announcements.php':
-			if($aid = intval($mybb->input['aid'])) {
+			if($aid = (int)($mybb->input['aid'])) {
 				// unfortunately MyBB doesn't have a cache for announcements
 				// so we can have fun and double query!
 				global $db;
@@ -213,7 +213,7 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 		default: return;
 	}
 	
-	$fid = intval($fid); // paranoia
+	$fid = (int)($fid); // paranoia
 	
 	if($fid) {
 		global $forum, $cache, $xtforum, $xt_fid;
@@ -248,7 +248,7 @@ function xthreads_global() {
 		case 'misc.php':
 			if($mybb->input['action'] != 'rules') break;
 		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
-			$fid = intval($mybb->input['fid']);
+			$fid = (int)$mybb->input['fid'];
 			if($fid) break;
 			
 		case 'polls.php':
@@ -260,11 +260,11 @@ function xthreads_global() {
 				case 'do_undovote':
 					// no cached poll getting function, dupe a query then...
 					global $db;
-					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.intval($mybb->input['pid'])), 'tid');
+					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.(int)$mybb->input['pid']), 'tid');
 			}
 			// fall through
 		case 'showthread.php': case 'newreply.php': case 'ratethread.php': case 'sendthread.php': case 'printthread.php':
-			if(isset($tid) || $tid = intval($mybb->input['tid'])) {
+			if(isset($tid) || $tid = (int)$mybb->input['tid']) {
 				$thread = get_thread($tid);
 				if($thread['fid']) {
 					$fid = $thread['fid'];
@@ -274,7 +274,7 @@ function xthreads_global() {
 			if($fid || $current_page == 'polls.php') break;
 			
 		case 'editpost.php':
-			if($pid = intval($mybb->input['pid'])) {
+			if($pid = (int)$mybb->input['pid']) {
 				$post = get_post($pid);
 				if($post['fid']) {
 					$fid = $post['fid'];
@@ -284,7 +284,7 @@ function xthreads_global() {
 			break;
 		
 		case 'announcements.php':
-			if($aid = intval($mybb->input['aid'])) {
+			if($aid = (int)$mybb->input['aid']) {
 				// unfortunately MyBB doesn't have a cache for announcements
 				// so we can have fun and double query!
 				global $db;
@@ -294,7 +294,7 @@ function xthreads_global() {
 			break;
 		default: return;
 	}
-	$fid = intval($fid); // paranoia
+	$fid = (int)$fid; // paranoia
 	
 	if($fid) {
 		global $forum, $cache, $xtforum;
@@ -351,7 +351,7 @@ function xthreads_global() {
 						if($current_page == 'editpost.php') {
 							global $thread;
 							// check if first post
-							$post = get_post(intval($mybb->input['pid']));
+							$post = get_post((int)$mybb->input['pid']);
 							if(!empty($post))
 								$thread = get_thread($post['tid']);
 							$do_preload = (!empty($thread) && $thread['firstpost'] == $post['pid']);
@@ -516,7 +516,7 @@ function xthreads_handle_uploads() {
 function xthreads_xmlhttp_blankpost_hack() {
 	global $mybb;
 	if($mybb->input['action'] == 'edit_post' && $mybb->input['do'] == 'get_post') {
-		$post = get_post(intval($mybb->input['pid']));
+		$post = get_post((int)$mybb->input['pid']);
 		if($post['pid']) {
 			$thread = get_thread($post['tid']);
 			$forum = get_forum($thread['fid']);

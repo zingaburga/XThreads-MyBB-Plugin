@@ -140,7 +140,7 @@ if(!defined('IN_MYBB'))
 			// look for HTTP/1.1 type header
 			if(strtoupper(substr($header, 0, 5)) == 'HTTP/') {
 				if(preg_match('~^HTTP/[0-9.]+ (\d+) (.*)$~i', $header, $match)) {
-					return array('retcode' => array(intval($match[1]), trim($match[2])));
+					return array('retcode' => array((int)$match[1], trim($match[2])));
 				}
 			}
 			return null;
@@ -148,7 +148,7 @@ if(!defined('IN_MYBB'))
 		$hdata = trim(substr($header, $p+1));
 		switch(strtolower(substr($header, 0, $p))) {
 			case 'content-length':
-				$size = intval($hdata);
+				$size = (int)$hdata;
 				if($size || $hdata === '0') {
 					return array('size' => $size);
 				}

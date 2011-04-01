@@ -921,7 +921,7 @@ function xthreads_admin_forumcommit() {
 	global $fid, $db, $cache, $mybb;
 	if(!$fid) {
 		// bad MyPlaza Turbo! (or any other plugin which does the same thing)
-		$fid = intval($mybb->input['fid']);
+		$fid = (int)$mybb->input['fid'];
 	}
 	
 	/*
@@ -962,17 +962,17 @@ function xthreads_admin_forumcommit() {
 	$db->update_query('forums', array(
 		'xthreads_tplprefix' => $db->escape_string($mybb->input['xthreads_tplprefix']),
 		'xthreads_langprefix' => $db->escape_string($mybb->input['xthreads_langprefix']),
-		'xthreads_grouping' => intval(trim($mybb->input['xthreads_grouping'])),
-		'xthreads_firstpostattop' => intval(trim($mybb->input['xthreads_firstpostattop'])),
-		'xthreads_allow_blankmsg' => intval(trim($mybb->input['xthreads_allow_blankmsg'])),
-		'xthreads_nostatcount' => intval(trim($mybb->input['xthreads_nostatcount'])),
-		'xthreads_inlinesearch' => intval(trim($mybb->input['xthreads_inlinesearch'])),
-		'xthreads_fdcolspan_offset' => intval(trim($mybb->input['xthreads_fdcolspan_offset'])),
-		'xthreads_threadsperpage' => intval(trim($mybb->input['xthreads_threadsperpage'])),
-		'xthreads_postsperpage' => intval(trim($mybb->input['xthreads_postsperpage'])),
+		'xthreads_grouping' => (int)trim($mybb->input['xthreads_grouping']),
+		'xthreads_firstpostattop' => (int)trim($mybb->input['xthreads_firstpostattop']),
+		'xthreads_allow_blankmsg' => (int)trim($mybb->input['xthreads_allow_blankmsg']),
+		'xthreads_nostatcount' => (int)trim($mybb->input['xthreads_nostatcount']),
+		'xthreads_inlinesearch' => (int)trim($mybb->input['xthreads_inlinesearch']),
+		'xthreads_fdcolspan_offset' => (int)trim($mybb->input['xthreads_fdcolspan_offset']),
+		'xthreads_threadsperpage' => (int)trim($mybb->input['xthreads_threadsperpage']),
+		'xthreads_postsperpage' => (int)trim($mybb->input['xthreads_postsperpage']),
 		'xthreads_force_postlayout' => trim($mybb->input['xthreads_force_postlayout']),
-		'xthreads_hideforum' => intval($mybb->input['xthreads_hideforum']),
-		'xthreads_hidebreadcrumb' => intval($mybb->input['xthreads_hidebreadcrumb']),
+		'xthreads_hideforum' => (int)$mybb->input['xthreads_hideforum'],
+		'xthreads_hidebreadcrumb' => (int)$mybb->input['xthreads_hidebreadcrumb'],
 		'xthreads_defaultfilter' => $db->escape_string($mybb->input['xthreads_defaultfilter']),
 		//'xthreads_addfiltenable' => $db->escape_string($addfiltenable),
 //		'xthreads_deffilter' => $db->escape_string($deffilter),
@@ -1021,7 +1021,7 @@ function xthreads_admin_modtool_commit() {
 	global $mybb, $thread_options, $db;
 	if(isset($GLOBALS['update_tool'])) {
 		// updating
-		$tid = intval($mybb->input['tid']);
+		$tid = (int)$mybb->input['tid'];
 	} else {
 		$tid = $GLOBALS['tid'];
 	}
@@ -1096,10 +1096,10 @@ function xthreads_admin_rebuildthumbs() {
 	global $mybb, $db;
 	if($mybb->request_method == 'post') {
 		if(isset($mybb->input['do_rebuildxtathumbs'])) {
-			$page = intval($mybb->input['page']);
+			$page = (int)$mybb->input['page'];
 			if($page < 1)
 				$page = 1;
-			$perpage = intval($mybb->input['xtathumbs']);
+			$perpage = (int)$mybb->input['xtathumbs'];
 			if(!$perpage) $perpage = 500;
 			
 			global $lang;
@@ -1239,7 +1239,7 @@ function xthreads_format_version_number($v) {
 function xthreads_size_to_bytes($s) {
 	$s = strtolower(trim($s));
 	if(!$s) return 0;
-	$v = floatval($s);
+	$v = (float)$s;
 	$last = substr($s, -1);
 	if($last == 'b')
 		$last = substr($s, -2, 1);
@@ -1251,5 +1251,5 @@ function xthreads_size_to_bytes($s) {
 		case 'm': $v *= 1024;
 		case 'k': $v *= 1024;
 	}
-	return intval(round($v));
+	return (int)round($v);
 }

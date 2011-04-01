@@ -30,7 +30,7 @@ function xthreads_tfvalue_settable(&$tf, $val) {
 
 function xthreads_input_posthandler_postvalidate(&$ph) {
 	// determine if first post
-	$pid = intval($ph->data['pid']);
+	$pid = (int)$ph->data['pid'];
 	if(!$pid) return;
 	$post = get_post($pid); // will be cached so won't actually cause additional query
 	$thread = get_thread($post['tid']); // should be cached from editpost.php, so doesn't cost another query
@@ -107,11 +107,11 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 		
 		if(isset($mybb->input['xthreads_'.$k])) {
 			if($v['inputtype'] == XTHREADS_INPUT_FILE) {
-				$inval = intval($mybb->input['xthreads_'.$k]);
+				$inval = (int)$mybb->input['xthreads_'.$k];
 			}
 			elseif($v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
 				if(is_numeric($mybb->input['xthreads_'.$k]))
-					$inval = intval($mybb->input['xthreads_'.$k]);
+					$inval = (int)$mybb->input['xthreads_'.$k];
 				else
 					$inval = trim($mybb->input['xthreads_'.$k]);
 			}
@@ -268,10 +268,10 @@ function xthreads_convert_str_to_datatype($s, $type) {
 	switch($type) {
 		case XTHREADS_DATATYPE_INT:
 		case XTHREADS_DATATYPE_BIGINT:
-			return intval($s);
+			return (int)$s;
 		case XTHREADS_DATATYPE_UINT:
 		case XTHREADS_DATATYPE_BIGUINT:
-			return (int)abs(intval($s));
+			return (int)abs((int)$s);
 		case XTHREADS_DATATYPE_FLOAT:
 			return doubleval($s);
 	}
@@ -356,7 +356,7 @@ function xthreads_inputdisp() {
 	if($editpost) {
 		// because the placement of the editpost_start hook really sucks...
 		if(!$post) {
-			$post = get_post(intval($mybb->input['pid'])); // hopefully MyBB will also use get_post in their code too...
+			$post = get_post((int)$mybb->input['pid']); // hopefully MyBB will also use get_post in their code too...
 		}
 		if(!$thread) {
 			if(!empty($post))
@@ -402,7 +402,7 @@ function xthreads_inputdisp() {
 				$fid = $GLOBALS['thread']['fid'];
 			else {
 				// last ditch resort, grab everything from the post
-				$pid = intval($mybb->input['pid']);
+				$pid = (int)$mybb->input['pid'];
 				$post = get_post($pid);
 				$fid = $post['fid'];
 			}
@@ -494,7 +494,7 @@ function xthreads_inputdisp() {
 		
 		// message length hack for newthread
 		if(!$editpost && $forum['xthreads_allow_blankmsg'] && my_strlen($mybb->input['message']) == 0) {
-			$mybb->input['message'] = str_repeat('-', max(intval($mybb->settings['minmessagelength']), 1));
+			$mybb->input['message'] = str_repeat('-', max((int)$mybb->settings['minmessagelength'], 1));
 			function xthreads_newthread_prev_blankmsg_hack() {
 				static $done=false;
 				if($done) return;
@@ -564,14 +564,14 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		$tf['desc'] = htmlspecialchars_uni($tf['desc']);
 		$maxlen = '';
 		if($tf['maxlen'])
-			$maxlen = ' maxlength="'.intval($tf['maxlen']).'"';
+			$maxlen = ' maxlength="'.(int)$tf['maxlen'].'"';
 		$tfname = ' name="xthreads_'.$tf['field'].'"';
 		
 		$tf_fw_style = $tf_fw_size = $tf_fw_cols = $tf_fh = '';
 		if($tf['fieldwidth']) {
-			$tf_fw_size = ' size="'.intval($tf['fieldwidth']).'"';
-			$tf_fw_style = ' style="width: '.(intval($tf['fieldwidth'])/2).'em;"'; // only used for select box [in Firefox, seems we need to divide by 2 to get the equivalent width]
-			$tf_fw_cols = ' cols="'.intval($tf['fieldwidth']).'"';
+			$tf_fw_size = ' size="'.(int)$tf['fieldwidth'].'"';
+			$tf_fw_style = ' style="width: '.(((int)$tf['fieldwidth'])/2).'em;"'; // only used for select box [in Firefox, seems we need to divide by 2 to get the equivalent width]
+			$tf_fw_cols = ' cols="'.(int)$tf['fieldwidth'].'"';
 		}
 		
 		$using_default = false;
@@ -620,12 +620,12 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		switch($tf['inputtype']) {
 			case XTHREADS_INPUT_TEXTAREA:
 				if($tf['fieldheight'])
-					$tf_fh = ' rows="'.intval($tf['fieldheight']).'"';
+					$tf_fh = ' rows="'.(int)$tf['fieldheight'].'"';
 				$tfinput[$k] = '<textarea'.$tfname.$maxlen.$tf_fh.$tf_fw_cols.$tabindex.'>'.$defval.'</textarea>';
 				break;
 			case XTHREADS_INPUT_SELECT:
 				if($tf['fieldheight'])
-					$tf_fh = ' size="'.intval($tf['fieldheight']).'"';
+					$tf_fh = ' size="'.(int)$tf['fieldheight'].'"';
 				elseif(!xthreads_empty($tf['multival']))
 					$tf_fh = ' size="5"';
 				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].(!xthreads_empty($tf['multival']) ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
@@ -773,7 +773,7 @@ function xthreads_upload_attachments_global() {
 	global $mybb, $current_page, $thread;
 	if($current_page == 'editpost.php') {
 		// check if first post
-		$pid = intval($mybb->input['pid']);
+		$pid = (int)$mybb->input['pid'];
 		if(!$thread) {
 			$post = get_post($pid);
 			if(!empty($post))
@@ -784,7 +784,7 @@ function xthreads_upload_attachments_global() {
 		if($thread['firstpost'] != $pid)
 			return;
 	} elseif($mybb->input['tid']) { /* ($mybb->input['action'] == 'editdraft' || $mybb->input['action'] == 'savedraft') && */
-		$thread = get_thread(intval($mybb->input['tid']));
+		$thread = get_thread((int)$mybb->input['tid']);
 		if($thread['visible'] != -2 || $thread['uid'] != $mybb->user['uid']) // ensure that this is, indeed, a draft
 			unset($GLOBALS['thread']);
 	}
@@ -792,7 +792,7 @@ function xthreads_upload_attachments_global() {
 	// permissions check - ideally, should get MyBB to do this, but I see no easy way to implement it unfortunately
 	if($mybb->user['suspendposting'] == 1) return;
 	if($thread['fid']) $fid = $thread['fid'];
-	else $fid = intval($mybb->input['fid']);
+	else $fid = (int)$mybb->input['fid'];
 	$forum = get_forum($fid);
 	if(!$forum['fid'] || $forum['open'] == 0 || $forum['type'] != 'f') return;
 	
@@ -826,12 +826,12 @@ function xthreads_upload_attachments() {
 		elseif($GLOBALS['foruminfo']['fid'])
 			$fid = $GLOBALS['foruminfo']['fid'];
 		elseif($mybb->input['pid']) { // editpost - not good to trust user input, but should be fine
-			$post = get_post(intval($mybb->input['pid']));
+			$post = get_post((int)$mybb->input['pid']);
 			if($post['pid'])
 				$fid = $post['fid'];
 		}
 		elseif($mybb->input['fid']) // newthread
-			$fid = intval($mybb->input['fid']);
+			$fid = (int)$mybb->input['fid'];
 		// we _should_ now have an fid
 	}
 	
@@ -847,7 +847,7 @@ function xthreads_upload_attachments() {
 	// first, run through to see if we have already uploaded some attachments
 	// this code totally relies on the posthash being unique...
 	if($GLOBALS['thread']['tid'])
-		$attachwhere = 'tid='.intval($GLOBALS['thread']['tid']);
+		$attachwhere = 'tid='.(int)$GLOBALS['thread']['tid'];
 	else
 		$attachwhere = 'posthash="'.$db->escape_string($mybb->input['posthash']).'"';
 	$query = $db->simple_select('xtattachments', '*', $attachwhere);
@@ -1105,7 +1105,7 @@ function xthreads_fix_tabindexes() {
 	function xthreads_fix_tabindexes_out_preg($match) {
 		if($match[2]) // xthreads elements
 			return $match[1].$match[3].$match[4];
-		$ti = intval($match[3]);
+		$ti = (int)$match[3];
 		if($ti > 1)
 			return $match[1].($ti+$GLOBALS['xthreads_threadin_tabindex_shift']).$match[4];
 		else // no change (eg subject input)
@@ -1298,7 +1298,7 @@ function xthreads_purge_draft() {
 	$tidin = '';
 	foreach($mybb->input['deletedraft'] as $id => &$val) {
 		if($val == 'thread')
-			$tidin .= ($tidin===''?'':',') . intval($id);
+			$tidin .= ($tidin===''?'':',') . (int)$id;
 	}
 	
 	if(!$tidin) return;
