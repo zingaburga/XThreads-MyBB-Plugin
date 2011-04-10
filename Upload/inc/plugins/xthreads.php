@@ -548,6 +548,8 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 	}
 }
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
+	include_once MYBB_ROOT.'cache/xthreads_evalcache.php';
+	$evalfunc = 'xthreads_evalcache_'.$tfinfo['field'];
 	if(!$noextra) {
 		// this "hack" stops this function being totally independent of the outside world :(
 		global $threadfields_x;
@@ -560,22 +562,21 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 	if($s === '' || $s === null) { // won't catch file inputs, as they are integer type
 		$sx['num_values'] = 0;
 		$sx['num_values_friendly'] = my_number_format(0);
-		if(!xthreads_empty($tfinfo['blankval'])) $s = eval_str($tfinfo['blankval']);
+		$s = $evalfunc('blankval');
 		return;
 	}
 	
-	$dispfmt = $tfinfo['dispformat'];
+	$dispfmt = 'dispformat';
 	
 	if(!xthreads_user_in_groups($tfinfo['viewable_gids'])) {
-		$dispfmt = $tfinfo['unviewableval'];
+		$dispfmt = 'unviewableval';
 	}
 	
 	if($tfinfo['inputtype'] == XTHREADS_INPUT_FILE || ($tfinfo['inputtype'] == XTHREADS_INPUT_FILE_URL && !preg_match('~^[a-z]+\://~i', $s))) {
 		global $xta_cache, $mybb;
 		// attached file
 		if(!$s) {
-			$s = array();
-			if(!xthreads_empty($tfinfo['blankval'])) $s['value'] = eval_str($tfinfo['blankval']);
+			$s = array('value' => $evalfunc('blankval'));
 			xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 			return;
 		}
@@ -609,13 +610,14 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 		xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 		
 		$s['value'] = '';
-		if(!xthreads_empty($dispfmt)) {
-			$vars = array();
+		$vars = array();
+		if($tf[$dispfmt]) {
 			foreach($s as $k => &$v)
 				if(!is_array($v))
 					$vars[strtoupper($k)] =& $v;
-			$s['value'] = eval_str($dispfmt, $vars);
 		}
+		$s['value'] = $evalfunc($dispfmt, $vars);
+		unset($vars);
 		$sx['value'] =& $s;
 	}
 	else {
@@ -624,15 +626,13 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 			$i = 0;
 			$sx['value'] = array();
 			foreach($vals as &$v) {
-				xthreads_sanitize_disp_field($v, $tfinfo, $tfinfo['dispitemformat'], $mename);
+				xthreads_sanitize_disp_field($v, $tfinfo, 'dispitemformat', $mename);
 				$sx['value'][$i++] = $v;
 			}
 			$sx['num_values'] = $i;
 			$sx['num_values_friendly'] = my_number_format($i);
 			$s = implode($tfinfo['multival'], $vals);
-			if(!xthreads_empty($dispfmt)) {
-				$s = eval_str($dispfmt, array('VALUE' => $s));
-			}
+			$s = $evalfunc($dispfmt, array('VALUE' => $s));
 		}
 		else {
 			xthreads_sanitize_disp_field($s, $tfinfo, $dispfmt, $mename);
@@ -642,7 +642,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 	}
 }
 
-function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
+function xthreads_sanitize_disp_field(&$v, &$tfinfo, $dispfmt, $mename) {
 	$raw_v = $v;
 	if(isset($tfinfo['formatmap']) && isset($tfinfo['formatmap'][($vnl = str_replace("\r", '', $v))])) {
 		$v = eval_str($tfinfo['formatmap'][$vnl]); // not sanitized obviously
@@ -651,7 +651,8 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 		$v = xthreads_sanitize_disp_string($type, $v, $parser_opts, $mename);
 	}
 	
-	if(!xthreads_empty($dispfmt)) {
+	$evalfunc = 'xthreads_evalcache_'.$tfinfo['field'];
+	if($tfinfo[$dispfmt]) {
 		$vars = array(
 			'VALUE' => $v, 
 			'RAWVALUE' => $raw_v, 
@@ -673,8 +674,9 @@ function xthreads_sanitize_disp_field(&$v, &$tfinfo, &$dispfmt, $mename) {
 				}
 			}
 		}
-		$v = eval_str($dispfmt, $vars);
-	}
+		$v = $evalfunc($dispfmt, $vars);
+	} else
+		$v = $evalfunc($dispfmt);
 }
 
 function xthreads_sanitize_disp_string($type, &$v, &$parser_opts = null, $mename='') {

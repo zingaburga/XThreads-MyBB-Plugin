@@ -430,6 +430,7 @@ function xthreads_uninstall() {
 	xthreads_delete_datacache('xt_forums');
 	
 	@unlink(MYBB_ROOT.'cache/xthreads.php');
+	@unlink(MYBB_ROOT.'cache/xthreads_evalcache.php');
 	
 	$db->delete_query('templates', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
 	

@@ -465,6 +465,7 @@ function xthreads_buildtfcache() {
 	$sanitise_fields_normal = array('VALUE', 'RAWVALUE');
 	$sanitise_fields_file = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
 	$cd = array();
+	$evalcache = '';
 	$query = $db->simple_select('threadfields', '*', '', array('order_by' => 'disporder', 'order_dir' => 'asc'));
 	while($tf = $db->fetch_array($query)) {
 		// remove unnecessary fields
@@ -602,19 +603,39 @@ function xthreads_buildtfcache() {
 				($tf['dispitemformat'] && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispitemformat']))
 			);
 		}
-		if($tf['defaultval']) xthreads_sanitize_eval($tf['defaultval']);
-		if($tf['unviewableval']) xthreads_sanitize_eval($tf['unviewableval'], $sanitise_fields);
-		if($tf['dispformat']) xthreads_sanitize_eval($tf['dispformat'], $sanitise_fields);
-		if($tf['dispitemformat']) xthreads_sanitize_eval($tf['dispitemformat'], $sanitise_fields);
-		if($tf['blankval']) xthreads_sanitize_eval($tf['blankval']);
 		if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
 			foreach($tf['formatmap'] as &$fm)
 				xthreads_sanitize_eval($fm);
+		
+		$evalcache .= '
+			function xthreads_evalcache_'.$tf['field'].'($field, $vars=array()) {
+				switch($field) {';
+		foreach(array('defaultval', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
+			if(isset($tf[$field])) {
+				if($field == 'blankval' || $field == 'defaultval')
+					xthreads_sanitize_eval($tf[$field]);
+				else
+					xthreads_sanitize_eval($tf[$field], $sanitise_fields);
+				$evalcache .= '
+					case \''.$field.'\': return "'.$tf[$field].'";';
+				$tf[$field] = true; // evaluate vars; TODO: actually scan code to evaulate to determine whether should eval vars or not
+			} else
+				$tf[$field] = false;
+		}
+		$evalcache .= '
+				} return \'\';
+			}
+		';
 		
 		$cd[$tf['field']] = $tf;
 	}
 	$db->free_result($query);
 	$cache->update('threadfields', $cd);
+	
+	$fp = fopen(MYBB_ROOT.'cache/xthreads_evalcache.php', 'w');
+	fwrite($fp, '<?php /* this file caches preparsed versions of display formats - please do not modify this file */
+'.$evalcache);
+	fclose($fp);
 	
 	// rebuild the forums cache too - there's a dependency because this can affect the filtering etc allows
 	xthreads_buildcache_forums();

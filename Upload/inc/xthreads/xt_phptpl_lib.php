@@ -180,6 +180,10 @@ function xthreads_allow_php() {
 
 // sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
 function xthreads_sanitize_eval(&$s, $fields=array()) {
+	if(xthreads_empty($s)) {
+		$s = '';
+		return;
+	}
 	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
 	$s = preg_replace(

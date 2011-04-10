@@ -154,7 +154,6 @@ if(XTHREADS_INSTALLED_VERSION < 1.41) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
 		`editable_values` text not null
 	)');
-	xthreads_buildtfcache(); // will also update XThreads forum cache
 	
 }
 if(XTHREADS_INSTALLED_VERSION < 1.42) {
@@ -184,6 +183,10 @@ if(XTHREADS_INSTALLED_VERSION < 1.43) {
 		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 		xthreads_rm_attach_query('tid IN ('.$tids.')');
 	}
+	
+	
+	
+	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 
 
