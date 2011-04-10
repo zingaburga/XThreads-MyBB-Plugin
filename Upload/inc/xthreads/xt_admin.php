@@ -603,6 +603,7 @@ function xthreads_buildtfcache() {
 				($tf['dispitemformat'] && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispitemformat']))
 			);
 		}
+		if($tf['defaultval']) xthreads_sanitize_eval($tf['defaultval']);
 		if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
 			foreach($tf['formatmap'] as &$fm)
 				xthreads_sanitize_eval($fm);
@@ -610,15 +611,19 @@ function xthreads_buildtfcache() {
 		$evalcache .= '
 			function xthreads_evalcache_'.$tf['field'].'($field, $vars=array()) {
 				switch($field) {';
-		foreach(array('defaultval', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
+		foreach(array('unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
 			if(isset($tf[$field])) {
 				if($field == 'blankval' || $field == 'defaultval')
 					xthreads_sanitize_eval($tf[$field]);
 				else
 					xthreads_sanitize_eval($tf[$field], $sanitise_fields);
-				$evalcache .= '
+				if($tf[$field] !== '') {
+					// slight optimisation - reduces amount of code if will return empty string
+					$evalcache .= '
 					case \''.$field.'\': return "'.$tf[$field].'";';
-				$tf[$field] = true; // evaluate vars; TODO: actually scan code to evaulate to determine whether should eval vars or not
+				}
+				$tf[$field] = (bool)preg_match('~\$vars[^a-z0-9_]~i', $tf[$field]); // whether to evaluate vars
+				// ^ above preg_match is a simple optimisation - not the best, but simple and usually effective
 			} else
 				$tf[$field] = false;
 		}

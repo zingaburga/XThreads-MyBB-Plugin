@@ -622,6 +622,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 	}
 	else {
 		if(!xthreads_empty($tfinfo['multival'])) {
+			// we _could_ optimise this out if the final $dispformat never actually refers to {VALUE}, but this is perhaps an unlikely situation, and we don't know whether the dispitemformat has some special eval'd code we should run
 			$vals = explode("\n", str_replace("\r", '', $s));
 			$i = 0;
 			$sx['value'] = array();
