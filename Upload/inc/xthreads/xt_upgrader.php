@@ -161,4 +161,30 @@ if(XTHREADS_INSTALLED_VERSION < 1.42) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `defaultsortby` varchar(255) NOT NULL default \'\'');
 	
 }
+if(XTHREADS_INSTALLED_VERSION < 1.43) {
+	// remove hanging threadfields_data entries
+	$query = $db->query('SELECT tfd.tid
+		FROM `'.$db->table_prefix.'threadfields_data` tfd
+		LEFT JOIN `'.$db->table_prefix.'threads` t ON tfd.tid=t.tid
+		WHERE t.tid IS NULL');
+	/* other queries, which seem to be slower
+	 * select tid from mybb_threadfields_data where tid not in (select tid from mybb_threads)
+	 * ^ about same speed
+	 * select tid from mybb_threadfields_data tfd where not exists (select tid from mybb_threads t where t.tid=tfd.tid)
+	 * ^ a fair bit slower
+	 */
+	$tids = '';
+	while($tid = $db->fetch_field($query, 'tid')) {
+		$tids .= ($tids?',':'') . $tid;
+	}
+	$db->free_result($query);
+	
+	if($tids) {
+		$db->delete_query('threadfields_data', 'tid IN ('.$tids.')');
+		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+		xthreads_rm_attach_query('tid IN ('.$tids.')');
+	}
+}
+
+
 return true;
