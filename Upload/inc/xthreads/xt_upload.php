@@ -621,6 +621,18 @@ if(!function_exists('ctype_xdigit')) {
 		return (bool)preg_match('~^[0-9a-fA-F]+$~', $s);
 	}
 }
+// for PHP < 5.2.1
+if(!function_exists('sys_get_temp_dir')) {
+	function sys_get_temp_dir() {
+		foreach(array('TMP', 'TMPDIR', 'TEMP') as $e) {
+			if(!empty($_ENV[$e]) && @is_dir($_ENV[$e]))
+				return realpath($_ENV[$e]);
+		}
+		if(@is_dir('/tmp/')) return '/tmp/';
+		// fallback on current dir
+		return './';
+	}
+}
 
 function db_ping(&$dbobj) {
 	if($dbobj->type == 'mysqli')
