@@ -625,22 +625,22 @@ if(!function_exists('ctype_xdigit')) {
 if(!function_exists('sys_get_temp_dir')) {
 	function sys_get_temp_dir() {
 		foreach(array('TMP', 'TMPDIR', 'TEMP') as $e) {
-			if(!empty($_ENV[$e]) && @is_dir($_ENV[$e]) && is_writable($_ENV[$e]))
-				return realpath($_ENV[$e]);
+			if(($env = getenv($e)) && @is_dir($env) && is_writable($env))
+				return realpath($env);
 		}
 		if(DIRECTORY_SEPARATOR == '\\') { // Windows
 			$dirs = array();
 			// all this probably unnecessary, but oh well, enjoy it whilst we can
-			if(!empty($_ENV['LOCALAPPDATA']))
-				$dirs[] = $_ENV['LOCALAPPDATA'].'\\Temp\\';
-			if(!empty($_ENV['USERPROFILE']))
-				$dirs[] = $_ENV['USERPROFILE'].'\\Local Settings\\Temp\\';
-			if(!empty($_ENV['SystemRoot']))
-				$dirs[] = $_ENV['SystemRoot'].'\\Temp\\';
-			if(!empty($_ENV['windir']))
-				$dirs[] = $_ENV['windir'].'\\Temp\\';
-			if(!empty($_ENV['SystemDrive']))
-				$dirs[] = $_ENV['SystemDrive'].'\\Temp\\';
+			if($env = getenv('LOCALAPPDATA'))
+				$dirs[] = $env.'\\Temp\\';
+			if($env = getenv('USERPROFILE'))
+				$dirs[] = $env.'\\Local Settings\\Temp\\';
+			if($env = getenv('SYSTEMROOT'))
+				$dirs[] = $env.'\\Temp\\';
+			if($env = getenv('WINDIR'))
+				$dirs[] = $env.'\\Temp\\';
+			if($env = getenv('SYSTEMDRIVE'))
+				$dirs[] = $env.'\\Temp\\';
 			
 			$dirs[] = 'C:\\Windows\\Temp\\';
 			$dirs[] = 'C:\\Temp\\';
