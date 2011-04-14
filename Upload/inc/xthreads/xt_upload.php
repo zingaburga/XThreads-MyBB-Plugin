@@ -625,7 +625,7 @@ if(!function_exists('ctype_xdigit')) {
 if(!function_exists('sys_get_temp_dir')) {
 	function sys_get_temp_dir() {
 		foreach(array('TMP', 'TMPDIR', 'TEMP') as $e) {
-			if(!empty($_ENV[$e]) && @is_dir($_ENV[$e]) && is_writable($_ENV[$e])
+			if(!empty($_ENV[$e]) && @is_dir($_ENV[$e]) && is_writable($_ENV[$e]))
 				return realpath($_ENV[$e]);
 		}
 		if(DIRECTORY_SEPARATOR == '\\') { // Windows
