@@ -625,12 +625,34 @@ if(!function_exists('ctype_xdigit')) {
 if(!function_exists('sys_get_temp_dir')) {
 	function sys_get_temp_dir() {
 		foreach(array('TMP', 'TMPDIR', 'TEMP') as $e) {
-			if(!empty($_ENV[$e]) && @is_dir($_ENV[$e]))
+			if(!empty($_ENV[$e]) && @is_dir($_ENV[$e]) && is_writable($_ENV[$e])
 				return realpath($_ENV[$e]);
 		}
-		if(@is_dir('/tmp/')) return '/tmp/';
-		// fallback on current dir
-		return './';
+		if(DIRECTORY_SEPARATOR == '\\') { // Windows
+			$dirs = array();
+			// all this probably unnecessary, but oh well, enjoy it whilst we can
+			if(!empty($_ENV['LOCALAPPDATA']))
+				$dirs[] = $_ENV['LOCALAPPDATA'].'\\Temp\\';
+			if(!empty($_ENV['USERPROFILE']))
+				$dirs[] = $_ENV['USERPROFILE'].'\\Local Settings\\Temp\\';
+			if(!empty($_ENV['SystemRoot']))
+				$dirs[] = $_ENV['SystemRoot'].'\\Temp\\';
+			if(!empty($_ENV['windir']))
+				$dirs[] = $_ENV['windir'].'\\Temp\\';
+			if(!empty($_ENV['SystemDrive']))
+				$dirs[] = $_ENV['SystemDrive'].'\\Temp\\';
+			
+			$dirs[] = 'C:\\Windows\\Temp\\';
+			$dirs[] = 'C:\\Temp\\';
+			foreach($dirs as &$dir) {
+				if(@is_dir($dir) && is_writable($dir))
+					return realpath($dir);
+			}
+		} else {
+			if(@is_dir('/tmp/') && is_writable('/tmp/')) return '/tmp/';
+		}
+		// fallback on uploads dir (guaranteed to be writable)
+		return realpath(MYBB_ROOT.'uploads/');
 	}
 }
 
