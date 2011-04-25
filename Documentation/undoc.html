@@ -98,6 +98,7 @@
      <br />Note that this is not indexed, like MyBB's sorting options aren't.
     </li>
     <li>XThreads can filter forumdisplay by thread starter, last poster, thread icon and thread prefix (MyBB 1.6 only); to do this, supply <em>filterxt_<span class="token1">field</span>=<span class="token2">value</span></em> to the URL, where <span class="token1">field</span> is either <em>uid</em>, <em>lastposteruid</em>, <em>icon</em>, <em>prefix</em>.  For example, <em>forumdisplay.php?fid=2&amp;filterxt_uid=1</em></li>
+    <li>In a thread field's <em>Display Format Fields</em> (includes <em>Display Format</em>, <em>Display Item Format</em>, <em>Blank Replacement Value</em>, <em>Unviewable Value</em> and replacement values for <em>Formatting Map List</em>), references to other thread fields are possible, only if the <em>Display Order</em> is set lower than the thread field making the reference (for those with the same <em>Display Order</em>, whether or not it'll work will depend on your luck).  For example, if we have two thread fields, the first having a <em>Display Order</em> of 1 and the second having a <em>Display Format</em> of 2, then this second field can refer to the first field via <code>{$GLOBALS['threadfields']['<span class="token1">key</span>']}</code> in any of its <em>Display Format Fields</em> (where <span class="token1">key</span> is the <em>Key</em> of the first thread field, which also isn't a File input field).</li>
    </ul>
    
    <h2>XThreads Additions</h2>
