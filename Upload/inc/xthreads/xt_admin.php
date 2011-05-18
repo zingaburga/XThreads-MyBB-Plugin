@@ -781,7 +781,7 @@ function xthreads_admin_forumedit() {
 		if(!empty($threadfield_cache)) {
 			//$changed = false;
 			foreach($threadfield_cache as &$tf) {
-				if($tf['inputtype'] == XTHREADS_INPUT_TEXTAREA) continue;
+				if($tf['inputtype'] == XTHREADS_INPUT_TEXTAREA || !xthreads_empty($tf['multival'])) continue;
 				if(!$lang->xthreads_sort_threadfield_prefix) $lang->load('xthreads');
 				
 				//$changed = true;
