@@ -1,4 +1,4 @@
-body		{font-family: tahoma, sans-serif; font-size: 0.8em; cursor: default; margin: 20px;}
+body		{font-family: tahoma, sans-serif; font-size: 9pt; cursor: default; margin: 20px;}
 table	{font-family: tahoma, sans-serif; font-size: 0.9em; border: 0; width: 95%; margin-top: 2}
 td.header	{color: #FFFFFF; background: #000000}
 td		{padding-left: 5; padding-right: 5; padding-top:2; padding-bottom: 2}
@@ -19,6 +19,8 @@ td.codeline	{ font-family: courier new, monospaced; width: 50px; font-size: 10pt
 td.code	{ background: #ECF2F8; font-family: courier new, monospaced; font-size: 10pt; cursor: text; white-space: no-wrap; overflow: auto; width: 100%; padding-left: 5px; line-height: 1.2em; }
 pre		{ margin: 0px;}
 div.code	{ background: #ECF2F8; font-family: courier new, monospaced; font-size: 10pt; cursor: text; white-space: no-wrap; overflow: auto; width: 100%; border: 1px solid #CCE5FE; margin: 3px; padding: 2px; }
+
+code		{ font-size: 0.95em; }
 
 span.key	{ font-weight: bold; font-size: 1.5em; color: green; font-family: georgia; }
 
