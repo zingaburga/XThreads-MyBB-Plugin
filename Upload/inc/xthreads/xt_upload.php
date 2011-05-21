@@ -442,7 +442,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		return array('error' => $lang->xthreads_xtfurlerr_badport);
 	
 	$ret = array(
-		'tmp_name' => tempnam(sys_get_temp_dir(), mt_rand()),
+		'tmp_name' => tempnam(xthreads_get_temp_dir(), mt_rand()),
 		'name' => basename($purl['path']),
 		'size' => 0,
 	);
@@ -573,7 +573,7 @@ function xthreads_fetch_url_write(&$fetcher, &$data) {
 		if(!xthreads_empty($xtfurl_ret['type']) && strpos($xtfurl_ret['name'], '.') === false) {
 			// we'll only try a few common ones
 			switch(strtolower($xtfurl_ret['type'])) {
-				case 'text/html':
+				case 'text/html': case 'text/xhtml+xml':
 					$xtfurl_ret['name'] .= '.html'; break;
 				case 'image/jpeg': case 'image/jpg':
 					$xtfurl_ret['name'] .= '.jpg'; break;
@@ -681,9 +681,16 @@ if(!function_exists('sys_get_temp_dir')) {
 		} else {
 			if(@is_dir('/tmp/') && is_writable('/tmp/')) return '/tmp/';
 		}
-		// fallback on uploads dir (guaranteed to be writable)
-		return realpath(MYBB_ROOT.'uploads/');
+		// fallback on cache dir (guaranteed to be writable)
+		return realpath(MYBB_ROOT.'cache/');
 	}
+}
+function xthreads_get_temp_dir() {
+	if(ini_get('safe_mode') == 1 || strtolower(ini_get('safe_mode')) == 'on')
+		// safemode - fallback to cache dir
+		return realpath(MYBB_ROOT.'cache/');
+	else
+		return sys_get_temp_dir();
 }
 
 function db_ping(&$dbobj) {
