@@ -565,11 +565,41 @@ function xthreads_fetch_url_meta(&$fetcher, &$name, &$val) {
 }
 function xthreads_fetch_url_write(&$fetcher, &$data) {
 	$len = strlen($data);
-	global $xtfurl_datalen, $xtfurl_magicchecked;
+	global $xtfurl_datalen, $xtfurl_magicchecked, $xtfurl_ret;
 	
 	// check extension
 	if(!$xtfurl_datalen) {
-		if(!xthreads_fetch_url_validext($GLOBALS['xtfurl_ret']['name'], $GLOBALS['xtfurl_exts'])) {
+		// firstly, do we have an extension?  if not, maybe try guess one from the content-type
+		if(!xthreads_empty($xtfurl_ret['type']) && strpos($xtfurl_ret['name'], '.') === false) {
+			// we'll only try a few common ones
+			switch(strtolower($xtfurl_ret['type'])) {
+				case 'text/html':
+					$xtfurl_ret['name'] .= '.html'; break;
+				case 'image/jpeg': case 'image/jpg':
+					$xtfurl_ret['name'] .= '.jpg'; break;
+				case 'image/gif':
+					$xtfurl_ret['name'] .= '.gif'; break;
+				case 'image/png':
+					$xtfurl_ret['name'] .= '.png'; break;
+				case 'image/bmp':
+					$xtfurl_ret['name'] .= '.bmp'; break;
+				case 'image/svg+xml':
+					$xtfurl_ret['name'] .= '.svg'; break;
+				case 'image/tiff':
+					$xtfurl_ret['name'] .= '.tiff'; break;
+				case 'image/x-icon':
+					$xtfurl_ret['name'] .= '.ico'; break;
+				case 'text/xml':
+					$xtfurl_ret['name'] .= '.xml'; break;
+				case 'text/plain':
+					$xtfurl_ret['name'] .= '.txt'; break;
+				case 'text/css':
+					$xtfurl_ret['name'] .= '.css'; break;
+				case 'text/javascript': case 'application/javascript':
+					$xtfurl_ret['name'] .= '.js'; break;
+			}
+		}
+		if(!xthreads_fetch_url_validext($xtfurl_ret['name'], $GLOBALS['xtfurl_exts'])) {
 			$xtfurl_magicchecked = 'invalid'; // dirty, but works...
 			return false;
 		}
@@ -577,7 +607,7 @@ function xthreads_fetch_url_write(&$fetcher, &$data) {
 	
 	$xtfurl_datalen += $len;
 	if($GLOBALS['xtfurl_max_size'] && $xtfurl_datalen > $GLOBALS['xtfurl_max_size']) {
-		$GLOBALS['xtfurl_ret']['size'] = $xtfurl_datalen;
+		$xtfurl_ret['size'] = $xtfurl_datalen;
 		return false;
 	}
 	if(!$xtfurl_magicchecked && !empty($GLOBALS['xtfurl_validmagic'])) {
