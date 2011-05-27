@@ -444,6 +444,7 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 	$ret = array(
 		'tmp_name' => tempnam(xthreads_get_temp_dir(), mt_rand()),
 		'name' => basename($purl['path']),
+		'name_disposition' => false,
 		'size' => 0,
 	);
 	@unlink($ret['tmp_name']);
@@ -553,8 +554,10 @@ function xthreads_fetch_url_meta(&$fetcher, &$name, &$val) {
 			}
 			return true;
 		
-		case 'size':
 		case 'name':
+			$xtfurl_ret['name_disposition'] = true;
+			// fall through
+		case 'size':
 		case 'type':
 			if(!xthreads_empty($val))
 				$xtfurl_ret[$name] = $val;
@@ -570,7 +573,7 @@ function xthreads_fetch_url_write(&$fetcher, &$data) {
 	// check extension
 	if(!$xtfurl_datalen) {
 		// firstly, do we have an extension?  if not, maybe try guess one from the content-type
-		if(!xthreads_empty($xtfurl_ret['type']) && strpos($xtfurl_ret['name'], '.') === false) {
+		if(!xthreads_empty($xtfurl_ret['type']) && !$xtfurl_ret['name_disposition'] && strpos($xtfurl_ret['name'], '.') === false) {
 			// we'll only try a few common ones
 			switch(strtolower($xtfurl_ret['type'])) {
 				case 'text/html': case 'text/xhtml+xml':
@@ -595,7 +598,7 @@ function xthreads_fetch_url_write(&$fetcher, &$data) {
 					$xtfurl_ret['name'] .= '.txt'; break;
 				case 'text/css':
 					$xtfurl_ret['name'] .= '.css'; break;
-				case 'text/javascript': case 'application/javascript':
+				case 'text/javascript': case 'application/javascript': case 'application/x-javascript':
 					$xtfurl_ret['name'] .= '.js'; break;
 			}
 		}
