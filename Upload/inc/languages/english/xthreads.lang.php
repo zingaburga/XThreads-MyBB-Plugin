@@ -6,6 +6,7 @@ $l['postdata_threadfield_toolong'] = 'Value for &quot;{1}&quot; may not exceed {
 $l['postdata_threadfield_invalidvalue'] = 'Invalid value supplied for &quot;{1}&quot;.';
 $l['xthreads_threadfield_attacherror'] = 'Error attaching file for &quot;{1}&quot;; <em>{2}</em>';
 $l['xthreads_xtaerr_error_attachsize'] = 'The file you attached is too large. The maximum file size allowed is {1} kilobytes.';
+$l['xthreads_xtaerr_error_imgdims'] = 'The dimensions of the image file you attached ({1}x{2}) exceeds the dimension requirements.  Please upload a smaller/larger image, in terms of resolution.';
 $l['xthreads_xtaerr_admindrop_not_found'] = 'The specified file &quot;{1}&quot; was not found on the server - ensure that the file <em>{2}</em> exists.';
 $l['xthreads_xtaerr_admindrop_file_unwritable'] = 'The specified file &quot;{1}&quot; is not writable.  You will probably need to CHMOD the file to something like 0666 for this function to work properly.';
 $l['xthreads_xtaerr_admindrop_index_error'] = 'Sorry, you cannot move index.html (or the various capitalised variants).  Please rename the file and try again.';

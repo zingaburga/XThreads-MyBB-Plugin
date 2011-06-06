@@ -13,7 +13,7 @@ if(!defined('IN_MYBB'))
 	/**
 	 * Timeout in seconds
 	 */
-	var $timeout = 10;
+	var $timeout = 30;
 	
 	/**
 	 * Number of redirects (Location header) to follow.  0 to disable.

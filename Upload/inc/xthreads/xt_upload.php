@@ -126,8 +126,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 				)
 			)) {
 				@unlink($attachment['tmp_name']);
-				// TODO: better error message
-				return array('error' => $lang->error_attachtype);
+				return array('error' => $lang->sprintf($lang->xthreads_xtaerr_error_imgdims, $img_dimensions[0], $img_dimensions[1]));
 			}
 		}
 		/*
