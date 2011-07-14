@@ -163,9 +163,9 @@ function xthreads_forumdisplay() {
 		$xtforum = xthreads_evalcacheForumFilters($fid);
 		if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
 			$tf_filters =& $xtforum['defaultfilter_tf'];
-			foreach($xtforum['defaultfilter_tf'] as $n => &$filter) {
+			foreach($tf_filters as $n => &$filter) {
 				if(!xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
-					unset($xtforum['defaultfilter_tf'][$n]);
+					unset($tf_filters[$n]);
 					continue;
 				}
 				/*if(is_array($filter))

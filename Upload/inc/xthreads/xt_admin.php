@@ -648,30 +648,27 @@ function xthreads_buildtfcache() {
 }
 
 // build xt_forums cache from forums cache (also reduce size of forums cache)
-function xthreads_buildcache_forums($fp=null) {
+// actually, it now just writes the evalcache stuff for forums
+function xthreads_buildcache_forums($fp) {
 	global $cache;
 	$forums = $cache->read('forums');
 	$xtforums = array();
 	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
-	if($fp) fwrite($fp, '
+	fwrite($fp, '
 		function xthreads_evalcacheForums($fid) {
 			switch($fid) {');
 	foreach($forums as $fid => $forum) {
-		if($fp) {
-			$tplprefix = $forum['xthreads_tplprefix'];
-			xthreads_sanitize_eval($tplprefix);
-			$langprefix = $forum['xthreads_langprefix'];
-			xthreads_sanitize_eval($langprefix);
-			if(!xthreads_empty($tplprefix) || !xthreads_empty($langprefix)) // slight optimisation: only write if there's something interesting
-				fwrite($fp, '
+		$tplprefix = $forum['xthreads_tplprefix'];
+		xthreads_sanitize_eval($tplprefix);
+		$langprefix = $forum['xthreads_langprefix'];
+		xthreads_sanitize_eval($langprefix);
+		if(!xthreads_empty($tplprefix) || !xthreads_empty($langprefix)) // slight optimisation: only write if there's something interesting
+			fwrite($fp, '
 				case '.$fid.': return array(
 					\'tplprefix\' => '.(xthreads_empty($tplprefix) ? '\'\'' : 'array_map(\'trim\', explode(\',\', "'.$tplprefix.'"))').',
 					\'langprefix\' => '.(xthreads_empty($langprefix) ? '\'\'' : 'array_map(\'trim\', explode(\',\', "'.$langprefix.'"))').',
 				);');
-		}
 		$xtforum = array(
-			//'tplprefix' => !xthreads_empty($forum['xthreads_tplprefix']),
-			//'langprefix' => !xthreads_empty($forum['xthreads_langprefix']),
 			'defaultfilter_tf' => array(),
 			'defaultfilter_xt' => array(),
 		);
@@ -708,14 +705,14 @@ function xthreads_buildcache_forums($fp=null) {
 		unset($forum['xthreads_tplprefix'], $forum['xthreads_langprefix'], $forum['xthreads_defaultfilter']);
 		if(!empty($xtforum)) $xtforums[$fid] = $xtforum;
 	}
-	if($fp) {
-		fwrite($fp, '
+	fwrite($fp, '
 			} return array(\'tplprefix\' => \'\', \'langprefix\' => \'\');
 		}
 		
 		function xthreads_evalcacheForumFilters($fid) {
 			switch($fid) {');
 		
+	{ // dummy brace
 		foreach($xtforums as $fid => &$xtforum) {
 			// check to see if everything is empty
 			$allempty = true;
@@ -743,12 +740,11 @@ function xthreads_buildcache_forums($fp=null) {
 			fwrite($fp, '
 				);');
 		}
-		
-		fwrite($fp, '
+	}
+	
+	fwrite($fp, '
 			} return array(\'defaultfilter_tf\' => array(), \'defaultfilter_xt\' => array());
 		}');
-	}
-	//$cache->update('xt_forums', $xtforums);
 	$cache->update('forums', $forums);
 }
 
@@ -756,9 +752,6 @@ function xthreads_admin_cachehack() {
 	control_object($GLOBALS['cache'], '
 		function update_threadfields() {
 			xthreads_buildtfcache();
-		}
-		function update_xt_forums() {
-			xthreads_buildcache_forums();
 		}
 	');
 }
@@ -1065,7 +1058,7 @@ function xthreads_admin_forumcommit() {
 	), 'fid='.$fid);
 	
 	$cache->update_forums();
-	xthreads_buildcache_forums();
+	xthreads_buildtfcache();
 }
 
 

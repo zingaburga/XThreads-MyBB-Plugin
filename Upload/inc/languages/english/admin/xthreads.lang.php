@@ -300,7 +300,7 @@ $l['xthreads_confirm_uninstall'] = 'Are you sure you wish to uninstall XThreads?
 $l['xthreads_orphancleanup_name'] = 'Prune XThreads Orphaned Attachments';
 $l['xthreads_orphancleanup_desc'] = 'Removes orphaned XThreads attachments more than one day old.  Orphaned attachments usually arise when users upload an attachment but decide not to post the thread.  Note that this does not affect MyBB\'s attachment system in any way.';
 
-$l['xthreads_uploads_dir'] = 'XThreads Attachment Uploads Directory';
+$l['xthreads_uploads_dir'] = 'XThreads\' Uploads Directory';
 
 $l['admin_log_config_threadfields_add'] = 'Added thread field <em>{1}</em> ({2})';
 $l['admin_log_config_threadfields_edit'] = 'Modified thread field <em>{1}</em> ({2})';
