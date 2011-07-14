@@ -27,6 +27,8 @@ $plugins->add_hook('admin_config_mod_tools_edit_post_tool_commit', 'xthreads_adm
 
 $plugins->add_hook('admin_tools_recount_rebuild_start', 'xthreads_admin_rebuildthumbs');
 
+$plugins->add_hook('admin_tools_system_health_start', 'xthreads_admin_fileperms');
+
 $plugins->add_hook('admin_tools_get_admin_log_action', 'xthreads_admin_logs');
 
 $plugins->add_hook('admin_load', 'xthreads_vercheck');
@@ -1254,6 +1256,23 @@ function xthreads_admin_logs(&$a) {
 			$a['lang_string'] = '__xthreads_log_inline';
 		}
 	}
+}
+
+function xthreads_admin_fileperms() {
+	global $lang;
+	// MyBB only appends '.', but '../' is more accurate IMO
+	$path = $GLOBALS['mybb']->settings['uploadspath'].'/xthreads_ul';
+	if(is_writable('../'.$path))
+		$message_xtupload = '<span style="color: green;">'.$lang->writable.'</span>';
+	else {
+		$message_xtupload = '<strong><span style="color: #C00">'.$lang->not_writable.'</span></strong><br />'.$lang->please_chmod_777;
+		++$GLOBALS['errors'];
+	}
+	$lang->load('xthreads');
+	// would be nicer to grab the $table object, but doesn't seem easily possible, and these are really simple tables anyway, so unlikely to be much of an issue
+	// so just do a simple language hack
+	// alt_row won't work properly though :|
+	$lang->language_files = $lang->xthreads_uploads_dir.'</strong></td><td class="alt_col">'.$path.'</td><td class="last">'.$message_xtupload.'</td></tr><tr><td class="first"><strong>'.$lang->language_files;
 }
 
 function xthreads_vercheck() {
