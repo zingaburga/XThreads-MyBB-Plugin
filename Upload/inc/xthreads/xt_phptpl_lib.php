@@ -5,7 +5,7 @@
 if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
-function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array())
+function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 {
 	$find = array(
 		'#\<if\s+(.*?)\s+then\>#sie',
@@ -29,6 +29,23 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array())
 		'\'".strval(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\')."\'',
 		'\'".(($GLOBALS["tplvars"]["$1"] = (\'._xthreads_phptpl_expr_parse(\'$2\', $fields).\'))?"":"")."\'',
 	);
+	
+	if($evalvarname) {
+		$find[] = '#\<while\s+(.*?)\s+do\>#sie';
+		$find[] = '#\</while\>#i';
+		$repl[] = '\'"; while(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\') { $'.$evalvarname.'.="\'';
+		$repl[] = '"; } $'.$evalvarname.'.="';
+		
+		$find[] = '#\<foreach\s+(.*?)\s+do\>#sie';
+		$find[] = '#\</foreach\>#i';
+		$repl[] = '\'"; foreach(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\' as $__key => $__value) { $'.$evalvarname.'.="\'';
+		$repl[] = '"; } $'.$evalvarname.'.="';
+		
+		$find[] = '#\<repeat\s+(.*?)\s+do\>#sie';
+		$find[] = '#\</repeat\>#i';
+		$repl[] = '\'"; for($__iter=0; $__iter < \'._xthreads_phptpl_expr_parse(\'$1\', $fields).\'; ++$__iter) { $'.$evalvarname.'.="\'';
+		$repl[] = '"; } $'.$evalvarname.'.="';
+	}
 	
 	if(xthreads_allow_php()) {
 		$find[] = '#\<\?.+?(\?\>)#se';
@@ -179,7 +196,7 @@ function xthreads_allow_php() {
 
 
 // sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
-function xthreads_sanitize_eval(&$s, $fields=array()) {
+function xthreads_sanitize_eval(&$s, $fields=array(), $evalvarname=null) {
 	if(xthreads_empty($s)) {
 		$s = '';
 		return;
@@ -203,7 +220,7 @@ function xthreads_sanitize_eval(&$s, $fields=array()) {
 	);
 	
 	// replace conditionals
-	xthreads_phptpl_parsetpl($s, $fields);
+	xthreads_phptpl_parsetpl($s, $fields, $evalvarname);
 	
 	// replace value tokens at the end
 	if(!empty($fields)) {
