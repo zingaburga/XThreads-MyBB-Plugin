@@ -159,28 +159,30 @@ function xthreads_forumdisplay() {
 		unset($enabled_xtf);
 	//}
 	
-	global $xtforum;
-	if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
-		$tf_filters = $xtforum['defaultfilter_tf'];
-		foreach($tf_filters as $n => &$filter) {
-			if(!xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
-				unset($tf_filters[$n]);
-				continue;
+	if(function_exists('xthreads_evalcacheForumFilters')) {
+		$xtforum = xthreads_evalcacheForumFilters($fid);
+		if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
+			$tf_filters =& $xtforum['defaultfilter_tf'];
+			foreach($xtforum['defaultfilter_tf'] as $n => &$filter) {
+				if(!xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
+					unset($xtforum['defaultfilter_tf'][$n]);
+					continue;
+				}
+				/*if(is_array($filter))
+					$filter = array_map('eval_str', $filter);
+				else
+					$filter = eval_str($filter);*/
 			}
-			if(is_array($filter))
-				$filter = array_map('eval_str', $filter);
-			else
-				$filter = eval_str($filter);
+			$xt_filters =& $xtforum['defaultfilter_xt'];
+			/*foreach($xt_filters as $n => &$filter) {
+				if(is_array($filter))
+					$filter = array_map('eval_str', $filter);
+				else
+					$filter = eval_str($filter);
+			}*/
 		}
-		$xt_filters = $xtforum['defaultfilter_xt'];
-		foreach($xt_filters as $n => &$filter) {
-			if(is_array($filter))
-				$filter = array_map('eval_str', $filter);
-			else
-				$filter = eval_str($filter);
-		}
+		//unset($enabled_xtf);
 	}
-	//unset($enabled_xtf);
 	
 	foreach($tf_filters as $n => &$filter) {
 		xthreads_forumdisplay_filter_input('filtertf_'.$n, $filter, $filters_set[$n]);

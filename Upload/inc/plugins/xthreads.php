@@ -5,6 +5,7 @@ if(!defined('IN_MYBB'))
 
 define('XTHREADS_VERSION', 1.43);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
+@include_once MYBB_ROOT.'cache/xthreads_evalcache.php';
 
 $plugins->add_hook('forumdisplay_start', 'xthreads_forumdisplay_sortlang');
 $plugins->add_hook('forumdisplay_thread', 'xthreads_format_thread_date');
@@ -297,45 +298,45 @@ function xthreads_global() {
 	$fid = (int)$fid; // paranoia
 	
 	if($fid) {
-		global $forum, $cache, $xtforum;
+		global $forum;
 		$forum = get_forum($fid);
-		$xtforums = $cache->read('xt_forums');
-		$xtforum = $xtforums[$fid];
-		unset($xtforums);
-		if($xtforum['tplprefix'] !== '') {
-			// this forum has a custom tpl prefix, hook into templates system
-			control_object($templates, '
-				function cache($templates) {
-					xthreads_tpl_cache($templates, $this);
+		if(function_exists('xthreads_evalcacheForums')) {
+			$xtforum = xthreads_evalcacheForums($fid);
+			if($xtforum['tplprefix'] !== '') {
+				// this forum has a custom tpl prefix, hook into templates system
+				control_object($templates, '
+					function cache($templates) {
+						xthreads_tpl_cache($templates, $this);
+					}
+					
+					function get($title, $eslashes=1, $htmlcomments=1) {
+						xthreads_tpl_get($this, $title);
+						return parent::get($title, $eslashes, $htmlcomments);
+					}
+				');
+				$templates->non_existant_templates = array();
+				$templates->xt_tpl_prefix = $xtforum['tplprefix'];
+			}
+			if($xtforum['langprefix'] !== '') {
+				global $lang;
+				// this forum has a custom lang prefix, hook into lang system
+				control_object($lang, '
+					function load($section, $isdatahandler=false, $supress_error=false) {
+						$this->__xt_load($section, $isdatahandler, $supress_error);
+						foreach($this->__xt_lang_prefix as &$pref)
+							if($pref !== \'\')
+								$this->__xt_load($pref.$section, $isdatahandler, true);
+					}
+					function __xt_load($section, $isdatahandler=false, $supress_error=false) {
+						return parent::load($section, $isdatahandler, $supress_error);
+					}
+				');
+				$lang->__xt_lang_prefix = $xtforum['langprefix'];
+				// load global lang messages that we couldn't before
+				foreach($lang->__xt_lang_prefix as &$pref) if($pref !== '' && preg_match('~^[a-zA-Z0-9_]+$~', $pref)) {
+					$lang->__xt_load($pref.'global', false, true);
+					$lang->__xt_load($pref.'messages', false, true);
 				}
-				
-				function get($title, $eslashes=1, $htmlcomments=1) {
-					xthreads_tpl_get($this, $title);
-					return parent::get($title, $eslashes, $htmlcomments);
-				}
-			');
-			$templates->non_existant_templates = array();
-			$templates->xt_tpl_prefix = array_map('trim', explode(',', eval_str($xtforum['tplprefix'])));
-		}
-		if(!xthreads_empty($xtforum['langprefix'])) {
-			global $lang;
-			// this forum has a custom lang prefix, hook into lang system
-			control_object($lang, '
-				function load($section, $isdatahandler=false, $supress_error=false) {
-					$this->__xt_load($section, $isdatahandler, $supress_error);
-					foreach($this->__xt_lang_prefix as &$pref)
-						if($pref !== \'\')
-							$this->__xt_load($pref.$section, $isdatahandler, true);
-				}
-				function __xt_load($section, $isdatahandler=false, $supress_error=false) {
-					return parent::load($section, $isdatahandler, $supress_error);
-				}
-			');
-			$lang->__xt_lang_prefix = array_map('trim', explode(',', eval_str($xtforum['langprefix'])));
-			// load global lang messages that we couldn't before
-			foreach($lang->__xt_lang_prefix as &$pref) if($pref !== '' && preg_match('~^[a-zA-Z0-9_]+$~', $pref)) {
-				$lang->__xt_load($pref.'global', false, true);
-				$lang->__xt_load($pref.'messages', false, true);
 			}
 		}
 		//if($forum['xthreads_firstpostattop']) {
@@ -447,14 +448,14 @@ function xthreads_tpl_get(&$obj, &$t) {
 // get template prefixes for multiple forums
 // returns an array (forums) of arrays (prefixes), unless $firstonly is true, in which case, it's an array of strings (first prefix)
 function &xthreads_get_tplprefixes($firstonly=false, &$forums=null) {
-	global $xtforums;
-	if(!is_array($xtforums))
-		$xtforums = $GLOBALS['cache']->read('xt_forums');
 	$ret = array();
-	foreach($xtforums as $fid => &$xtforum) {
+	if(!function_exists('xthreads_evalcacheForums')) return $ret;
+	if($forums) $fids = array_keys($forums);
+	else $fids = array_keys($GLOBALS['cache']->read('forums'));
+	foreach($fids as $fid) {
+		$xtforum = xthreads_evalcacheForums($fid);
 		if($xtforum['tplprefix'] === '') continue;
-		if($forums && !isset($forums[$fid])) continue;
-		$ret[$fid] = array_map('trim', explode(',', eval_str($xtforum['tplprefix'])));
+		$ret[$fid] = $xtforum['tplprefix'];
 		if($firstonly) {
 			$ret[$fid] = $ret[$fid][0];
 		}
@@ -553,7 +554,6 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 	}
 }
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
-	include_once MYBB_ROOT.'cache/xthreads_evalcache.php';
 	$evalfunc = 'xthreads_evalcache_'.$tfinfo['field'];
 	if(!$noextra) {
 		// this "hack" stops this function being totally independent of the outside world :(
