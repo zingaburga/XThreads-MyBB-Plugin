@@ -162,7 +162,7 @@ function xthreads_forumdisplay() {
 	if(function_exists('xthreads_evalcacheForumFilters')) {
 		$xtforum = xthreads_evalcacheForumFilters($fid);
 		if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
-			$tf_filters =& $xtforum['defaultfilter_tf'];
+			$tf_filters = $xtforum['defaultfilter_tf'];
 			foreach($tf_filters as $n => &$filter) {
 				if(!xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
 					unset($tf_filters[$n]);
@@ -173,7 +173,7 @@ function xthreads_forumdisplay() {
 				else
 					$filter = eval_str($filter);*/
 			}
-			$xt_filters =& $xtforum['defaultfilter_xt'];
+			$xt_filters = $xtforum['defaultfilter_xt'];
 			/*foreach($xt_filters as $n => &$filter) {
 				if(is_array($filter))
 					$filter = array_map('eval_str', $filter);
