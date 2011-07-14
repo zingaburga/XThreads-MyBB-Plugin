@@ -7,7 +7,8 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 function xthreads_editpost_autofill() {
-	global $mybb, $post;
+	global $mybb, $post, $thread;
+	if($thread['firstpost'] != $post['pid']) return;
 	// fill in missing stuff in edit post
 	
 	// auto-filling postoptions is difficult because we can't differentiate between unticked and not sent
@@ -26,7 +27,7 @@ function xthreads_editpost_autofill() {
 			$mybb->input[$key] = $post[$key];
 	}
 	if($mybb->version_code >= 1500 && !isset($mybb->input['threadprefix']))
-		$mybb->input['threadprefix'] = $GLOBALS['thread']['prefix'];
+		$mybb->input['threadprefix'] = $thread['prefix'];
 }
 
 // filters an input tfcache, removing items which cannot be modified by current user
