@@ -52,6 +52,7 @@ $plugins->add_hook('usercp_do_drafts_start', 'xthreads_purge_draft', 10, $update
 
 $plugins->add_hook('newthread_start', 'xthreads_inputdisp', 10, $updatehooks_file);
 $plugins->add_hook(($GLOBALS['mybb']->version_code >= 1412 ? 'editpost_action_start' : 'editpost_start'), 'xthreads_inputdisp', 10, $updatehooks_file);
+$plugins->add_hook('editpost_do_editpost_start', 'xthreads_editpost_autofill', 10, $updatehooks_file);
 
 $plugins->add_hook('newreply_do_newreply_end', 'xthreads_js_remove_noreplies_notice', 10, $updatehooks_file);
 

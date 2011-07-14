@@ -6,6 +6,18 @@
 if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
+function xthreads_editpost_autofill() {
+	global $mybb, $post;
+	// fill in missing stuff in edit post
+	// it would be nicer to simply unset posthandler vars, but this doesn't seem possible to do (plus the post-validate hack is ugly); this solution is short and simple and works(tm)
+	foreach(array('subject','icon','message') as $key) {
+		if(!isset($mybb->input[$key]))
+			$mybb->input[$key] = $post[$key];
+	}
+	if($mybb->version_code >= 1500 && !isset($mybb->input['threadprefix']))
+		$mybb->input['threadprefix'] = $GLOBALS['thread']['prefix'];
+}
+
 // filters an input tfcache, removing items which cannot be modified by current user
 function xthreads_filter_tfeditable(&$tf, $fid=0) {
 	foreach($tf as $k => &$v) {
