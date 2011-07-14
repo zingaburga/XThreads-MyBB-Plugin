@@ -16,6 +16,8 @@ $plugins->add_hook('admin_forum_management_add_commit', 'xthreads_admin_forumcom
 $plugins->add_hook('admin_forum_management_add_insert_query', 'xthreads_admin_forumcommit_myplazaturbo_fix');
 $plugins->add_hook('admin_forum_management_edit_commit', 'xthreads_admin_forumcommit');
 
+$plugins->add_hook('admin_forum_management_delete', 'xthreads_admin_forumdel');
+
 $plugins->add_hook('admin_config_mod_tools_add_thread_tool', 'xthreads_admin_modtool');
 $plugins->add_hook('admin_config_mod_tools_edit_thread_tool', 'xthreads_admin_modtool');
 $plugins->add_hook('admin_config_mod_tools_add_post_tool', 'xthreads_admin_modtool');
@@ -1059,6 +1061,45 @@ function xthreads_admin_forumcommit() {
 	
 	$cache->update_forums();
 	xthreads_buildtfcache();
+}
+
+function xthreads_admin_forumdel() {
+	control_object($GLOBALS['db'], '
+		function delete_query($table, $where="", $limit="") {
+			static $done=false;
+			if(!$done && $table == "threads" && substr($where, 0, 4) == "fid=") {
+				$done = true;
+				xthreads_admin_forumdel_do($where);
+			}
+			return parent::delete_query($table, $where, $limit);
+		}
+	');
+}
+function xthreads_admin_forumdel_do($where) {
+	require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+	global $db;
+	$query = $db->simple_select('threads', 'tid', $where);
+	
+	do {
+		$count = 0;
+		$continue = false;
+		$tids = '';
+		while($tid = $db->fetch_field($query)) {
+			$tids .= ($count?',':'') . $tid;
+			// stagger updates to 1000 thread chunks for larger forums
+			// TODO: since queries are buffered, should we actually put the limit in the select query?
+			if(++$count >= 1000) {
+				$continue = true;
+				break;
+			}
+		}
+		if($tids) {
+			$twhere = 'tid IN ('.$tids.')';
+			xthreads_rm_attach_query($twhere);
+			$db->delete_query('threadfields_data', $twhere);
+		}
+	} while($continue);
+	$db->free_result($query);
 }
 
 
