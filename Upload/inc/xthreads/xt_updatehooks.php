@@ -9,6 +9,17 @@ if(!defined('IN_MYBB'))
 function xthreads_editpost_autofill() {
 	global $mybb, $post;
 	// fill in missing stuff in edit post
+	
+	// auto-filling postoptions is difficult because we can't differentiate between unticked and not sent
+	// so use heuristic -> if no message/subject sent and no options, we'll assume postoptions not sent
+	if(!isset($mybb->input['postoptions']) && !isset($mybb->input['subject']) && !isset($mybb->input['message'])) {
+		$mybb->input['postoptions'] = array(
+			'signature' => $post['includesig'],
+			'disablesmilies' => $post['smilieoff'],
+		);
+		// we don't need to worry about 'subscriptionmethod'
+	}
+	
 	// it would be nicer to simply unset posthandler vars, but this doesn't seem possible to do (plus the post-validate hack is ugly); this solution is short and simple and works(tm)
 	foreach(array('subject','icon','message') as $key) {
 		if(!isset($mybb->input[$key]))
