@@ -26,6 +26,7 @@ xtOFEditor.prototype = {
 	init: function() {
 		// this is broken in Firefox 4 - if we have it, bail
 		// see bug: https://bugzilla.mozilla.org/show_bug.cgi?id=637644
+		// fixed in Firefox 5 though
 		if(/Firefox\/4\./.test(navigator.userAgent)) return;
 		
 		this.src.onclick = this.open.bind(this);
@@ -263,7 +264,7 @@ xtOFEditor.prototype = {
 		if(!this.isOpen()) return;
 		// check modification status and ask to save
 		this.window.document.activeElement.blur(); // run update routine
-		if(this.unsaved && confirm(xtOFEditorLang.closeSaveChanges))
+		if(this.unsaved && this.window.confirm(xtOFEditorLang.closeSaveChanges))
 			this.save();
 		else {
 			this.winOpen = false;
