@@ -5,7 +5,7 @@ if(!defined('IN_MYBB'))
 
 define('XTHREADS_VERSION', 1.43);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
-@include_once MYBB_ROOT.'cache/xthreads_evalcache.php';
+@include_once MYBB_ROOT.'cache/xthreads_evalcache.php'; // if missing, we'll regenerate only in the AdminCP; weird heuristic, but one would imagine that a visit there is likely if the evalcache stuffs up
 
 $plugins->add_hook('forumdisplay_start', 'xthreads_forumdisplay_sortlang');
 $plugins->add_hook('forumdisplay_thread', 'xthreads_format_thread_date');

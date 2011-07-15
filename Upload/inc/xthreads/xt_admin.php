@@ -1324,6 +1324,11 @@ function xthreads_vercheck() {
 		}
 	}
 	
+	// whilst we're here, also check if evalcache file exists
+	if(!file_exists(MYBB_ROOT.'cache/xthreads_evalcache.php'))
+		xthreads_buildtfcache();
+	
+	
 	if(!defined('XTHREADS_INSTALLED_VERSION')) { // 1.32 or older
 		$info = @include(MYBB_ROOT.'cache/xthreads.php');
 		if(is_array($info))
