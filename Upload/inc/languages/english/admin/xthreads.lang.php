@@ -46,7 +46,7 @@ $l['threadfields_editable_desc'] = 'Specify who is allowed to modify the value o
 $l['threadfields_editable_gids'] = 'Editable by Usergroups';
 $l['threadfields_editable_gids_desc'] = 'Specify which usergroups are allowed to edit this field.';
 $l['threadfields_editable_values'] = 'Settable Value Permissions';
-$l['threadfields_editable_values_desc'] = 'Here, you can restrict values particular usergroups can set for this field.  Put separate values on separate lines, and separate values and usergroups with the three characters <code>{|}</code>.  Separate multiple groups with commas.  Example: <code>special value{|}1,2,3</code> - the value <em>special value</em> can only be set by users in groups (ID) 1, 2 or 3.
+$l['threadfields_editable_values_desc'] = 'Here, you can restrict values particular usergroups can set for this field.<noscript>  Put separate values on separate lines, and separate values and usergroups with the three characters <code>{|}</code>.  Separate multiple groups with commas.  Example: <code>special value{|}1,2,3</code> - the value <em>special value</em> can only be set by users in groups (ID) 1, 2 or 3.</noscript>
 <br />Note that when editing a thread, if a thread has a value already set to a value the editing user cannot set, the user will not be forced to change the value.';
 $l['threadfields_viewable_gids'] = 'Viewable by Usergroups';
 $l['threadfields_viewable_gids_desc'] = 'You can specify usergroups which can view the value of this field.  Selecting none means it is viewable to all usergroups.  Note that filtering and sorting by this thread field is affected by this setting.';
@@ -280,7 +280,7 @@ $l['xthreads_sort_ext_numratings'] = 'Number of Ratings';
 $l['xthreads_sort_ext_attachmentcount'] = 'Number of Attachments in Thread';
 
 $l['xthreads_modtool_edit_threadfields'] = 'Modify Custom Thread Field(s)';
-$l['xthreads_modtool_edit_threadfields_desc'] = 'You can use this option to modify XThreads\' custom thread fields when this tool is executed.  Specify each thread field you wish to edit on a separate line and assign to the thread field\'s key using = (equals sign).  The current value (before setting) of the field can be denoted by <code>{VALUE}</code>.  Variables/conditionals supported.  NOTE: values here are NOT validated, and permissions are NOT checked!  Example:
+$l['xthreads_modtool_edit_threadfields_desc'] = 'You can use this option to modify XThreads\' custom thread fields when this tool is executed.  <noscript>Specify each thread field you wish to edit on a separate line and assign to the thread field\'s key using = (equals sign).  </noscript>The current value (before setting) of the field can be denoted by <code>{VALUE}</code>.  Variables/conditionals supported.  NOTE: values here are NOT validated, and permissions are NOT checked!  Example:
 <code style="display: block; margin-left: 2em;">myfield=something<br />anotherfield={VALUE},something else</code>';
 
 $l['xthreads_js_confirm_form_submit'] = 'You have an editor window open - are you sure you wish to submit these changes without closing this window?';
