@@ -748,9 +748,12 @@ function xthreads_user_in_groups(&$gids) {
 function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 	//if(!$tids) return;
 	// our special query needed to get download info across
-	static $done_attach_dl_count = false;
-	if(!$done_attach_dl_count && ($tf['inputtype'] == XTHREADS_INPUT_FILE || $tf['inputtype'] == XTHREADS_INPUT_FILE_URL)) {
-		$done_attach_dl_count = true;
+	static $done_attach_dl_count = null;
+	if(!isset($done_attach_dl_count)) $done_attach_dl_count = array();
+	$donekey = ($posthash ? $posthash : $tids);
+	
+	if(!isset($done_attach_dl_count[$donekey]) && ($tf['inputtype'] == XTHREADS_INPUT_FILE || $tf['inputtype'] == XTHREADS_INPUT_FILE_URL)) {
+		$done_attach_dl_count[$donekey] = true;
 		
 		global $xta_cache, $db;
 		if(!is_array($xta_cache))
@@ -789,6 +792,32 @@ function xthreads_get_xta_url(&$xta) {
 	
 	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).$delim.$md5hash.rawurlencode($xta['filename']);
 }
+
+// only 'username' and 'fid' keys are used from the $thread array
+function &xthreads_get_threadfields($tid, $thread=array()) {
+	$threadfields = array();
+	$tid = (int)$tid;
+	
+	if(empty($thread))
+		$thread = get_thread($tid);
+	
+	if($thread['fid'] == $GLOBALS['fid']) // use global cache if we're referring to current forum
+		$threadfield_cache =& $GLOBALS['threadfield_cache'];
+	if(!isset($threadfield_cache))
+		$threadfield_cache = xthreads_gettfcache((int)$thread['fid']);
+	
+	if(!empty($threadfield_cache)) {
+		global $db;
+		$threadfields = $db->fetch_array($db->simple_select('threadfields_data', '`'.implode('`,`', array_keys($threadfield_cache)).'`', 'tid='.$tid));
+		if(!isset($threadfields)) $threadfields = array();
+		foreach($threadfield_cache as $k => &$v) {
+			xthreads_get_xta_cache($v, $tid);
+			xthreads_sanitize_disp($threadfields[$k], $v, $thread['username']);
+		}
+	}
+	return $threadfields;
+}
+
 
 function xthreads_phptpl_iif($condition, $true)
 {

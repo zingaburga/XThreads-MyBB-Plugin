@@ -325,6 +325,9 @@ validate_email_format
 xthreads_phptpl_eval_expr
 xthreads_phptpl_eval_text
 
+;XThreads functions
+xthreads_get_threadfields
+
 ;mb_*
 ;ob_* ?
 ;print_r / var_dump / serialize / unserialize ?

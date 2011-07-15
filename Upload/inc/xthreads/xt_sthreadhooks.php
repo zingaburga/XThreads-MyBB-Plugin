@@ -4,18 +4,9 @@ if(!defined('IN_MYBB'))
 
 
 function xthreads_showthread() {
-	global $thread;
-	global $threadfield_cache, $db, $threadfields;
-	
-	$threadfields = array();
-	if(!isset($threadfield_cache))
-		$threadfield_cache = xthreads_gettfcache($GLOBALS['fid']);
-	
-	if(!empty($threadfield_cache)) {
-		// just do an extra query to grab the threadfields
-		$threadfields = $db->fetch_array($db->simple_select('threadfields_data', '`'.implode('`,`', array_keys($threadfield_cache)).'`', 'tid='.$thread['tid']));
-		if(!isset($threadfields)) $threadfields = array();
-	}
+	global $thread, $threadfields;
+	// just do an extra query to grab the threadfields
+	$threadfields = xthreads_get_threadfields($thread['tid'], $thread);
 	
 	/*
 	global $mybb;
@@ -97,13 +88,6 @@ function xthreads_showthread() {
 		exit;
 	}
 	*/
-	
-	if(!empty($threadfield_cache)) {
-		foreach($threadfield_cache as $k => &$v) {
-			xthreads_get_xta_cache($v, $thread['tid']);
-			xthreads_sanitize_disp($threadfields[$k], $v, $thread['username']);
-		}
-	}
 }
 
 function xthreads_showthread_firstpost() {
