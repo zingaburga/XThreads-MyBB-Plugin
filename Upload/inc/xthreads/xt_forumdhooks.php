@@ -330,7 +330,7 @@ function xthreads_forumdisplay_quickthread() {
 	xthreads_input_generate($blank, $edit_fields, $GLOBALS['fid']);
 	if(!strpos($tpl, 'enctype="multipart/form-data"'))
 		$tpl = str_replace('<form method="post" ', '<form method="post" enctype="multipart/form-data" ', $tpl);
-	$tpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1'.strtr($GLOBALS['extra_threadfields'], array('$' => '\\$')).'$2', $tpl, 1);
+	$tpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1'.strtr($GLOBALS['extra_threadfields'], array('\\' => '\\\\', '$' => '\\$')).'$2', $tpl, 1);
 }
 
 function xthreads_forumdisplay_sorter() {
