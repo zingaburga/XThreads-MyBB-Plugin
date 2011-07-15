@@ -312,3 +312,5 @@ $l['admin_log_config_threadfields_inline_delim'] = '; ';
 $l['xthreads_do_upgrade'] = 'You have uploaded a newer version of XThreads, v{1}, however the version currently installed is v{2}.  You may need to perform an upgrade for your board to be functional - to perform an upgrade, please <a href="{3}">click here</a>.';
 $l['xthreads_upgrade_done'] = 'XThreads successfully upgraded.';
 $l['xthreads_upgrade_failed'] = 'XThreads upgraded failed.';
+$l['xthreads_cachefile_rewritten'] = 'XThreads settings file successfully rewritten - version set to {1}';
+$l['xthreads_cachefile_missing'] = 'The XThreads settings file (cache/xthreads.php) is missing or corrupted!  If you have modified this file, please revert the changes and try again, or if you have a backup copy of this file, please upload it.  Otherwise, it is possible to try to regenerate the file if the version installed is v{1} - if this is the case, please <a href="{2}">click here</a> to try to regenerate the file.';

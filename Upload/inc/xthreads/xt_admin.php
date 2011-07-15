@@ -1310,15 +1310,37 @@ function xthreads_admin_fileperms() {
 }
 
 function xthreads_vercheck() {
+	global $admin_session, $lang, $mybb;
+	
+	$upgrade_link = 'index.php?xthreads_upgrade=1&amp;my_post_key='.$mybb->post_code;
+	if($mybb->request_mode != 'post') {
+		if($qs = $_SERVER['QUERY_STRING']) {
+			$qs = preg_replace('~(^|&)my_post_key=.*?(&|$)~i', '$2', $qs);
+			if($qs{0} != '&') $qs = '&'.$qs;
+			$upgrade_link .= htmlspecialchars($qs);
+		}
+	}
+	
 	if(!defined('XTHREADS_INSTALLED_VERSION')) { // 1.32 or older
 		$info = @include(MYBB_ROOT.'cache/xthreads.php');
 		if(is_array($info))
 			define('XTHREADS_INSTALLED_VERSION', $info['version']);
-		else
-			define('XTHREADS_INSTALLED_VERSION', 0.54); // fallback
+		else {
+			// can't retrieve info!
+			define('XTHREADS_INSTALLED_VERSION', XTHREADS_VERSION); // fallback
+			
+			// try to rewrite file if possible
+			if(!$lang->xthreads_cachefile_rewritten) $lang->load('xthreads');
+			if($mybb->input['xthreads_upgrade'] && $mybb->input['my_post_key'] == $mybb->post_code) {
+				xthreads_write_xtcachefile();
+				$msg = array('message' => $lang->sprintf($lang->xthreads_cachefile_rewritten, XTHREADS_INSTALLED_VERSION), 'type' => 'success');
+				unset($mybb->input['xthreads_upgrade']);
+			} else {
+				$msg = array('message' => $lang->sprintf($lang->xthreads_cachefile_missing, xthreads_format_version_number(XTHREADS_VERSION), $upgrade_link), 'type' => 'alert');
+			}
+		}
 	}
 	if(XTHREADS_INSTALLED_VERSION < XTHREADS_VERSION) {
-		global $admin_session, $lang, $mybb;
 		// need to upgrade
 		if(!$lang->xthreads_upgrade_done) $lang->load('xthreads');
 		if($mybb->input['xthreads_upgrade'] && $mybb->input['my_post_key'] == $mybb->post_code) {
@@ -1334,17 +1356,10 @@ function xthreads_vercheck() {
 			}
 			unset($mybb->input['xthreads_upgrade']);
 		} else {
-			$link = 'index.php?xthreads_upgrade=1&amp;my_post_key='.$mybb->post_code;
-			if($mybb->request_mode != 'post') {
-				if($qs = $_SERVER['QUERY_STRING']) {
-					$qs = preg_replace('~(^|&)my_post_key=.*?(&|$)~i', '$2', $qs);
-					if($qs{0} != '&') $qs = '&'.$qs;
-					$link .= htmlspecialchars($qs);
-				}
-			}
-			
-			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, xthreads_format_version_number(XTHREADS_VERSION), xthreads_format_version_number(XTHREADS_INSTALLED_VERSION), $link), 'type' => 'alert');
+			$msg = array('message' => $lang->sprintf($lang->xthreads_do_upgrade, xthreads_format_version_number(XTHREADS_VERSION), xthreads_format_version_number(XTHREADS_INSTALLED_VERSION), $upgrade_link), 'type' => 'alert');
 		}
+	}
+	if($msg) {
 		if($admin_session['data']['flash_message'])
 			$admin_session['data']['flash_message']['message'] .= '</div><br /><div class="'.$msg['type'].'">'.$msg['message'];
 		else
