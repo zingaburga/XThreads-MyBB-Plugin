@@ -17,6 +17,7 @@ if(!defined('IN_MYBB'))
 	
 	/**
 	 * Number of redirects (Location header) to follow.  0 to disable.
+	 * Doesn't work properly with cURL fetcher
 	 */
 	var $follow_redir = 5;
 	/**
