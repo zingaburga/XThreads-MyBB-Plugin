@@ -189,9 +189,9 @@ if(XTHREADS_INSTALLED_VERSION < 1.43) {
 	
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 	
-	if(isset($cache->cache['xt_forums'])) { // remove old xt_forums cache if present
+	$xt_forums_cache = $cache->read('xt_forums');
+	if(!empty($xt_forums_cache)) { // remove old xt_forums cache if present
 		xthreads_delete_datacache('xt_forums');
-		unset($cache->cache['xt_forums']);
 	}
 }
 
