@@ -44,6 +44,10 @@ xtOFEditor.prototype = {
 			return true;
 		}.bind(this);
 		this.src.readOnly = true;
+		this.src.style.borderColor = "#FF8040";
+		this.src.style.backgroundColor = "#FFFFF0";
+		this.src.style.color = "#504030";
+		this.src.style.cursor = "pointer";
 		
 		if(this.src.form && !window.opera) {
 			if(this.src.form.onsubmit)
