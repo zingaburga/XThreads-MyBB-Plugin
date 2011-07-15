@@ -565,13 +565,6 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 	} // otherwise, let the following line dummy the variable
 	$sx = array('title' => htmlspecialchars_uni($tfinfo['title']), 'desc' => htmlspecialchars_uni($tfinfo['desc']), 'num_values' => 1, 'num_values_friendly' => my_number_format(1));
 	
-	if($s === '' || $s === null) { // won't catch file inputs, as they are integer type
-		$sx['num_values'] = 0;
-		$sx['num_values_friendly'] = my_number_format(0);
-		$s = $evalfunc('blankval');
-		return;
-	}
-	
 	$dispfmt = 'dispformat';
 	
 	if(!xthreads_user_in_groups($tfinfo['viewable_gids'])) {
@@ -627,6 +620,12 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 		$sx['value'] =& $s;
 	}
 	else {
+		if($s === '' || $s === null) {
+			$sx['num_values'] = 0;
+			$sx['num_values_friendly'] = my_number_format(0);
+			$s = $evalfunc('blankval');
+			return;
+		}
 		if(!xthreads_empty($tfinfo['multival'])) {
 			// we _could_ optimise this out if the final $dispformat never actually refers to {VALUE}, but this is perhaps an unlikely situation, and we don't know whether the dispitemformat has some special eval'd code we should run
 			$vals = explode("\n", str_replace("\r", '', $s));
