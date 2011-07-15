@@ -794,7 +794,7 @@ function xthreads_get_xta_url(&$xta) {
 }
 
 // only 'username' and 'fid' keys are used from the $thread array
-function &xthreads_get_threadfields($tid, $thread=array()) {
+function &xthreads_get_threadfields($tid, $noextra=true, $thread=array()) {
 	$threadfields = array();
 	$tid = (int)$tid;
 	
@@ -812,7 +812,7 @@ function &xthreads_get_threadfields($tid, $thread=array()) {
 		if(!isset($threadfields)) $threadfields = array();
 		foreach($threadfield_cache as $k => &$v) {
 			xthreads_get_xta_cache($v, $tid);
-			xthreads_sanitize_disp($threadfields[$k], $v, $thread['username']);
+			xthreads_sanitize_disp($threadfields[$k], $v, $thread['username'], $noextra);
 		}
 	}
 	return $threadfields;
