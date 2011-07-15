@@ -610,7 +610,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 		
 		$s['value'] = '';
 		$vars = array();
-		if($tf[$dispfmt]) {
+		if($tfinfo[$dispfmt]) {
 			foreach($s as $k => &$v)
 				if(!is_array($v))
 					$vars[strtoupper($k)] =& $v;
