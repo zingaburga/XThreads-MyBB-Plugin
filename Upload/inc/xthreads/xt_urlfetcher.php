@@ -17,7 +17,6 @@ if(!defined('IN_MYBB'))
 	
 	/**
 	 * Number of redirects (Location header) to follow.  0 to disable.
-	 * Not guaranteed to be respected
 	 */
 	var $follow_redir = 5;
 	/**
@@ -302,84 +301,103 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 	}
 	
 	function fetch() {
-		$purl = @parse_url($this->url);
-		if(!isset($purl['path']) || $purl['path'] === '')
-			$purl['path'] = '/';
-		if(@$purl['query'])
-			$purl['path'] .= '?'.@$purl['query'];
-		if(!$purl['port']) $purl['port'] = 80;
-		if(!($fr = @fsockopen($purl['host'], $purl['port'], $errno, $errstr, $this->timeout))) {
-			$this->errno = $errno;
-			$this->errstr = $errstr;
-			return false;
-		}
-		@stream_set_timeout($fr, $this->timeout);
-		$headers = array_merge(array(
-			'GET '.$purl['path'].' HTTP/1.1',
-			'Host: '.$purl['host'],
-		), $this->_generateHeaders());
-		
-		$headers[] = "\r\n";
-		
-		if(!@fwrite($fr, implode("\r\n", $headers))) {
-			$this->errno = 0;
-			$this->errstr = 'cantwritesocket';
-			fclose($fr);
-			return false;
-		}
-		
-		$databuf = ''; // returned string if no body_function defined
-		$doneheaders = false;
-		while(!feof($fr)) {
-			if(!$doneheaders) {
-				$data = self::fill_fread($fr, 16384);
-				$len = strlen($data);
-				$p = strpos($data, "\r\n\r\n");
-				if(!$p || $p > 12288 || substr($data, 0, 4) != 'HTTP') { // should be no reason to have >12KB headers
-					$this->errno = 0;
-					$this->errstr = 'headernotfound';
-					break;
-				}
-				// parse headers
-				if(isset($this->meta_function)) {
-					foreach(explode("\r\n", substr($data, 0, $p)) as $header) {
-						if(!$this->_processHttpHeader(trim($header))) {
+		$redirs = $this->follow_redir;
+		$url = $this->url;
+		do {
+			$redirect = false;
+			$purl = @parse_url($url);
+			if(empty($purl) || !isset($purl['host'])) {
+				$this->errno = 0;
+				$this->errstr = 'invalidurl';
+				return false;
+			}
+			if(!isset($purl['path']) || $purl['path'] === '')
+				$purl['path'] = '/';
+			if(@$purl['query'])
+				$purl['path'] .= '?'.@$purl['query'];
+			if(!$purl['port']) $purl['port'] = 80;
+			if(!($fr = @fsockopen($purl['host'], $purl['port'], $errno, $errstr, $this->timeout))) {
+				$this->errno = $errno;
+				$this->errstr = $errstr;
+				return false;
+			}
+			@stream_set_timeout($fr, $this->timeout);
+			$headers = array_merge(array(
+				'GET '.$purl['path'].' HTTP/1.1',
+				'Host: '.$purl['host'],
+			), $this->_generateHeaders());
+			
+			$headers[] = "\r\n";
+			
+			if(!@fwrite($fr, implode("\r\n", $headers))) {
+				$this->errno = 0;
+				$this->errstr = 'cantwritesocket';
+				fclose($fr);
+				return false;
+			}
+			
+			$databuf = ''; // returned string if no body_function defined
+			$doneheaders = false;
+			while(!feof($fr)) {
+				if(!$doneheaders) {
+					$data = self::fill_fread($fr, 16384);
+					$len = strlen($data);
+					$p = strpos($data, "\r\n\r\n");
+					if(!$p || $p > 12288 || substr($data, 0, 4) != 'HTTP') { // should be no reason to have >12KB headers
+						$this->errno = 0;
+						$this->errstr = 'headernotfound';
+						break;
+					}
+					$headerdata = substr($data, 0, $p);
+					// check redirect
+					if($redirs && preg_match("~\r\nlocation\:([^\r\n]*?)\r\n~i", $headerdata, $match)) {
+						$url = trim($match[1]);
+						if($url) {
+							$redirect = true;
+							--$redirs;
 							break;
 						}
 					}
-					if($this->aborted) break;
-				}
-				
-				$p += 4;
-				$data = substr($data, $p);
-				$len -= $p;
-				$doneheaders = true;
-			} else {
-				$len = 0;
-				while(!feof($fr) && !$len) {
-					$data = fread($fr, 16384);
-					$len = strlen($data);
-				}
-			}
-			if($len) {
-				if(isset($this->body_function)) {
-					if(!call_user_func_array($this->body_function, array(&$this, &$data))) {
-						$this->aborted = true;
-						break;
+					// parse headers
+					if(isset($this->meta_function)) {
+						foreach(explode("\r\n", $headerdata) as $header) {
+							if(!$this->_processHttpHeader(trim($header))) {
+								break;
+							}
+						}
+						if($this->aborted) break;
 					}
+					
+					$p += 4;
+					$data = substr($data, $p);
+					$len -= $p;
+					$doneheaders = true;
 				} else {
-					$databuf .= $data;
+					$len = 0;
+					while(!feof($fr) && !$len) {
+						$data = fread($fr, 16384);
+						$len = strlen($data);
+					}
+				}
+				if($len) {
+					if(isset($this->body_function)) {
+						if(!call_user_func_array($this->body_function, array(&$this, &$data))) {
+							$this->aborted = true;
+							break;
+						}
+					} else {
+						$databuf .= $data;
+					}
 				}
 			}
-		}
-		fclose($fr);
-		if($this->aborted) return null;
-		if(isset($this->errstr)) return false;
+			fclose($fr);
+			if($this->aborted) return null;
+			if(isset($this->errstr)) return false;
+		} while($redirect);
 		
 		if(isset($this->body_function)) return true;
 		return $databuf;
 	}
-	
 }
 
 /**
