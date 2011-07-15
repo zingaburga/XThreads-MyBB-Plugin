@@ -1078,13 +1078,16 @@ function xthreads_admin_forumdel() {
 function xthreads_admin_forumdel_do($where) {
 	require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 	global $db;
-	$query = $db->simple_select('threads', 'tid', $where);
+	//$query = $db->simple_select('threads', 'tid', $where);
+	$query = $db->query('
+		SELECT t.tid AS tid FROM '.TABLE_PREFIX.'threads t INNER JOIN '.TABLE_PREFIX.'threadfields_data d ON t.tid=d.tid
+		WHERE '.$where);
 	
 	do {
 		$count = 0;
 		$continue = false;
 		$tids = '';
-		while($tid = $db->fetch_field($query)) {
+		while($tid = $db->fetch_field($query, 'tid')) {
 			$tids .= ($count?',':'') . $tid;
 			// stagger updates to 1000 thread chunks for larger forums
 			// TODO: since queries are buffered, should we actually put the limit in the select query?

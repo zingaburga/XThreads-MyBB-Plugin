@@ -434,6 +434,16 @@ function xthreads_uninstall() {
 	
 	$db->delete_query('templates', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
 	
+	// revert QuickThread modification
+	if(function_exists('quickthread_uninstall')) {
+		$tpl = $db->fetch_array($db->simple_select('templates', 'tid,template', 'title="forumdisplay_quick_thread" AND sid=-1', array('limit' => 1)));
+		if($tpl && strpos($tpl['template'], '{$GLOBALS[\'extra_threadfields\']}') !== false) {
+			$newtpl = preg_replace('~\\{\\$GLOBALS\\[\'extra_threadfields\'\\]\\}'."\r?(\n\t{0,3})?".'~is', '', $tpl['template'], 1);
+			if($newtpl != $tpl['template'])
+				$db->update_query('templates', array('template' => $db->escape_string($newtpl)), 'tid='.$tpl['tid']);
+		}
+	}
+	
 	// try to determine and remove stuff added to the custom moderation table
 	$query = $db->simple_select('modtools', 'tid,threadoptions');
 	while($tool = $db->fetch_array($query)) {
@@ -467,7 +477,7 @@ function xthreads_plugins_phptpl_reparse($active) {
 }
 
 function xthreads_plugins_quickthread_install() {
-	if($GLOBALS['codename'] != 'quickthread'] || !$GLOBALS['install_uninstall']) return;
+	if($GLOBALS['codename'] != 'quickthread' || !$GLOBALS['install_uninstall']) return;
 	xthreads_plugins_quickthread_tplmod();
 }
 function xthreads_plugins_quickthread_tplmod() {
@@ -475,7 +485,8 @@ function xthreads_plugins_quickthread_tplmod() {
 	global $db;
 	$tpl = $db->fetch_array($db->simple_select('templates', 'tid,template', 'title="forumdisplay_quick_thread" AND sid=-1', array('limit' => 1)));
 	if($tpl && strpos($tpl['template'], '{$GLOBALS[\'extra_threadfields\']}') === false) {
-		$newtpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1{\\$GLOBALS[\'extra_threadfields\']}$2', $tpl['template'], 1);
+		$newtpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1{\\$GLOBALS[\'extra_threadfields\']}
+			$2', $tpl['template'], 1);
 		if($newtpl != $tpl['template'])
 			$db->update_query('templates', array('template' => $db->escape_string($newtpl)), 'tid='.$tpl['tid']);
 	}

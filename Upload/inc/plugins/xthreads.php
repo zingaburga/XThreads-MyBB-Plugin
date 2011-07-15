@@ -797,6 +797,7 @@ function xthreads_get_xta_url(&$xta) {
 function &xthreads_get_threadfields($tid, $noextra=true, $thread=array()) {
 	$threadfields = array();
 	$tid = (int)$tid;
+	if(!$tid) return $threadfields;
 	
 	if(empty($thread))
 		$thread = get_thread($tid);

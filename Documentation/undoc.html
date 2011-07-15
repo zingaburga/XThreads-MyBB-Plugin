@@ -61,7 +61,7 @@
     <li><code>{VALUE}</code> and similar tokens above are treated as quoted string values, eg <code>&lt;?='This is '.{VALUE}?&gt;</code> is valid syntax</li>
     <li>All variables are auto-global'd - no need to do this explicitly.  Note that, because of this, it won't work correctly with some PHP syntax, such as <code>$$variable</code></li>
     <li>The two functions added in v1.4 of <em>Template Conditionals</em> are named <code>xthreads_phptpl_eval_expr</code> and <code>xthreads_phptpl_eval_text</code></li>
-    <li>An additional function is included which allows you to grab thread fields for a specified thread: <code>xthreads_get_threadfields</code> which accepts a thread ID as argument and returns an array, similar to the <code>$threadfields</code> variable used in various places</li>
+    <li>An additional function is included which allows you to grab thread fields for a specified thread: <code>xthreads_get_threadfields</code> which accepts a thread ID as argument and returns an array, similar to the <code>$threadfields</code> variable used in various places.  Note that care should be taken to avoid infinite recursion, if this function is being used in conditionals (this function is often only accessible through <code>&lt;setvar&gt;</code> which always evaluate even within <code>&lt;if&gt;</code> tags).</li>
    </ul>
    <p>PHP support is also available, but only if the  <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=260">PHP in Templates plugin</a> is installed and activated (and/or appropriate setting set in <em>cache/xthreads.php</em>); accepts PHP within <code>&lt;?php ... ?&gt;</code> tags, similar to how the plugin works.</p>
    

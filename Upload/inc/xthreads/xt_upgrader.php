@@ -178,18 +178,18 @@ if(XTHREADS_INSTALLED_VERSION < 1.43) {
 	}
 	$db->free_result($query);
 	
-	require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 	if($tids) {
 		$db->delete_query('threadfields_data', 'tid IN ('.$tids.')');
+		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 		xthreads_rm_attach_query('tid IN ('.$tids.')');
 	}
 	
+	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 	xthreads_plugins_quickthread_tplmod();
 	
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 	
 	if(isset($cache->cache['xt_forums'])) { // remove old xt_forums cache if present
-		require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 		xthreads_delete_datacache('xt_forums');
 		unset($cache->cache['xt_forums']);
 	}
