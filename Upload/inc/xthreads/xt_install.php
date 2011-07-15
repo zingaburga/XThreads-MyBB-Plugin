@@ -4,12 +4,14 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 // don't add hooks if we've included this file for other reasons
-if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2 && isset($plugins) && is_object($plugins)) {
-	$plugins->add_hook('admin_config_plugins_activate_commit', 'xthreads_plugins_phptpl_activate');
-	$plugins->add_hook('admin_config_plugins_deactivate_commit', 'xthreads_plugins_phptpl_deactivate');
+if(isset($plugins) && is_object($plugins)) {
+	if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2) {
+		$plugins->add_hook('admin_config_plugins_activate_commit', 'xthreads_plugins_phptpl_activate');
+		$plugins->add_hook('admin_config_plugins_deactivate_commit', 'xthreads_plugins_phptpl_deactivate');
+	}
+	$plugins->add_hook('admin_config_plugins_activate_commit', 'xthreads_plugins_quickthread_install');
 }
-
-// if you don't wish to have XThreads modify any templates, set this value to true
+// if you don't wish to have XThreads modify any templates, set this value to true (the Quick Thread mod will still be done regardless)
 // note that once you have XThreads installed, this will be stored in cache/xthreads.php instead
 @define('XTHREADS_MODIFY_TEMPLATES', true);
 
@@ -237,7 +239,7 @@ Put your stuff here
 </tr>'
 	));
 	
-	
+	xthreads_plugins_quickthread_tplmod();
 	
 	// admin permissions - default to all allow
 	$query = $db->simple_select('adminoptions', 'uid,permissions');
@@ -462,6 +464,21 @@ function xthreads_plugins_phptpl_reparse($active) {
 	
 	define('XTHREADS_ALLOW_PHP_THREADFIELDS_ACTIVATION', $active); // define is maybe safer?
 	xthreads_buildtfcache();
+}
+
+function xthreads_plugins_quickthread_install() {
+	if($GLOBALS['codename'] != 'quickthread'] || !$GLOBALS['install_uninstall']) return;
+	xthreads_plugins_quickthread_tplmod();
+}
+function xthreads_plugins_quickthread_tplmod() {
+	if(!function_exists('quickthread_install')) return;
+	global $db;
+	$tpl = $db->fetch_array($db->simple_select('templates', 'tid,template', 'title="forumdisplay_quick_thread" AND sid=-1', array('limit' => 1)));
+	if($tpl && strpos($tpl['template'], '{$GLOBALS[\'extra_threadfields\']}') === false) {
+		$newtpl = preg_replace('~(\<tbody.*?\<tr\>.*?)(\<tr\>)~is', '$1{\\$GLOBALS[\'extra_threadfields\']}$2', $tpl['template'], 1);
+		if($newtpl != $tpl['template'])
+			$db->update_query('templates', array('template' => $db->escape_string($newtpl)), 'tid='.$tpl['tid']);
+	}
 }
 
 
