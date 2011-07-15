@@ -1,6 +1,10 @@
 
 var appendNewChild = function(e,t) {
-	var o=e.ownerDocument.createElement(t);
+	var o;
+	if(e.ownerDocument)
+		o=e.ownerDocument.createElement(t);
+	else // IE
+		o=e.document.createElement(t);
 	e.appendChild(o);
 	return o;
 };
@@ -60,7 +64,10 @@ xtOFEditor.prototype = {
 	},
 	
 	isOpen: function() {
-		return this.winOpen && this.window && this.window.document;
+		try { // stop IE throwing error if window closed
+			return this.winOpen && this.window && this.window.document;
+		} catch(e) {}
+		return false;
 	},
 	closeWindow: function() {
 		if(this.isOpen()) {
@@ -116,16 +123,26 @@ xtOFEditor.prototype = {
 		if(this.copyStyles) {
 			var headTag;
 			if(headTag = this.window.document.getElementsByTagName("head")) {
-				headTag = headTag[0];
+				if(headTag.length == 0) {
+					headTag = this.window.document.createElement("head");
+					this.window.document.appendChild(headTag);
+				} else
+					headTag = headTag[0];
 				for(i=0; i<document.styleSheets.length; i++)
 					if(document.styleSheets[i].href)
 						this.addStylesheet(headTag, document.styleSheets[i].href);
 			}
 		}
-		if(xtOFEditorLang.windowTitle)
-			this.window.document.title = xtOFEditorLang.windowTitle;
-		if(!this.window.document.body)
-			this.window.document.body = this.window.document.createElement("body");
+		try { // prevent IE error
+			if(xtOFEditorLang.windowTitle)
+				this.window.document.title = xtOFEditorLang.windowTitle;
+		} catch(e) {}
+		if(!this.window.document.body) {
+			bodyTmp = this.window.document.createElement("body");
+			this.window.document.appendChild(bodyTmp);
+			if(!this.window.document.body)
+				this.window.document.body = bodyTmp;
+		}
 		var frm = this.window.document.createElement("form");
 		frm.id = "frm";
 		this.window.document.body.appendChild(frm);
@@ -174,7 +191,11 @@ xtOFEditor.prototype = {
 	},
 	
 	addStylesheet: function(headTag, href) {
-		var stylesheet = headTag.ownerDocument.createElement("link");
+		var stylesheet;
+		if(headTag.ownerDocument)
+			stylesheet = headTag.ownerDocument.createElement("link");
+		else // IE
+			stylesheet = headTag.document.createElement("link");
 		stylesheet.setAttribute("rel", "stylesheet");
 		stylesheet.setAttribute("type", "text/css");
 		stylesheet.setAttribute("href", href);
