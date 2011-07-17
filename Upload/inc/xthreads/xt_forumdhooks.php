@@ -168,18 +168,8 @@ function xthreads_forumdisplay() {
 					unset($tf_filters[$n]);
 					continue;
 				}
-				/*if(is_array($filter))
-					$filter = array_map('eval_str', $filter);
-				else
-					$filter = eval_str($filter);*/
 			}
 			$xt_filters = $xtforum['defaultfilter_xt'];
-			/*foreach($xt_filters as $n => &$filter) {
-				if(is_array($filter))
-					$filter = array_map('eval_str', $filter);
-				else
-					$filter = eval_str($filter);
-			}*/
 		}
 		//unset($enabled_xtf);
 	}

@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.43);
+define('XTHREADS_VERSION', 1.44);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
 @include_once MYBB_ROOT.'cache/xthreads_evalcache.php'; // if missing, we'll regenerate only in the AdminCP; weird heuristic, but one would imagine that a visit there is likely if the evalcache stuffs up
 
@@ -157,83 +157,6 @@ function xthreads_set_threadforum_urlvars($where, $id) {
 	else $GLOBALS[$urlq] .= '?';
 }
 
-
-/* function xthreads_preglobal() {
-	global $mybb;
-	if(defined('THIS_SCRIPT'))
-		$current_page = THIS_SCRIPT;
-	else
-		$current_page = my_strtolower(basename($_SERVER['PHP_SELF'])); // MyBB < 1.4.2
-	switch($current_page) {
-		case 'misc.php':
-			if($mybb->input['action'] != 'rules') break;
-		case 'forumdisplay.php': case 'newthread.php': case 'moderation.php':
-			$fid = (int)($mybb->input['fid']);
-			if($fid) break;
-			
-		case 'polls.php':
-			switch($mybb->input['action']) {
-				case 'editpoll':
-				case 'do_editpoll':
-				case 'showresults':
-				case 'vote':
-				case 'do_undovote':
-					// no cached poll getting function, dupe a query then...
-					global $db;
-					$tid = $db->fetch_field($db->simple_select('polls', 'tid', 'pid='.(int)($mybb->input['pid'])), 'tid');
-			}
-			// fall through
-		case 'showthread.php': case 'newreply.php': case 'ratethread.php': case 'sendthread.php': case 'printthread.php':
-			if(isset($tid) || $tid = (int)($mybb->input['tid'])) {
-				$thread = get_thread($tid);
-				if($thread['fid']) {
-					$fid = $thread['fid'];
-					$set_thread_urlvar = $thread['tid'];
-				}
-			}
-			if($fid || $current_page == 'polls.php') break;
-			
-		case 'editpost.php':
-			if($pid = (int)($mybb->input['pid'])) {
-				$post = get_post($pid);
-				if($post['fid']) {
-					$fid = $post['fid'];
-					$set_thread_urlvar = $post['tid'];
-				}
-			}
-			break;
-		
-		case 'announcements.php':
-			if($aid = (int)($mybb->input['aid'])) {
-				// unfortunately MyBB doesn't have a cache for announcements
-				// so we can have fun and double query!
-				global $db;
-				$fid = $db->fetch_field($db->simple_select('announcements', 'fid', 'aid='.$aid), 'fid');
-				// note, $fid can be 0, for invalid aid, or announcement applying to all forums
-			}
-			break;
-		default: return;
-	}
-	
-	$fid = (int)($fid); // paranoia
-	
-	if($fid) {
-		global $forum, $cache, $xtforum, $xt_fid;
-		$forum = get_forum($fid);
-		$xtforums = $cache->read('xt_forums');
-		$xtforum = $xtforums[$fid];
-		unset($xtforums);
-		$xt_fid = $fid;
-		
-		// TODO: custom URL stuffs here
-		// main problem is inter-forum URLs (ie forumbit stuffs, breadcrumbs etc)
-		// also, search URLs for threads/posts
-	}
-	
-	if(isset($set_thread_urlvar)) {
-		xthreads_set_threadforum_urlvars('thread', $set_thread_urlvar); // since it's convenient...
-	}
-} */
 
 function xthreads_global() {
 	global $current_page, $mybb, $templatelist, $templates;
