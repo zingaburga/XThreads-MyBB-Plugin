@@ -405,10 +405,11 @@ function &xthreads_forumdisplay_xtfilter_extrainfo($table, $fields, $idfield, &$
 
 function xthreads_forumdisplay_filter() {
 	global $mybb, $foruminfo, $tf_filters, $xt_filters, $threadfield_cache;
-	global $visibleonly, $tvisibleonly, $db;
+	global $visibleonly, $tvisibleonly, $__xt_visibleonly, $db;
 	
 	$q = '';
 	$tvisibleonly_tmp = $tvisibleonly;
+	$__xt_visibleonly = $visibleonly;
 	
 	if($foruminfo['xthreads_inlinesearch']) {
 		global $templates, $lang, $gobutton, $fid, $sortby, $sortordernow, $datecut, $xthreads_forum_filter_form;
@@ -471,7 +472,7 @@ function xthreads_forumdisplay_filter() {
 	}
 	if($q) {
 		// and now we have to patch the DB to get proper thread counts...
-		$dbf = $dbt = '';
+		$dbf = $dbt = $dbu = '';
 		if($GLOBALS['datecut'] <= 0) {
 			if(!empty($tf_filters))
 				$dbf_code = '
@@ -506,10 +507,20 @@ function xthreads_forumdisplay_filter() {
 				}
 			';
 		
+		if($__xt_visibleonly != $visibleonly && $mybb->user['uid'])
+			// fix up posts query in MyBB 1.6.4
+			$dbu = '
+				static $done_u = false;
+				if(!$done_u && $table == "posts" && $fields == "tid,uid" && strpos($conditions, $GLOBALS[\'visibleonly\'])) {
+					$done_u = true;
+					$conditions = str_replace($GLOBALS[\'visibleonly\'], $GLOBALS[\'__xt_visibleonly\'], $conditions);
+				}
+			';
+		
 		if($dbf || $dbt) {
 			control_object($db, '
 				function simple_select($table, $fields="*", $conditions="", $options=array()) {
-					'.$dbt.$dbf.'
+					'.$dbt.$dbf.$dbu.'
 					return parent::simple_select($table, $fields, $conditions, $options);
 				}
 			');
