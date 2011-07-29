@@ -517,7 +517,7 @@ function xthreads_forumdisplay_filter() {
 				}
 			';
 		
-		if($dbf || $dbt) {
+		if($dbf || $dbt || $dbu) {
 			control_object($db, '
 				function simple_select($table, $fields="*", $conditions="", $options=array()) {
 					'.$dbt.$dbf.$dbu.'
