@@ -208,8 +208,8 @@ class XTUrlFetcher_Curl extends XTUrlFetcher {
 	
 	/*const*/ var $name = 'cURL';
 	
-	static function available() {
-		return function_exists('curl_init');
+	static function available($scheme='') {
+		return (!$scheme || $scheme != 'data') && function_exists('curl_init');
 	}
 	
 	function XTUrlFetcher_Curl() {
@@ -297,8 +297,8 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 	
 	/*const*/ var $name = 'Sockets';
 	
-	static function available() {
-		return function_exists('fsockopen');
+	static function available($scheme='') {
+		return (!$scheme || $scheme == 'http' || $scheme == 'https') && function_exists('fsockopen');
 	}
 	
 	function fetch() {
@@ -316,8 +316,8 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 				$purl['path'] = '/';
 			if(@$purl['query'])
 				$purl['path'] .= '?'.@$purl['query'];
-			if(!$purl['port']) $purl['port'] = 80;
-			if(!($fr = @fsockopen($purl['host'], $purl['port'], $errno, $errstr, $this->timeout))) {
+			if(!$purl['port']) $purl['port'] = ($purl['scheme']=='https' ? 443:80);
+			if(!($fr = @fsockopen(($purl['scheme']=='https'?'ssl://':'').$purl['host'], $purl['port'], $errno, $errstr, $this->timeout))) {
 				$this->errno = $errno;
 				$this->errstr = $errstr;
 				return false;
@@ -407,9 +407,8 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 class XTUrlFetcher_Fopen extends XTUrlFetcher {
 	var $name = 'fopen';
 	
-	static function available() {
-		//return @ini_get('allow_url_fopen');
-		return true;
+	static function available($scheme='') {
+		return ($scheme == 'data') || @ini_get('allow_url_fopen');
 		// data:// streams don't require allow_url_fopen
 	}
 	
@@ -479,14 +478,11 @@ function getXTUrlFetcher($scheme='') {
 	$scheme = strtolower($scheme);
 	if($p = strpos($scheme, ':'))
 		$scheme = substr($scheme, 0, $p);
-	if(!$scheme || $scheme != 'data') {
-		if(XTUrlFetcher_Curl::available())
-			return new XTUrlFetcher_Curl;
-		// don't think our socket fetcher can do HTTPS...
-		if((!$scheme || $scheme == 'http') && XTUrlFetcher_Socket::available())
-			return new XTUrlFetcher_Socket;
-	}
-	if(XTUrlFetcher_Fopen::available())
+	if(XTUrlFetcher_Curl::available($scheme))
+		return new XTUrlFetcher_Curl;
+	if(XTUrlFetcher_Socket::available($scheme))
+		return new XTUrlFetcher_Socket;
+	if(XTUrlFetcher_Fopen::available($scheme))
 		return new XTUrlFetcher_Fopen;
 	
 	return null; // nothing can fetch it for us... >_>
