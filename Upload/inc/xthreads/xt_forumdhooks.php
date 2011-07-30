@@ -117,7 +117,7 @@ function xthreads_forumdisplay() {
 		switch($mybb->input['sortby']) {
 			case 'prefix': if($mybb->version_code >= 1500) {
 				$xthreads_forum_sort = array(
-					't' => 'p.',
+					't' => ($mybb->version_code >= 1604 ? 't.':'p.'),
 					'sortby' => $mybb->input['sortby'],
 					'sortfield' => $mybb->input['sortby']
 				);
