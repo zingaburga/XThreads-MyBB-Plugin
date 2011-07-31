@@ -48,7 +48,7 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 	}
 	
 	if(xthreads_allow_php()) {
-		$find[] = '#\<\?.+?(\?\>)#se';
+		$find[] = '#\<\?(?:php|\s).+?(\?\>)#se';
 		$repl[] = 'xthreads_phptpl_evalphp(\'$0\', \'$1\', $fields)';
 	}
 	$ourtpl = preg_replace($find, $repl, $ourtpl);
