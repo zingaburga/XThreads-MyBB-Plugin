@@ -158,7 +158,7 @@ function do_processing() {
 		unset($evalcode);
 	}
 	
-	if(!PROXY_REDIR_HEADER_PREFIX) {
+	if(!XTHREADS_PROXY_REDIR_HEADER_PREFIX) {
 		$fp = fopen($fn, 'rb');
 		if(!$fp) {
 			header('HTTP/1.1 500 Internal Server Error');
@@ -196,15 +196,15 @@ function do_processing() {
 				header('HTTP/1.1 206 Partial Content');
 		}
 
-		if(COUNT_DOWNLOADS == 1 && !$thumb) increment_downloads($match[1]);
+		if(XTHREADS_COUNT_DOWNLOADS == 1 && !$thumb) increment_downloads($match[1]);
 		header('Accept-Ranges: bytes');
 	} else {
-		if(COUNT_DOWNLOADS && !$thumb) increment_downloads($match[1]);
+		if(XTHREADS_COUNT_DOWNLOADS && !$thumb) increment_downloads($match[1]);
 	}
 	header('Allow: GET, HEAD');
 	header('Last-Modified: '.gmdate('D, d M Y H:i:s', $modtime).'GMT');
-	header('Expires: '.gmdate('D, d M Y H:i:s', time() + CACHE_TIME).'GMT');
-	header('Cache-Control: max-age='.CACHE_TIME);
+	header('Expires: '.gmdate('D, d M Y H:i:s', time() + XTHREADS_CACHE_TIME).'GMT');
+	header('Cache-Control: max-age='.XTHREADS_CACHE_TIME);
 	header('ETag: '.$etag);
 	header('Vary: Range');
 
@@ -310,9 +310,9 @@ function do_processing() {
 		header('Content-Disposition: '.$disposition.'; filename="'.strtr($match[5], array('"'=>'\\"', "\r"=>'', "\n"=>'')).'"');
 	}
 
-	if(PROXY_REDIR_HEADER_PREFIX) {
+	if(XTHREADS_PROXY_REDIR_HEADER_PREFIX) {
 		// we terminate here and let the webserver do the rest of the work
-		header(PROXY_REDIR_HEADER_PREFIX.$fn_rel);
+		header(XTHREADS_PROXY_REDIR_HEADER_PREFIX.$fn_rel);
 		exit;
 	}
 	
@@ -338,7 +338,7 @@ function do_processing() {
 		exit;
 	}
 	
-	if(COUNT_DOWNLOADS == 2 && !$thumb)
+	if(XTHREADS_COUNT_DOWNLOADS == 2 && !$thumb)
 		$GLOBALS['aid'] = $match[1]; // increment download below
 	
 } do_processing();

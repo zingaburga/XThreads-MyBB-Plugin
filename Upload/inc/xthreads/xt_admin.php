@@ -297,15 +297,18 @@ return array(
 			'XTHREADS_ATTACH_USE_QUERY' => 0,
 			'XTHREADS_MODIFY_TEMPLATES' => true,
 			
-			'COUNT_DOWNLOADS' => 2,
-			'CACHE_TIME' => 604800,
-			'PROXY_REDIR_HEADER_PREFIX' => '',
+			'XTHREADS_COUNT_DOWNLOADS' => 2,
+			'XTHREADS_CACHE_TIME' => 604800,
+			'XTHREADS_PROXY_REDIR_HEADER_PREFIX' => '',
 		) as $name => $val) {
 			if(defined($name))
 				$val = constant($name);
 			// support legacy query string definition
 			elseif($name == 'XTHREADS_ATTACH_USE_QUERY' && defined('ARCHIVE_QUERY_STRINGS') && ARCHIVE_QUERY_STRINGS)
 				$val = 1;
+			// name transition from XThreads 1.45 and older
+			elseif(in_array($name, array('XTHREADS_COUNT_DOWNLOADS','XTHREADS_CACHE_TIME','XTHREADS_PROXY_REDIR_HEADER_PREFIX')) && defined(substr($name, 0, 9)))
+				$val = constant(substr($name, 0, 9));
 			
 			if(is_string($val))
 				// don't need to escape ' characters as we don't use them here
@@ -408,7 +411,7 @@ $defines[XTHREADS_ATTACH_USE_QUERY]
  *  if 2 [default]: will count download only when entire file is sent; in the case of segmented download, will only count if last segment is requested (and completed)
  * mode 2 is perhaps the most accurate method of counting downloads under normal circumstances
  */
-$defines[COUNT_DOWNLOADS]
+$defines[XTHREADS_COUNT_DOWNLOADS]
 
 
 /**
@@ -416,7 +419,7 @@ $defines[COUNT_DOWNLOADS]
  * as XThreads changes the URL if a file is modified, you can safely use a very long cache expiry time
  * the default value is 1 week (604800 seconds)
  */
-$defines[CACHE_TIME]
+$defines[XTHREADS_CACHE_TIME]
 
 
 /**
@@ -429,9 +432,9 @@ $defines[CACHE_TIME]
  *  define('PROXY_REDIR_HEADER_PREFIX', 'X-Sendfile: /forums/uploads/xthreads_ul/');
  *
  * defaults to empty string, which tunnels the file through PHP
- * note that using this option will cause a COUNT_DOWNLOADS setting of 2, to become 1 (can't count downloads after redirect header sent)
+ * note that using this option will cause a XTHREADS_COUNT_DOWNLOADS setting of 2, to become 1 (can't count downloads after redirect header sent)
  */
-$defines[PROXY_REDIR_HEADER_PREFIX]
+$defines[XTHREADS_PROXY_REDIR_HEADER_PREFIX]
 
 
 
