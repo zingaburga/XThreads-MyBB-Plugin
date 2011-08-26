@@ -230,7 +230,8 @@ class XTUrlFetcher_Curl extends XTUrlFetcher {
 			curl_setopt($this->_ch, CURLOPT_REFERER, $this->referrer);
 		
 		if($this->follow_redir) {
-			curl_setopt($this->_ch, CURLOPT_AUTOREFERER, true);
+			if(defined('CURLOPT_AUTOREFERER'))
+				curl_setopt($this->_ch, CURLOPT_AUTOREFERER, true);
 			// PHP safe mode may restrict the following
 			@curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
 			curl_setopt($this->_ch, CURLOPT_MAXREDIRS, $this->follow_redir);
