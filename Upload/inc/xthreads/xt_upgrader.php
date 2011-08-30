@@ -195,5 +195,22 @@ if(XTHREADS_INSTALLED_VERSION < 1.43) {
 	}
 }
 
+if(XTHREADS_INSTALLED_VERSION < 1.45 && XTHREADS_INSTALLED_VERSION > 1.32) {
+	// we'll fix up broken regexes in these versions if they exist
+	// note that this does assume people haven't deliberately used bad regexes
+	$db->update_query('threadfields', array(
+		'textmask' => $db->escape_string('^(https?)\://([a-z0-9.\-_]+)(/[^\r\n"<>&]*)?$')
+	), 'textmask="'.$db->escape_string('^(https?)\://([a-z.\-_]+)(/[^\r\n"<>&]*)?$').'"');
+	$rows_changed = $db->affected_rows();
+	$db->update_query('threadfields', array(
+		'textmask' => $db->escape_string('^([a-z0-9]+)\://([a-z0-9.\-_]+)(/[^\r\n"<>&]*)?$')
+	), 'textmask="'.$db->escape_string('^([a-z0-9]+)\://([a-z.\-_]+)(/[^\r\n"<>&]*)?$').'"');
+	
+	$rows_changed += $db->affected_rows();
+	
+	if($rows_changed)
+		xthreads_buildtfcache(); // yeah, we'll possibly rebuild the cache twice; will be removed on later versions maybe
+}
+
 
 return true;
