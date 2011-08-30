@@ -202,10 +202,10 @@ if(XTHREADS_INSTALLED_VERSION < 1.45 && XTHREADS_INSTALLED_VERSION > 1.32) {
 		'textmask' => $db->escape_string('^(https?)\://([a-z0-9.\-_]+)(/[^\r\n"<>&]*)?$')
 	), 'textmask="'.$db->escape_string('^(https?)\://([a-z.\-_]+)(/[^\r\n"<>&]*)?$').'"');
 	$rows_changed = $db->affected_rows();
+	
 	$db->update_query('threadfields', array(
 		'textmask' => $db->escape_string('^([a-z0-9]+)\://([a-z0-9.\-_]+)(/[^\r\n"<>&]*)?$')
 	), 'textmask="'.$db->escape_string('^([a-z0-9]+)\://([a-z.\-_]+)(/[^\r\n"<>&]*)?$').'"');
-	
 	$rows_changed += $db->affected_rows();
 	
 	if($rows_changed)
