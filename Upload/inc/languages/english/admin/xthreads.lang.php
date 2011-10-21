@@ -42,7 +42,7 @@ $l['threadfields_desc_desc'] = 'A short description of this field which is place
 $l['threadfields_inputtype'] = 'Input Field Type';
 $l['threadfields_inputtype_desc'] = 'What the user is presented with when they wish to edit the data of this custom field.  Tip: you may be able to use more exotic input arragements via template edits.';
 $l['threadfields_editable'] = 'Editable by / Required Field?';
-$l['threadfields_editable_desc'] = 'Specify who is allowed to modify the value of this field.  Can also be used to set whether this field is required to be filled out or not.  Note that a required field implies that everyone can edit this field.';
+$l['threadfields_editable_desc'] = 'Specify who is allowed to modify the value of this field.  Can also be used to set whether this field is required to be filled out or not.  Note that a required field implies that everyone can edit this field.  Also note that it is possible to not have a required field filled in, for example, a moderator moving a thread from a forum which doesn\'t have the field.';
 $l['threadfields_editable_gids'] = 'Editable by Usergroups';
 $l['threadfields_editable_gids_desc'] = 'Specify which usergroups are allowed to edit this field.';
 $l['threadfields_editable_values'] = 'Settable Value Permissions';
@@ -71,7 +71,7 @@ $l['threadfields_blankval_desc'] = 'You can specify a custom value to be display
 $l['threadfields_defaultval'] = 'Default Value';
 $l['threadfields_defaultval_desc'] = 'The default value for this field for new threads.  For example, if the type is a textbox, this value will fill the textbox by default, or if a selection list, this will be the default item which is selected.  You can select multiple options by default for multiple-select boxes and check boxes by separating selected items with a new line.  Variables and conditionals supported here - note that these are applied before the separation for multiple values are done (if necessary).';
 $l['threadfields_dispformat'] = 'Display Format';
-$l['threadfields_dispformat_desc'] = 'Custom formatting applied to value.  Use {VALUE} to represet the value of this field (non-file fields only).  This is only displayed if this field has a value (otherwise the above Blank Value is used).  Like above, this field is not parsed.  For file inputs, use {FILENAME}, {FILESIZE_FRIENDLY}, {UPLOAD_DATE} etc instead.<br />This field can also accept some variables, eg <code>{$fid}</code>, as well as <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=464">conditionals</a> (&lt;template ...&gt; calls not supported).';
+$l['threadfields_dispformat_desc'] = 'Custom formatting applied to value.  Use {VALUE} to represet the value of this field (non-file fields only).  This is only displayed if this field has a value (otherwise the above Blank Value is used).  Like above, this field is not parsed.  For file inputs, use {FILENAME}, {FILESIZE_FRIENDLY}, {UPLOAD_DATE} etc instead.<br /><em>Display Parsing</em> has no effect on <em>Display Format</em>, so you should enter HTML here.  This can also accept some variables, eg <code>{$fid}</code>, as well as <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=464">conditionals</a> (&lt;template ...&gt; calls not supported).';
 $l['threadfields_dispitemformat'] = 'Display Item Format';
 $l['threadfields_dispitemformat_desc'] = 'Like the &quot;Display Format&quot; field, but this one will be applied to every single value for this field as opposed to being applied to the concatenated list of values.';
 $l['threadfields_datatype'] = 'Underlying Data Type';
