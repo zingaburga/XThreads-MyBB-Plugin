@@ -115,8 +115,7 @@ function xthreads_input_posthandler_validate(&$ph, $update=false) {
 		}
 	}
 	$errors = xthreads_input_validate($data, $threadfield_cache, $update_tid);
-	foreach($errors as &$error)
-		call_user_func_array(array($ph, 'set_error'), $error);
+	xthreads_posthandler_add_errors($ph, $errors);
 	
 	foreach($data as $k => &$v)
 		$ph->data['xthreads_'.$k] = $v;
@@ -505,8 +504,7 @@ function xthreads_inputdisp() {
 					// and recheck
 					$posthandler->verify_subject();
 					
-					foreach($GLOBALS['xthreads_preview_errors'] as &$error)
-						call_user_func_array(array($posthandler, 'set_error'), $error);
+					xthreads_posthandler_add_errors($posthandler, $GLOBALS['xthreads_preview_errors']);
 					
 					$GLOBALS['lang']->load('xthreads');
 					$errorlist = '';
@@ -535,8 +533,23 @@ function xthreads_inputdisp() {
 			$plugins->add_hook('postbit_prev', 'xthreads_newthread_prev_blankmsg_hack_postbit');
 		}
 	}
-
 }
+function xthreads_posthandler_add_errors(&$ph, &$errors) {
+	// force uniquifier onto the end of the error code
+	static $cnt=0;
+	global $lang;
+	foreach($errors as $error) {
+		// ugly hack; alternative is to push errors directly into the property, since it's declared public, which is ugly too
+		$newname = $error[0].'__'.($cnt++);
+		$langname = $ph->language_prefix.'_'.$error[0];
+		$newlangname = $ph->language_prefix.'_'.$newname;
+		$lang->$newlangname =& $lang->$langname;
+		isset($error[1]) or $error[1] = '';
+		$ph->set_error($newname, $error[1]);
+		//call_user_func_array(array($ph, 'set_error'), $error);
+	}
+}
+
 // be a little pedantic and delete any xtattachments which has the same posthash as the one selected
 // should be very rare, but we'll be extra careful
 // also can potentially be problematic too, but deleting an attachment not abandoned is perhaps even rarer
