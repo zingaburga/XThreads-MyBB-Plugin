@@ -32,7 +32,7 @@ $l['threadfields_file_name_info'] = 'Variables are referenced with <code>{$GLOBA
 	<li><em>icon</em> - MyBB\'s attachment file type icon</li>
 	<li><em>value</em> - if no file is uploaded, will be Blank Value (see below), otherwise, will be Display Format</li>
 	<li><em>dims</em> - an array containing width/height of uploaded image if the option to require image uploads is chosen.  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'dims\'][\'w\']}</code> would get the width of the uploaded image.</li>
-	<li><em>thumbs</em> - an array containing width/height of thumbnails (if used).  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'thumbs\'][\'320x240\'][\'w\']}</code> would get the real image width of the 320x240 thumbnail.</li>
+	<li><em>thumbs</em> - an array containing width/height/URL of thumbnails (if used).  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'thumbs\'][\'320x240\'][\'w\']}</code> would get the real image width of the 320x240 thumbnail.</li>
 </ul>';
 $l['threadfields_file_upload_disabled_warning'] = 'It appears that file uploading has been disabled on this server.  XThreads assumes that it is enabled, so if a user tries to upload something, it will fail unless you enable file uploads (URL fetching will still work if enabled).  Please set the <em>file_uploads</em> php.ini value to \'1\'.';
 $l['threadfields_title'] = 'Title';
@@ -110,7 +110,7 @@ $l['threadfields_fileimage_mindim_desc'] = 'Smallest acceptable image dimensions
 $l['threadfields_fileimage_maxdim'] = 'Maximum Image Dimensions';
 $l['threadfields_fileimage_maxdim_desc'] = 'Largest acceptable image dimensions, in <em>w</em>x<em>h</em> format, eg <em>1920x1080</em>.';
 $l['threadfields_fileimgthumbs'] = 'Image Thumbnail Generation';
-$l['threadfields_fileimgthumbs_desc'] = 'This field only applies if this field only accepts images.  This is a pipe (|) separated list of thumbnail dimensions which will be generated.  For example, if <em>160x120|320x240</em> is entered here, a 160x120 and a 320x240 thumbnail will be generated from the uploaded image.  These thumbnails can be accessed using something like <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\'][\'url\']}/thumb160x120</code>.<br />Note, if this field is changed whilst there are already images uploaded for this field, you may need to <a href="'.xthreads_admin_url('tools', 'recount_rebuild').'#rebuild_xtathumbs" target="_blank">rebuild thumbnails</a>.';
+$l['threadfields_fileimgthumbs_desc'] = 'This field only applies if this field only accepts images.  This is a pipe (|) separated list of thumbnail dimensions which will be generated.  For example, if <em>160x120|320x240</em> is entered here, a 160x120 and a 320x240 thumbnail will be generated from the uploaded image.  These thumbnails can be accessed using something like <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\'][\'thumbs\'][\'160x120\'][\'url\']}</code>.<br />Note, if this field is changed whilst there are already images uploaded for this field, you may need to <a href="'.xthreads_admin_url('tools', 'recount_rebuild').'#rebuild_xtathumbs" target="_blank">rebuild thumbnails</a>.';
 $l['threadfields_vallist'] = 'Values List';
 $l['threadfields_vallist_desc'] = 'A list of valid values which can be entered for this field.  Separate values with newlines.  HTML can be used with checkbox/radio button input.  It is recommended that you do not exceed 255 characters for each value/line.';
 $l['threadfields_formatmap'] = 'Formatting Map List';

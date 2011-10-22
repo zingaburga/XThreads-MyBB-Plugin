@@ -471,7 +471,7 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 			$s['thumbs'] = array();
 		foreach($tfinfo['fileimgthumbs'] as &$$th)
 			if(!isset($s['thumbs'][$th]))
-				$s['thumbs'][$th] = array('w' => 0, 'h' => 0);
+				$s['thumbs'][$th] = array('w' => 0, 'h' => 0, 'url' => '');
 		if(!isset($s['thumbs']['orig']))
 			$s['thumbs']['orig'] = array();
 		$s['dims'] =& $s['thumbs']['orig'];
@@ -529,6 +529,12 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 			$s['thumbs'] = unserialize($s['thumbs']);
 		if(isset($s['thumbs']['orig']))
 			$s['dims'] =& $s['thumbs']['orig'];
+		if(!empty($s['thumbs'])) foreach($s['thumbs'] as $thumbdim => &$thumb) {
+			if($thumbdim == 'orig')
+				$thumb['url'] =& $s['url'];
+			else
+				$thumb['url'] = xthreads_get_xta_url($s, $thumbdim);
+		}
 		xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 		
 		$s['value'] = '';
@@ -690,7 +696,7 @@ function xthreads_get_xta_cache(&$tf, &$tids, $posthash='') {
 		$db->free_result($query);
 	}
 }
-function xthreads_get_xta_url(&$xta) {
+function xthreads_get_xta_url(&$xta, $thumb='') {
 	$delim = '/';
 	if(defined('XTHREADS_ATTACH_USE_QUERY') && XTHREADS_ATTACH_USE_QUERY == 2)
 		$delim = '|';
@@ -712,7 +718,10 @@ function xthreads_get_xta_url(&$xta) {
 		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') === false) || stripos(SAPI_NAME, 'cgi') !== false || (defined('XTHREADS_ATTACH_USE_QUERY') && XTHREADS_ATTACH_USE_QUERY) || defined('ARCHIVE_QUERY_STRINGS'));
 	// yes, above is copied from the archive
 	
-	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).$delim.$md5hash.rawurlencode($xta['filename']);
+	if($thumb) $thumb = $delim.'thumb'.$thumb;
+	else $thumb = '';
+	
+	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).$delim.$md5hash.rawurlencode($xta['filename']).$thumb;
 }
 
 // only 'username' and 'fid' keys are used from the $thread array
