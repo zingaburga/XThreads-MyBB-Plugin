@@ -1,9 +1,9 @@
-body		{font-family: tahoma, sans-serif; font-size: 9pt; cursor: default; margin: 20px;}
+body		{font-family: tahoma, sans-serif; font-size: 9pt; margin: 20px;}
 table	{font-family: tahoma, sans-serif; font-size: 0.9em; border: 0; width: 95%; margin-top: 2}
 td.header	{color: #FFFFFF; background: #000000}
 td		{padding-left: 5; padding-right: 5; padding-top:2; padding-bottom: 2}
-h2		{font-family: tahoma, sans-serif; font-size: 1.3em; font-weight: bold; color: #88AAFF; background: #DDEEFF;
-	 padding-left: 15; margin: 15 -10 5 -10}
+h2		{font-family: tahoma, sans-serif; font-size: 1.3em; font-weight: bold; color: #4499EE; background: #DDEEFF;
+	 padding: 2px 3px; margin: 15 -10 5 -10}
 h1		{font-family: tahoma, sans-serif; font-size: 16pt; font-weight: bold; margin-bottom: 5px}
 h3		{font-family: tahoma, sans-serif; font-weight: bold; font-style: italic; font-size: 1em; margin-bottom: 0px; margin-top: 10px; }
 a		{text-decoration: none}
@@ -13,6 +13,7 @@ a:active	{color: #FF0000}
 /*a:visited	{color: 6633AA}*/
 ol		{margin-top: 5px; margin-bottom: 5px}
 li		{margin-top: 1px; margin-bottom: 1px}
+li ul		{padding-left: 2em;}
 div.CITE		{border-style: ridge; border-width: 2px; border-color: #880000; background: #EEF8EE; margin: 5 5 5 5; padding: 10 10 10 10; font-size: 0.9em}
 table.codecontainer { border: 1px solid #CCE5FE; max-height: 100px; overflow: auto; }
 td.codeline	{ font-family: courier new, monospaced; width: 50px; font-size: 10pt; white-space: no-wrap; background: #FFFFF0; text-align: right; line-height: 1.2em; }
