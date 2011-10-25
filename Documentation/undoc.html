@@ -107,6 +107,16 @@
     </li>
     <li>XThreads can filter forumdisplay by thread starter, last poster, thread icon and thread prefix (MyBB 1.6 only); to do this, supply <em>filterxt_<span class="token1">field</span>=<span class="token2">value</span></em> to the URL, where <span class="token1">field</span> is either <em>uid</em>, <em>lastposteruid</em>, <em>icon</em>, <em>prefix</em>.  For example, <em>forumdisplay.php?fid=2&amp;filterxt_uid=1</em></li>
     <li>In a thread field's <em>Display Format Fields</em> (includes <em>Display Format</em>, <em>Display Item Format</em>, <em>Blank Replacement Value</em>, <em>Unviewable Value</em> and replacement values for <em>Formatting Map List</em>), references to other thread fields are possible, only if the <em>Display Order</em> is set lower than the thread field making the reference (for those with the same <em>Display Order</em>, whether or not it'll work will depend on your luck).  For example, if we have two thread fields, the first having a <em>Display Order</em> of 1 and the second having a <em>Display Format</em> of 2, then this second field can refer to the first field via <code>{$GLOBALS['threadfields']['<span class="token1">key</span>']}</code> in any of its <em>Display Format Fields</em> (where <span class="token1">key</span> is the <em>Key</em> of the first thread field, which also isn't a File input field).</li>
+    <li>The <em>Value List</em> for Listbox, Option Buttons and Checkboxes input types can have an associated &quot;input display label&quot; - that is, a separate value and label.  This is achieved through the <code>{|}</code> separator, for example:
+     <div style="margin-left: 1em;"><code>1{|}Value 1<br />2{|}A second value<br />5{|}&lt;span style=&quot;color: red;&quot;&gt;Some other value&lt;/span&gt;</code></div>
+     with a Listbox input would give something like:
+     <div style="margin-left: 1em;"><code>&lt;select&gt;<br />&lt;option value=&quot;1&quot;&gt;Value 1&lt;/option&gt;<br />&lt;option value=&quot;2&quot;&gt;A second value&lt;/option&gt;<br />&lt;option value=&quot;5&quot; style=&quot;color: red;&quot;&gt;Some other value&lt;/option&gt;<br />&lt;/select&gt;</code></div>
+     Additional notes: <ul>
+      <li>XThreads has the special ability with Listbox inputs to use CSS for items if it is surrounded by a <code>&lt;span&gt;</code> tag with a single <code>style</code> property (like above example; for non-Listbox inputs, HTML is accepted anyway)</li>
+      <li>This mapping does not affect the output display, so you may wish to use this in conjunction with the <em>Formatting Map List</em> option</li>
+      <li>You can override the label of the <em>(Not Set)</em> item by not supplying a value before the separator, eg <code>{|}Blank</code></li>
+     </ul>
+    </li>
    </ul>
    
    <h2>XThreads Additions</h2>

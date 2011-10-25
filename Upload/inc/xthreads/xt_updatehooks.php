@@ -203,7 +203,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 						break;
 					}
 					elseif(!empty($v['vallist'])) {
-						if(!in_array($val, $v['vallist'])) {
+						if(!isset($v['vallist'][$val])) {
 							$errors[] = array('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
 							break;
 						}
@@ -630,7 +630,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 			case XTHREADS_INPUT_SELECT:
 			case XTHREADS_INPUT_RADIO:
 			case XTHREADS_INPUT_CHECKBOX:
-				$vals = array_map('htmlspecialchars_uni', $tf['vallist']);
+				$vals = $tf['vallist'];
 				if(!xthreads_empty($tf['multival'])) {
 					if($using_default)
 						$defval = explode("\n", str_replace("\r", '', $defval));
@@ -639,10 +639,15 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 					else
 						$defvals = explode("\n", str_replace("\r", '', $defval));
 					$defvals = array_map('htmlspecialchars_uni', $defvals);
+					unset($vals['']);
 				}
 				// give blank option if none is actually required
-				elseif($tf['editable'] != XTHREADS_EDITABLE_REQ && $tf['inputtype'] != XTHREADS_INPUT_CHECKBOX)
-					array_unshift($vals, '');
+				elseif($tf['editable'] != XTHREADS_EDITABLE_REQ && $tf['inputtype'] != XTHREADS_INPUT_CHECKBOX) {
+					if(!isset($vals['']))
+						// can't array_unshift with a key...
+						$vals = array_merge(array('' => '<span style="font-style: italic;">'.$lang->xthreads_val_blank.'</span>'), $vals);
+				} else
+					unset($vals['']);
 		}
 		if(!isset($defvals) && ($tf['inputtype'] != XTHREADS_INPUT_FILE && $tf['inputtype'] != XTHREADS_INPUT_FILE_URL))
 			$defval = htmlspecialchars_uni($defval);
@@ -667,13 +672,17 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				elseif(!xthreads_empty($tf['multival']))
 					$tf_fh = ' size="5"';
 				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].(!xthreads_empty($tf['multival']) ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
-				foreach($vals as &$val) {
+				foreach($vals as $val => $valdisp) {
+					$val = htmlspecialchars_uni($val);
 					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
 					$selected = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' selected="selected"':'');
-					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
-						$tfinput[$k] .= '<option value="" style="font-style: italic;"'.$selected.'>'.$lang->xthreads_val_blank.'</option>';
-					else
-						$tfinput[$k] .= '<option value="'.$val.'"'.$selected.'>'.$val.'</option>';
+					
+					if(preg_match('~^\<span style\="([^"]*?)"\>(.*)\</span\>$~is', $valdisp, $style)) {
+						$valdisp = $style[2];
+						$style = ' style="'.$style[1].'"';
+					} else
+						$style = '';
+					$tfinput[$k] .= '<option value="'.$val.'"'.$style.$selected.'>'.htmlspecialchars_uni($valdisp).'</option>';
 				}
 				$tfinput[$k] .= '</select>';
 				break;
@@ -682,13 +691,11 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				// fall through
 			case XTHREADS_INPUT_RADIO:
 				$tftype = ($tf['inputtype'] == XTHREADS_INPUT_RADIO ? 'radio':'checkbox');
-				foreach($vals as &$val) {
+				foreach($vals as $val => &$valdisp) {
+					$val = htmlspecialchars_uni($val);
 					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
 					$checked = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' checked="checked"':'');
-					if(xthreads_empty($val) && $tf['editable'] != XTHREADS_EDITABLE_REQ)
-						$tfinput[$k] .= '<label style="display: block; font-style: italic;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value=""'.$checked.$tabindex.' />'.$lang->xthreads_val_blank.'</label>';
-					else
-						$tfinput[$k] .= '<label style="display: block;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value="'.$val.'"'.$checked.$tabindex.' />'.unhtmlentities($val).'</label>';
+					$tfinput[$k] .= '<label style="display: block;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value="'.$val.'"'.$checked.$tabindex.' />'.$valdisp.'</label>';
 					$tabindex = ''; // or maybe make each thing tabbable?
 				}
 				break;

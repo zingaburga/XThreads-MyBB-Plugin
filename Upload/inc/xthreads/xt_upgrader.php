@@ -187,8 +187,6 @@ if(XTHREADS_INSTALLED_VERSION < 1.43) {
 	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 	xthreads_plugins_quickthread_tplmod();
 	
-	xthreads_buildtfcache(); // will also update XThreads forum cache
-	
 	$xt_forums_cache = $cache->read('xt_forums');
 	if(!empty($xt_forums_cache)) { // remove old xt_forums cache if present
 		xthreads_delete_datacache('xt_forums');
@@ -207,10 +205,10 @@ if(XTHREADS_INSTALLED_VERSION < 1.45 && XTHREADS_INSTALLED_VERSION > 1.32) {
 		'textmask' => $db->escape_string('^([a-z0-9]+)\://([a-z0-9.\-_]+)(/[^\r\n"<>&]*)?$')
 	), 'textmask="'.$db->escape_string('^([a-z0-9]+)\://([a-z.\-_]+)(/[^\r\n"<>&]*)?$').'"');
 	$rows_changed += $db->affected_rows();
-	
-	if($rows_changed)
-		xthreads_buildtfcache(); // yeah, we'll possibly rebuild the cache twice; will be removed on later versions maybe
 }
 
+if(XTHREADS_INSTALLED_VERSION < 1.48) {
+	xthreads_buildtfcache(); // will also update XThreads forum cache
+}
 
 return true;

@@ -552,7 +552,14 @@ function xthreads_buildtfcache() {
 			$tf['formatmap'] = null;
 		
 		if(!xthreads_empty($tf['vallist'])) {
-			$tf['vallist'] = array_unique(array_map('trim', explode("\n", str_replace("\r", '', $tf['vallist']))));
+			$vallist = $tf['vallist'];
+			$tf['vallist'] = array();
+			foreach(array_map('trim', explode("\n", str_replace("\r", '', $vallist))) as $vallistitem) {
+				if(($p = strpos($vallistitem, '{|}')) !== false)
+					$tf['vallist'][substr($vallistitem, 0, $p)] = substr($vallistitem, $p+3);
+				else
+					$tf['vallist'][$vallistitem] = $vallistitem;
+			}
 		}
 		// TODO: explode forums, fileexts?
 		if($tf['editable_gids']) {
@@ -587,7 +594,7 @@ function xthreads_buildtfcache() {
 		if($tf['allowfilter']) {
 			$tf['ignoreblankfilter'] = ($tf['editable'] == XTHREADS_EDITABLE_REQ);
 			if($tf['ignoreblankfilter'] && !empty($tf['vallist'])) {
-				$tf['ignoreblankfilter'] = !in_array('', $tf['vallist']);
+				$tf['ignoreblankfilter'] = !isset($tf['vallist']['']);
 			}
 		}
 		
