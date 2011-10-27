@@ -767,14 +767,14 @@ function xthreads_buildcache_forums($fp) {
 function xthreads_check_evalstr($s) {
 	return (bool)@create_function('', 'return "'.$s.'";');
 }
-/*
+
 // checks whether the conditional supported text has any syntax errors
 function xthreads_check_condstr($s) {
 	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
 	xthreads_sanitize_eval($s);
 	return xthreads_check_evalstr($s);
 }
-*/
+
 function xthreads_catch_errorhandler() {
 	// we'll now overwrite the error handler since MyBB's handler seems to interfere with the following
 	if(!function_exists('_xthreads_catch_php_error')) { //paranoia
@@ -821,6 +821,27 @@ function &xthreads_admin_forumedit_get_description($lv) {
 	return $desc;
 }
 function xthreads_admin_forumedit() {
+	global $mybb;
+	if($mybb->request_method == 'post') {
+		global $errors, $lang;
+		$lang->load('xthreads');
+		// check for conditional syntax errors
+		if($mybb->input['xthreads_tplprefix'] && !xthreads_check_condstr($mybb->input['xthreads_tplprefix']))
+			$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->xthreads_tplprefix);
+		if($mybb->input['xthreads_langprefix'] && !xthreads_check_condstr($mybb->input['xthreads_langprefix']))
+			$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->xthreads_langprefix);
+		// the default forum filter will take some more work
+		if($mybb->input['xthreads_defaultfilter']) {
+			foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r", '', $mybb->input['xthreads_defaultfilter']))) as $filter) {
+				list($n, $v) = explode('=', str_replace("\r", "\n", $filter), 2);
+				if($v && !xthreads_check_condstr($v)) {
+					$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->xthreads_defaultfilter);
+					break;
+				}
+			}
+		}
+	}
+	
 	function xthreads_admin_forumedit_hook(&$args) {
 		static $done = false;
 		if($done || $args['title'] != $GLOBALS['lang']->misc_options) return;

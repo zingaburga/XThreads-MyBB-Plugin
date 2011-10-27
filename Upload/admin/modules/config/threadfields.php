@@ -543,12 +543,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xthreads_buildtfcache_parseitem($test_tf);
 		// test for bad conditional syntax
 		foreach(array(
-			'defaultval',
-			'blankval',
-			'dispformat',
+			'defaultval', 'blankval',
+			'dispformat', 'dispitemformat',
 			'unviewableval',
-			'dispitemformat',
-			// formatmap?
 		) as $condcheck) {
 			if($test_tf[$condcheck] && !xthreads_check_evalstr($test_tf[$condcheck])) {
 				$tflangkey = 'threadfields_'.$condcheck;
