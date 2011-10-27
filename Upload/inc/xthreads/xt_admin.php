@@ -467,174 +467,20 @@ ENDSTR
 function xthreads_buildtfcache() {
 	global $db, $cache;
 	
-	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
-	
-	$sanitise_fields_normal = array('VALUE', 'RAWVALUE');
-	$sanitise_fields_file = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
 	$cd = array();
 	$evalcache = '';
 	$query = $db->simple_select('threadfields', '*', '', array('order_by' => 'disporder', 'order_dir' => 'asc'));
 	while($tf = $db->fetch_array($query)) {
-		// remove unnecessary fields
-		if($tf['editable_gids']) $tf['editable'] = 0;
-		if(!$tf['viewable_gids']) unset($tf['unviewableval']);
-		if($tf['inputtype'] != XTHREADS_INPUT_CUSTOM)
-			unset($tf['formhtml']);
-		switch($tf['inputtype']) {
-			case XTHREADS_INPUT_FILE:
-			case XTHREADS_INPUT_FILE_URL:
-				unset(
-					$tf['editable_values'],
-					$tf['dispitemformat'],
-					$tf['formatmap'],
-					$tf['textmask'],
-					$tf['maxlen'],
-					$tf['vallist'],
-					$tf['multival'],
-					$tf['sanitize'],
-					$tf['allowfilter'],
-					$tf['defaultval'],
-					$tf['fieldheight']
-				);
-				if(!$tf['fileimage'])
-					unset($tf['fileimgthumbs']);
-				$tf['datatype'] = XTHREADS_DATATYPE_TEXT;
-				break;
-			
-			case XTHREADS_INPUT_TEXTAREA:
-				unset($tf['allowfilter']);
-				// fall through
-			case XTHREADS_INPUT_TEXT:
-			//case XTHREADS_INPUT_CUSTOM:
-				unset($tf['vallist']);
-				break;
-			case XTHREADS_INPUT_RADIO:
-				unset($tf['multival']);
-				// fall through
-			case XTHREADS_INPUT_CHECKBOX:
-			case XTHREADS_INPUT_SELECT:
-				unset($tf['textmask'], $tf['maxlen']);
-		}
-		
-		switch($tf['inputtype']) {
-			case XTHREADS_INPUT_FILE:
-			case XTHREADS_INPUT_FILE_URL:
-				break;
-			case XTHREADS_INPUT_TEXT:
-			case XTHREADS_INPUT_CHECKBOX:
-				unset($tf['fieldheight']);
-				// fall through
-			default:
-				unset(
-					$tf['filemagic'],
-					$tf['fileexts'],
-					$tf['filemaxsize'],
-					$tf['fileimage'],
-					$tf['fileimgthumbs']
-				);
-		}
-		
-		if(xthreads_empty($tf['multival']))
-			unset($tf['dispitemformat']);
-		else
-			$tf['datatype'] = XTHREADS_DATATYPE_TEXT;
-		
-		if($tf['datatype'] != XTHREADS_DATATYPE_TEXT) {
-			// disable santizer for a free speed boost
-			if(($tf['sanitize'] & XTHREADS_SANITIZE_MASK) != XTHREADS_SANITIZE_PARSER)
-				$tf['sanitize'] = XTHREADS_SANITIZE_NONE;
-		}
-		
-		// preformat stuff to save time later
-		if($tf['formatmap'])
-			$tf['formatmap'] = @unserialize($tf['formatmap']);
-		else
-			$tf['formatmap'] = null;
-		
-		if(!xthreads_empty($tf['vallist'])) {
-			$vallist = $tf['vallist'];
-			$tf['vallist'] = array();
-			foreach(array_map('trim', explode("\n", str_replace("\r", '', $vallist))) as $vallistitem) {
-				if(($p = strpos($vallistitem, '{|}')) !== false)
-					$tf['vallist'][substr($vallistitem, 0, $p)] = substr($vallistitem, $p+3);
-				else
-					$tf['vallist'][$vallistitem] = $vallistitem;
-			}
-		}
-		// TODO: explode forums, fileexts?
-		if($tf['editable_gids']) {
-			$tf['editable_gids'] = array_unique(explode(',', $tf['editable_gids']));
-		}
-		if($tf['viewable_gids']) {
-			$tf['viewable_gids'] = array_unique(explode(',', $tf['viewable_gids']));
-		}
-		if($tf['fileimgthumbs']) {
-			$tf['fileimgthumbs'] = array_unique(explode('|', str_replace(',','|',$tf['fileimgthumbs'])));
-		}
-		if(!xthreads_empty($tf['filemagic'])) {
-			$tf['filemagic'] = array_map('urldecode', array_unique(explode('|', $tf['filemagic'])));
-		}
-		
-		// fix sanitize
-		switch($tf['inputtype']) {
-			case XTHREADS_INPUT_TEXT:
-				//if($tf['sanitize'] == XTHREADS_SANITIZE_HTML_NL)
-				//	$tf['sanitize'] = XTHREADS_SANITIZE_HTML;
-				break;
-			case XTHREADS_INPUT_SELECT:
-				$tf['sanitize'] = XTHREADS_SANITIZE_HTML;
-				break;
-			case XTHREADS_INPUT_CHECKBOX:
-			case XTHREADS_INPUT_RADIO:
-				$tf['sanitize'] = XTHREADS_SANITIZE_NONE;
-				break;
-		}
-		// santize -> separate mycode stuff?
-		
-		if($tf['allowfilter']) {
-			$tf['ignoreblankfilter'] = ($tf['editable'] == XTHREADS_EDITABLE_REQ);
-			if($tf['ignoreblankfilter'] && !empty($tf['vallist'])) {
-				$tf['ignoreblankfilter'] = !isset($tf['vallist']['']);
-			}
-		}
-		
-		if(!xthreads_empty($tf['editable_values'])) {
-			if($tf['editable'] == XTHREADS_EDITABLE_NONE)
-				unset($tf['editable_values']);
-			else
-				$tf['editable_values'] = @unserialize($tf['editable_values']);
-		}
-		
-		// sanitise eval'd stuff
-		if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
-			$sanitise_fields =& $sanitise_fields_file;
-		}
-		else {
-			$sanitise_fields =& $sanitise_fields_normal;
-			$tf['regex_tokens'] = (
-				($tf['unviewableval']  && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['unviewableval'])) ||
-				($tf['dispformat']     && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispformat'])) ||
-				($tf['dispitemformat'] && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispitemformat']))
-			);
-		}
-		if($tf['defaultval']) xthreads_sanitize_eval($tf['defaultval']);
-		if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
-			foreach($tf['formatmap'] as &$fm)
-				xthreads_sanitize_eval($fm);
-		
+		xthreads_buildtfcache_parseitem($tf);
 		$evalcache .= '
-			function xthreads_evalcache_'.$tf['field'].'($field, $vars=array()) {
-				switch($field) {';
+		function xthreads_evalcache_'.$tf['field'].'($field, $vars=array()) {
+			switch($field) {';
 		foreach(array('unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
 			if(isset($tf[$field])) {
-				if($field == 'blankval' || $field == 'defaultval')
-					xthreads_sanitize_eval($tf[$field]);
-				else
-					xthreads_sanitize_eval($tf[$field], $sanitise_fields);
 				if($tf[$field] !== '') {
 					// slight optimisation - reduces amount of code if will return empty string
 					$evalcache .= '
-					case \''.$field.'\': return "'.$tf[$field].'";';
+				case \''.$field.'\': return "'.$tf[$field].'";';
 				}
 				$tf[$field] = (bool)preg_match('~\$vars[^a-z0-9_]~i', $tf[$field]); // whether to evaluate vars
 				// ^ above preg_match is a simple optimisation - not the best, but simple and usually effective
@@ -642,8 +488,8 @@ function xthreads_buildtfcache() {
 				$tf[$field] = false;
 		}
 		$evalcache .= '
-				} return \'\';
-			}';
+			} return \'\';
+		}';
 		
 		$cd[$tf['field']] = $tf;
 	}
@@ -657,6 +503,164 @@ function xthreads_buildtfcache() {
 	// rebuild the forums cache too - there's a dependency because this can affect the filtering etc allows
 	xthreads_buildcache_forums($fp);
 	fclose($fp);
+}
+function xthreads_buildtfcache_parseitem(&$tf) {
+	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
+	// remove unnecessary fields
+	if($tf['editable_gids']) $tf['editable'] = 0;
+	if(!$tf['viewable_gids']) unset($tf['unviewableval']);
+	if($tf['inputtype'] != XTHREADS_INPUT_CUSTOM)
+		unset($tf['formhtml']);
+	switch($tf['inputtype']) {
+		case XTHREADS_INPUT_FILE:
+		case XTHREADS_INPUT_FILE_URL:
+			unset(
+				$tf['editable_values'],
+				$tf['dispitemformat'],
+				$tf['formatmap'],
+				$tf['textmask'],
+				$tf['maxlen'],
+				$tf['vallist'],
+				$tf['multival'],
+				$tf['sanitize'],
+				$tf['allowfilter'],
+				$tf['defaultval'],
+				$tf['fieldheight']
+			);
+			if(!$tf['fileimage'])
+				unset($tf['fileimgthumbs']);
+			$tf['datatype'] = XTHREADS_DATATYPE_TEXT;
+			break;
+		
+		case XTHREADS_INPUT_TEXTAREA:
+			unset($tf['allowfilter']);
+			// fall through
+		case XTHREADS_INPUT_TEXT:
+		//case XTHREADS_INPUT_CUSTOM:
+			unset($tf['vallist']);
+			break;
+		case XTHREADS_INPUT_RADIO:
+			unset($tf['multival']);
+			// fall through
+		case XTHREADS_INPUT_CHECKBOX:
+		case XTHREADS_INPUT_SELECT:
+			unset($tf['textmask'], $tf['maxlen']);
+	}
+	
+	switch($tf['inputtype']) {
+		case XTHREADS_INPUT_FILE:
+		case XTHREADS_INPUT_FILE_URL:
+			break;
+		case XTHREADS_INPUT_TEXT:
+		case XTHREADS_INPUT_CHECKBOX:
+			unset($tf['fieldheight']);
+			// fall through
+		default:
+			unset(
+				$tf['filemagic'],
+				$tf['fileexts'],
+				$tf['filemaxsize'],
+				$tf['fileimage'],
+				$tf['fileimgthumbs']
+			);
+	}
+	
+	if(xthreads_empty($tf['multival']))
+		unset($tf['dispitemformat']);
+	else
+		$tf['datatype'] = XTHREADS_DATATYPE_TEXT;
+	
+	if($tf['datatype'] != XTHREADS_DATATYPE_TEXT) {
+		// disable santizer for a free speed boost
+		if(($tf['sanitize'] & XTHREADS_SANITIZE_MASK) != XTHREADS_SANITIZE_PARSER)
+			$tf['sanitize'] = XTHREADS_SANITIZE_NONE;
+	}
+	
+	// preformat stuff to save time later
+	if($tf['formatmap'])
+		$tf['formatmap'] = @unserialize($tf['formatmap']);
+	else
+		$tf['formatmap'] = null;
+	
+	if(!xthreads_empty($tf['vallist'])) {
+		$vallist = $tf['vallist'];
+		$tf['vallist'] = array();
+		foreach(array_map('trim', explode("\n", str_replace("\r", '', $vallist))) as $vallistitem) {
+			if(($p = strpos($vallistitem, '{|}')) !== false)
+				$tf['vallist'][substr($vallistitem, 0, $p)] = substr($vallistitem, $p+3);
+			else
+				$tf['vallist'][$vallistitem] = $vallistitem;
+		}
+	}
+	// TODO: explode forums, fileexts?
+	if($tf['editable_gids']) {
+		$tf['editable_gids'] = array_unique(explode(',', $tf['editable_gids']));
+	}
+	if($tf['viewable_gids']) {
+		$tf['viewable_gids'] = array_unique(explode(',', $tf['viewable_gids']));
+	}
+	if($tf['fileimgthumbs']) {
+		$tf['fileimgthumbs'] = array_unique(explode('|', str_replace(',','|',$tf['fileimgthumbs'])));
+	}
+	if(!xthreads_empty($tf['filemagic'])) {
+		$tf['filemagic'] = array_map('urldecode', array_unique(explode('|', $tf['filemagic'])));
+	}
+	
+	// fix sanitize
+	switch($tf['inputtype']) {
+		case XTHREADS_INPUT_TEXT:
+			//if($tf['sanitize'] == XTHREADS_SANITIZE_HTML_NL)
+			//	$tf['sanitize'] = XTHREADS_SANITIZE_HTML;
+			break;
+		case XTHREADS_INPUT_SELECT:
+			$tf['sanitize'] = XTHREADS_SANITIZE_HTML;
+			break;
+		case XTHREADS_INPUT_CHECKBOX:
+		case XTHREADS_INPUT_RADIO:
+			$tf['sanitize'] = XTHREADS_SANITIZE_NONE;
+			break;
+	}
+	// santize -> separate mycode stuff?
+	
+	if($tf['allowfilter']) {
+		$tf['ignoreblankfilter'] = ($tf['editable'] == XTHREADS_EDITABLE_REQ);
+		if($tf['ignoreblankfilter'] && !empty($tf['vallist'])) {
+			$tf['ignoreblankfilter'] = !isset($tf['vallist']['']);
+		}
+	}
+	
+	if(!xthreads_empty($tf['editable_values'])) {
+		if($tf['editable'] == XTHREADS_EDITABLE_NONE)
+			unset($tf['editable_values']);
+		else
+			$tf['editable_values'] = @unserialize($tf['editable_values']);
+	}
+	
+	// sanitise eval'd stuff
+	if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
+		$sanitise_fields = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
+	}
+	else {
+		$sanitise_fields = array('VALUE', 'RAWVALUE');
+		$tf['regex_tokens'] = (
+			($tf['unviewableval']  && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['unviewableval'])) ||
+			($tf['dispformat']     && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispformat'])) ||
+			($tf['dispitemformat'] && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispitemformat']))
+		);
+	}
+	if($tf['defaultval']) xthreads_sanitize_eval($tf['defaultval']);
+	if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
+		foreach($tf['formatmap'] as &$fm)
+			xthreads_sanitize_eval($fm);
+	
+	foreach(array('unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
+		if(isset($tf[$field])) {
+			if($field == 'blankval' || $field == 'defaultval')
+				xthreads_sanitize_eval($tf[$field]);
+			else
+				xthreads_sanitize_eval($tf[$field], $sanitise_fields);
+		}
+	}
 }
 
 // build xt_forums cache from forums cache (also reduce size of forums cache)
@@ -758,6 +762,28 @@ function xthreads_buildcache_forums($fp) {
 			} return array(\'defaultfilter_tf\' => array(), \'defaultfilter_xt\' => array());
 		}');
 	$cache->update('forums', $forums);
+}
+
+function xthreads_check_evalstr($s) {
+	return (bool)@create_function('', 'return "'.$s.'";');
+}
+/*
+// checks whether the conditional supported text has any syntax errors
+function xthreads_check_condstr($s) {
+	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
+	xthreads_sanitize_eval($s);
+	return xthreads_check_evalstr($s);
+}
+*/
+function xthreads_catch_errorhandler() {
+	// we'll now overwrite the error handler since MyBB's handler seems to interfere with the following
+	if(!function_exists('_xthreads_catch_php_error')) { //paranoia
+		function _xthreads_catch_php_error($errno, $errstr) {
+			$GLOBALS['_previous_error'] = array($errno, $errstr);
+		}
+	}
+	unset($GLOBALS['_previous_error']);
+	set_error_handler('_xthreads_catch_php_error');
 }
 
 function xthreads_admin_cachehack() {

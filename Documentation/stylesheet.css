@@ -13,7 +13,7 @@ a:active	{color: #FF0000}
 /*a:visited	{color: 6633AA}*/
 ol		{margin-top: 5px; margin-bottom: 5px}
 li		{margin-top: 1px; margin-bottom: 1px}
-li ul		{padding-left: 2em;}
+li ul		{padding-left: 2em}
 div.CITE		{border-style: ridge; border-width: 2px; border-color: #880000; background: #EEF8EE; margin: 5 5 5 5; padding: 10 10 10 10; font-size: 0.9em}
 table.codecontainer { border: 1px solid #CCE5FE; max-height: 100px; overflow: auto; }
 td.codeline	{ font-family: courier new, monospaced; width: 50px; font-size: 10pt; white-space: no-wrap; background: #FFFFF0; text-align: right; line-height: 1.2em; }

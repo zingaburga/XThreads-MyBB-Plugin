@@ -416,18 +416,11 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		if(!xthreads_empty($mybb->input['textmask'])) {
 			// test for bad regex
-			// we'll now overwrite the error handler since MyBB's handler seems to interfere with the following
-			if(!function_exists('xthreads_textmask_errhandler')) { //paranoia
-				function xthreads_textmask_errhandler($errno, $errstr) {
-					$GLOBALS['previous_error'] = array($errno, $errstr);
-				}
-			}
-			unset($GLOBALS['previous_error']);
-			set_error_handler('xthreads_textmask_errhandler');
+			xthreads_catch_errorhandler();
 			@preg_match('~'.str_replace('~', '\\~', $mybb->input['textmask']).'~si', 'testvalue');
 			restore_error_handler();
-			if(!empty($GLOBALS['previous_error'])) {
-				$errmsg =& $GLOBALS['previous_error'][1];
+			if(!empty($GLOBALS['_previous_error'])) {
+				$errmsg =& $GLOBALS['_previous_error'][1];
 				if(substr($errmsg, 0, 12) == 'preg_match()') {
 					$p = strpos($errmsg, ':', 12);
 					if($p)
@@ -437,24 +430,6 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					$errors[] = $lang->sprintf($lang->error_bad_textmask, $errmsg);
 				}
 			}
-			/*
-			if(function_exists('error_get_last')) {
-				@preg_match('~'.str_replace('~', '\\~', $mybb->input['textmask']).'~si', 'testvalue');
-				$error = error_get_last();
-				$errmsg = $error['message'];
-			} else {
-				$te = @ini_get('track_errors');
-				if(!$te)
-					@ini_set('track_errors', 1);
-				@preg_match('~'.str_replace('~', '\\~', $mybb->input['textmask']).'~si', 'testvalue');
-				$errmsg = $php_errormsg;
-				if(!$te)
-					@ini_set('track_errors', $te);
-			}
-			
-			if(substr($errmsg, 0, 13) == 'preg_match():')
-				$errors[] = $lang->sprintf($lang->error_bad_textmask, trim(substr($errmsg, 13)));
-			*/
 		}
 		
 		switch($mybb->input['inputtype']) {
@@ -555,6 +530,35 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			elseif(!$update || $mybb->input['field'] != $mybb->input['newfield']) {
 				$ftest = $db->fetch_field($db->simple_select('threadfields', 'field', 'field="'.$db->escape_string($mybb->input['newfield']).'"'), 'field');
 				if(!xthreads_empty($ftest)) $errors[] = $lang->error_field_name_in_use;
+			}
+		}
+		
+		
+		// check for syntax errors in conditionals
+		// this is a bit tricky because we need the cache function to build the conditional for checking
+		if($update)
+			$test_tf = array_merge($oldfield, $mybb->input);
+		else
+			$test_tf = $mybb->input;
+		xthreads_buildtfcache_parseitem($test_tf);
+		// test for bad conditional syntax
+		foreach(array(
+			'defaultval',
+			'blankval',
+			'dispformat',
+			'unviewableval',
+			'dispitemformat',
+			// formatmap?
+		) as $condcheck) {
+			if($test_tf[$condcheck] && !xthreads_check_evalstr($test_tf[$condcheck])) {
+				$tflangkey = 'threadfields_'.$condcheck;
+				$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->$tflangkey);
+			}
+		}
+		if(!xthreads_empty($test_tf['formatmap'])) foreach($test_tf['formatmap'] as &$fm) {
+			if($fm && !xthreads_check_evalstr($fm)) {
+				$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->threadfields_formatmap);
+				break;
 			}
 		}
 

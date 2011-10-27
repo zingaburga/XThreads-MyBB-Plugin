@@ -192,6 +192,7 @@ $l['error_invalid_inputtype'] = 'Invalid input type specified.';
 $l['error_dup_formatmap'] = 'Duplicate formatting definition for value <em>{1}</em> found.';
 $l['error_dup_editable_value'] = 'Duplicate value permission definition for value <em>{1}</em> found.';
 $l['error_bad_textmask'] = 'Bad regular expression used for Text Mask. PHP returned <em>{1}</em>';
+$l['error_bad_conditional'] = 'Bad conditional syntax detected for {1}.';
 $l['error_require_valllist'] = 'Select/checkbox/radiobutton input types must have a defined (non-empty) Value List.';
 $l['error_require_multival_delimiter'] = 'No multiple value delimiter defined (tip, you can set this to be a space).';
 $l['error_invalid_min_dims'] = 'Invalid minimum dimensions specified.';
