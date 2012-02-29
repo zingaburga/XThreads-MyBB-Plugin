@@ -89,9 +89,9 @@ function xthreads_search_result_thread() {
 		if($thread['posts'] > $forum['xthreads_postsperpage']) {
 			$pagesstop = ceil($thread['posts'] / $forum['xthreads_postsperpage']);
 			if($pagesstop != $thread['pages']) { // small optimisation
-				$thread['pages'] = $pagestop;
+				$thread['pages'] = $pagesstop;
 				$threadpages = $morelink = '';
-				if($pagestop > 4) {
+				if($pagesstop > 4) {
 					$pagesstop = 4;
 					$page_link = get_thread_link($thread['tid'], $thread['pages']).$highlight;
 					eval('$morelink = "'.$templates->get('forumdisplay_thread_multipage_more').'";');
