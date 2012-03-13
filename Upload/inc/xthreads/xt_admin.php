@@ -300,6 +300,8 @@ return array(
 			'XTHREADS_COUNT_DOWNLOADS' => 2,
 			'XTHREADS_CACHE_TIME' => 604800,
 			'XTHREADS_PROXY_REDIR_HEADER_PREFIX' => '',
+			'XTHREADS_EXPIRE_ATTACH_LINK' => 0,
+			'XTHREADS_ATTACH_LINK_IPMASK' => 0,
 		) as $name => $val) {
 			if(defined($name))
 				$val = constant($name);
@@ -435,6 +437,24 @@ $defines[XTHREADS_CACHE_TIME]
  * note that using this option will cause a XTHREADS_COUNT_DOWNLOADS setting of 2, to become 1 (can't count downloads after redirect header sent)
  */
 $defines[XTHREADS_PROXY_REDIR_HEADER_PREFIX]
+
+
+/**
+ * Expire attachment links after a certain period of time.  This may be useful if you wish to prevent users distributing direct links to attachments.
+ * If non-zero, attachment links will change every n seconds (where n is the value below).  Note that actual link expiry will range from n to n*2 seconds.
+ * Setting this value too low will cause links to be broken frequently.  You should also take into consideration download pausing, which may break if the download is resumed after the link expires.  A recommended number would be 43200 (12 hours)
+ *  - if set to 43200, this means that links will expire 12-24 hours after the user sees it
+ */
+$defines[XTHREADS_EXPIRE_ATTACH_LINK]
+
+
+/**
+ * Tie download links to IP networks.
+ * If non-zero, download links will vary depending on the IP address used to access the link.
+ * The IP will be masked by the number of host bits you specify below.  For example, a value of 8 would mean that all 224.0.0.0/8 would get the same download link, which would be different to the link accessible from 225.0.0.0/8
+ * A recommended number would be 16.  Do NOT set a value above 32.
+ */
+$defines[XTHREADS_ATTACH_LINK_IPMASK]
 
 
 

@@ -721,7 +721,14 @@ function xthreads_get_xta_url(&$xta, $thumb='') {
 	if($thumb) $thumb = $delim.'thumb'.$thumb;
 	else $thumb = '';
 	
-	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.substr($xta['attachname'], 0, 8).$delim.$md5hash.rawurlencode($xta['filename']).$thumb;
+	$attachhash = substr($xta['attachname'], 0, 8);
+	if(XTHREADS_EXPIRE_ATTACH_LINK || XTHREADS_ATTACH_LINK_IPMASK) {
+		if(!function_exists('xthreads_attach_encode_hash')) {
+			require_once MYBB_ROOT.'inc/xthreads/xt_attachfuncs.php';
+		}
+		$attachhash = dechex(xthreads_attach_encode_hash(hexdec($attachhash)));
+	}
+	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.$attachhash.$delim.$md5hash.rawurlencode($xta['filename']).$thumb;
 }
 
 // only 'username' and 'fid' keys are used from the $thread array

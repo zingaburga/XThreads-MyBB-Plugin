@@ -116,6 +116,12 @@ function do_processing() {
 
 	$match[5] = str_replace("\0", '', $match[5]);
 	$month_dir = 'ts_'.floor($match[2] / 1000000).'/';
+	if(XTHREADS_EXPIRE_ATTACH_LINK || XTHREADS_ATTACH_LINK_IPMASK) {
+		// decode special thing
+		require MYBB_ROOT.'inc/xthreads/xt_attachfuncs.php';
+		$match[3] = dechex(xthreads_attach_decode_hash(hexdec($match[3])));
+		// note that $match[3] isn't secret (eg sent as an ETag)
+	}
 	$fn = 'file_'.$match[1].'_'.$match[3].'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $match[5])).'.'.$fext;
 	if(file_exists($basedir.$month_dir.$fn))
 		$fn_rel = $month_dir.$fn;
@@ -123,7 +129,7 @@ function do_processing() {
 		$fn_rel = $fn;
 	else {
 		header('HTTP/1.1 404 Not Found');
-		die('Specified attachment not found.');
+		die('Specified attachment not found.'.(XTHREADS_EXPIRE_ATTACH_LINK ? '  It\'s possible that the link has expired - try going back, refresh the page, and access the attachment again.':''));
 	}
 	$fn = $basedir.$fn_rel;
 
@@ -408,7 +414,7 @@ function increment_downloads($aid) {
 	
 	// otherwise, load config + MyBB's DB engine
 	if(!file_exists(MYBB_ROOT.'inc/config.php')) return;
-	require_once MYBB_ROOT.'inc/config.php';
+	require MYBB_ROOT.'inc/config.php';
 	if(!isset($config['database']) || !is_array($config['database'])) return;
 	
 	// create dummy classes before loading DB
