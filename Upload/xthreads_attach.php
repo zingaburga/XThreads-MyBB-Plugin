@@ -269,6 +269,18 @@ function do_processing() {
 			'ogv' => 'video/ogg',
 			'wmv' => 'audio/x-ms-wmv',
 		);
+		if(XTHREADS_MIME_OVERRIDE) {
+			foreach(explode(',', strtolower(XTHREADS_MIME_OVERRIDE)) as $mime_entry) {
+				@list($mime_type, $mime_exts) = explode(' ', trim($mime_entry), 2);
+				if(isset($mime_exts) && $mime_exts !== '') {
+					$mime_type = trim($mime_type);
+					foreach(explode(' ', $mime_exts) as $mime_ext) {
+						if(($mime_ext = trim($mime_ext)) !== '')
+							$exts[$mime_ext] = $mime_type;
+					}
+				}
+			}
+		}
 		if(isset($exts[$ext]))
 			$content_type = $exts[$ext];
 		unset($exts);

@@ -302,6 +302,7 @@ return array(
 			'XTHREADS_PROXY_REDIR_HEADER_PREFIX' => '',
 			'XTHREADS_EXPIRE_ATTACH_LINK' => 0,
 			'XTHREADS_ATTACH_LINK_IPMASK' => 0,
+			'XTHREADS_MIME_OVERRIDE' => '',
 		) as $name => $val) {
 			if(defined($name))
 				$val = constant($name);
@@ -455,6 +456,15 @@ $defines[XTHREADS_EXPIRE_ATTACH_LINK]
  * A recommended number would be 16.  Do NOT set a value above 32.
  */
 $defines[XTHREADS_ATTACH_LINK_IPMASK]
+
+
+/**
+ * Override MIME types (Content-Type header) sent out by xthreads_attach.php
+ * Enter in a comma separated list of MIME type to extension mappings
+ *  eg 'application/x-httpd-php phtml pht php, application/x-httpd-php3 php3'
+ *  maps 3 extensions to the first MIME type, and the .php3 extension to the second MIME type
+ */
+$defines[XTHREADS_MIME_OVERRIDE]
 
 
 
