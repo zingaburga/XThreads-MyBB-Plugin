@@ -209,8 +209,14 @@ function do_processing() {
 	}
 	header('Allow: GET, HEAD');
 	header('Last-Modified: '.gmdate('D, d M Y H:i:s', $modtime).'GMT');
-	header('Expires: '.gmdate('D, d M Y H:i:s', time() + XTHREADS_CACHE_TIME).'GMT');
-	header('Cache-Control: max-age='.XTHREADS_CACHE_TIME);
+	if(XTHREADS_CACHE_TIME) {
+		header('Expires: '.gmdate('D, d M Y H:i:s', time() + XTHREADS_CACHE_TIME).'GMT');
+		header('Cache-Control: max-age='.XTHREADS_CACHE_TIME);
+	} else {
+		header('Expires: Sat, 1 Jan 2000 01:00:00 GMT');
+		header('Cache-Control: no-cache, must-revalidate');
+		header('Pragma: no-cache');
+	}
 	header('ETag: '.$etag);
 	header('Vary: Range');
 

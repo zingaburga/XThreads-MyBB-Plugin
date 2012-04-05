@@ -421,6 +421,7 @@ $defines[XTHREADS_COUNT_DOWNLOADS]
  * The following is just the default cache expiry period for downloads, specified in seconds
  * as XThreads changes the URL if a file is modified, you can safely use a very long cache expiry time
  * the default value is 1 week (604800 seconds)
+ * Set to 0 to explicitly disable client-side caching
  */
 $defines[XTHREADS_CACHE_TIME]
 
@@ -445,6 +446,7 @@ $defines[XTHREADS_PROXY_REDIR_HEADER_PREFIX]
  * If non-zero, attachment links will change every n seconds (where n is the value below).  Note that actual link expiry will range from n to n*2 seconds.
  * Setting this value too low will cause links to be broken frequently.  You should also take into consideration download pausing, which may break if the download is resumed after the link expires.  A recommended number would be 43200 (12 hours)
  *  - if set to 43200, this means that links will expire 12-24 hours after the user sees it
+ * You may also wish to consider modifying the XTHREADS_CACHE_TIME setting above to <= this value.
  */
 $defines[XTHREADS_EXPIRE_ATTACH_LINK]
 
@@ -881,7 +883,14 @@ function xthreads_admin_forumedit() {
 		if($GLOBALS['mybb']->version_code >= 1500) {
 			// unfortunately, the above effectively ditches the added Misc row
 			$GLOBALS['xt_fc_args'] = $args;
-			$fixcode = 'call_user_func_array(array($this, "output_row"), $GLOBALS[\'xt_fc_args\']);';
+			$fixcode = '
+				// need to disable hooks temporarily to prevent other plugins running twice
+				$hooks =& $GLOBALS[\'plugins\']->hooks[\'admin_formcontainer_output_row\'];
+				$hooks_copy = $hooks;
+				$hooks = array();
+				call_user_func_array(array($this, "output_row"), $GLOBALS[\'xt_fc_args\']);
+				$hooks = $hooks_copy;
+			';
 		}
 		control_object($GLOBALS['form_container'], '
 			function end($return=false) {
