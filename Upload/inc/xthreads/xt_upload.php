@@ -653,15 +653,20 @@ if(!function_exists('ctype_xdigit')) {
 		return (bool)preg_match('~^[0-9a-fA-F]+$~', $s);
 	}
 }
-// for PHP < 5.2.1
-if(!function_exists('sys_get_temp_dir')) {
-	function sys_get_temp_dir() {
+function xthreads_get_temp_dir() {
+	if(ini_get('safe_mode') == 1 || strtolower(ini_get('safe_mode')) == 'on')
+		// safemode - fallback to cache dir
+		return realpath(MYBB_ROOT.'cache/');
+	elseif(function_exists('sys_get_temp_dir') && ($tmpdir = sys_get_temp_dir()) && @is_dir($tmpdir) && is_writable($tmpdir))
+		return realpath($tmpdir);
+	elseif(!function_exists('sys_get_temp_dir')) {
+		// PHP < 5.2.1, try to find a temp dir
+		$dirs = array();
 		foreach(array('TMP', 'TMPDIR', 'TEMP') as $e) {
-			if(($env = getenv($e)) && @is_dir($env) && is_writable($env))
-				return realpath($env);
+			if($env = getenv($e))
+				$dirs[] = $env;
 		}
 		if(DIRECTORY_SEPARATOR == '\\') { // Windows
-			$dirs = array();
 			// all this probably unnecessary, but oh well, enjoy it whilst we can
 			if($env = getenv('LOCALAPPDATA'))
 				$dirs[] = $env.'\\Temp\\';
@@ -676,23 +681,16 @@ if(!function_exists('sys_get_temp_dir')) {
 			
 			$dirs[] = 'C:\\Windows\\Temp\\';
 			$dirs[] = 'C:\\Temp\\';
-			foreach($dirs as &$dir) {
-				if(@is_dir($dir) && is_writable($dir))
-					return realpath($dir);
-			}
 		} else {
-			if(@is_dir('/tmp/') && is_writable('/tmp/')) return '/tmp/';
+			$dirs[] = '/tmp/';
 		}
-		// fallback on cache dir (guaranteed to be writable)
-		return realpath(MYBB_ROOT.'cache/');
+		foreach($dirs as &$dir) {
+			if(@is_dir($dir) && is_writable($dir))
+				return realpath($dir);
+		}
 	}
-}
-function xthreads_get_temp_dir() {
-	if(ini_get('safe_mode') == 1 || strtolower(ini_get('safe_mode')) == 'on')
-		// safemode - fallback to cache dir
-		return realpath(MYBB_ROOT.'cache/');
-	else
-		return sys_get_temp_dir();
+	// fallback on cache dir (guaranteed to be writable)
+	return realpath(MYBB_ROOT.'cache/');
 }
 
 function db_ping(&$dbobj) {
