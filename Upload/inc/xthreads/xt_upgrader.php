@@ -208,6 +208,12 @@ if(XTHREADS_INSTALLED_VERSION < 1.45 && XTHREADS_INSTALLED_VERSION > 1.32) {
 }
 
 if(XTHREADS_INSTALLED_VERSION < 1.48) {
+	$tpl_threadfields_inputrow = $db->fetch_field($db->simple_select('templates', 'template', 'title="threadfields_inputrow" AND sid=-1'), 'template');
+	if($tpl_threadfields_inputrow) {
+		$newtpl = preg_replace('~^(\s*\<tr)\>~i', '$1 class="xthreads_inputrow">', $tpl_threadfields_inputrow);
+		if($newtpl != $tpl_threadfields_inputrow)
+			$db->update('templates', array('template' => $db->escape_string($newtpl)), 'title="threadfields_inputrow" AND sid=-1')
+	}
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 

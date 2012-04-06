@@ -233,7 +233,7 @@ Put your stuff here
 	<input type="hidden" name="datecut" value="{$datecut}" />
 	{$xthreads_forum_filter_form}
 	</form><br />',
-		'threadfields_inputrow' => '<tr>
+		'threadfields_inputrow' => '<tr class="xthreads_inputrow">
 <td class="{$altbg}" width="20%"><strong>{$tf[\'title\']}</strong></td>
 <td class="{$altbg}">{$inputfield}<small style="display: block;">{$tf[\'desc\']}</small></td>
 </tr>'
