@@ -277,7 +277,7 @@ function &xthreads_threadfields_props() {
 }
 
 function xthreads_default_threadfields_formhtml($type) {
-	$common_vars = array('KEY', 'NAME_PROP', 'VALUE', 'TABINDEX', 'TABINDEX_PROP');
+	$common_vars = array('KEY', 'NAME_PROP', 'VALUE', 'TABINDEX', 'TABINDEX_PROP', 'REQUIRED');
 	switch($type) {
 		case XTHREADS_INPUT_TEXTAREA:
 			return array(

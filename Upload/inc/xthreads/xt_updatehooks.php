@@ -608,6 +608,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 			'HEIGHT' => (int)$tf['fieldheight'],
 			'TABINDEX' => '',
 			'TABINDEX_PROP' => '',
+			'REQUIRED' => ($tf['editable'] == XTHREADS_EDITABLE_REQ),
 		);
 		if($vars['MAXLEN']) $vars['MAXLEN_PROP'] = ' maxlength="'.$vars['MAXLEN'].'"';
 		if($vars['WIDTH']) {
@@ -719,7 +720,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				}
 				break;
 			case XTHREADS_INPUT_FILE:
-				$vars['REQUIRED'] = ($tf['editable'] == XTHREADS_EDITABLE_REQ);
 				$vars['MAXSIZE'] = $tf['filemaxsize'];
 				$vars['URLFETCH'] = (XTHREADS_ALLOW_URL_FETCH?1:0);
 				if(XTHREADS_ALLOW_URL_FETCH) {

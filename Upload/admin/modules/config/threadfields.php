@@ -265,7 +265,7 @@ if(!$mybb->input['action'])
 	function xt_fields_submit() {
 		for(i=1; i<xt_fields.length; i++) {
 			if($('threadfields_mark_'+xt_fields[i]).checked) {
-				return confirm("<?php echo strtr($lang->threadfields_delete_field_confirm, array('\\' => '\\\\', '"' => '\\"')); ?>");
+				return confirm("<?php echo xt_js_str_escape($lang->threadfields_delete_field_confirm); ?>");
 			}
 		}
 		return true;
@@ -940,6 +940,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	
 	($('use_formhtml_yes').onclick = $('use_formhtml_no').onclick = xt_use_formhtml = function() {
 		xt_visi('row_formhtml', $('use_formhtml_yes').checked);
+		xt_visi('formhtml_desc_js', true);
 	})();
 	
 	function xt_filereqimg() {
@@ -1008,6 +1009,30 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML_NL; ?>")
 				$('sanitize').selectedIndex--;
 		}
+		
+		var setFormhtml = true;
+		if($('use_formhtml_yes').checked) {
+			setFormhtml = confirm("<?php echo xt_js_str_escape($lang->threadfields_formhtml_js_reset_warning); ?>");
+			if(setFormhtml) {
+				$('use_formhtml_no').checked = true;
+			}
+			xt_use_formhtml();
+		}
+		switch(si) {
+			<?php foreach(array(XTHREADS_INPUT_TEXTAREA,XTHREADS_INPUT_SELECT,XTHREADS_INPUT_CHECKBOX,XTHREADS_INPUT_RADIO,XTHREADS_INPUT_FILE,XTHREADS_INPUT_TEXT) as $inputtype) {
+				$formhtml_info = xthreads_default_threadfields_formhtml($inputtype);
+				$formhtml_desc = '';
+				foreach($formhtml_info[1] as $fhvar) {
+					$langvar = 'threadfields_formhtml_desc_'.strtolower($fhvar);
+					$formhtml_desc .= '<li><code>{'.$fhvar.'}</code>: '.$lang->$langvar.'</li>';
+				}
+				echo '
+				case '.$inputtype.':
+					if(setFormhtml) $("formhtml").value = "'.xt_js_str_escape($formhtml_info[0]).'";
+					$("formhtml_desc_ul_js").innerHTML = "'.xt_js_str_escape($formhtml_desc).'";
+					break;';
+			} ?>
+		}
 	}).apply($('inputtype'));
 	
 	($('datatype').onchange = function() {
@@ -1060,7 +1085,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	foreach($textmask_types as $type => &$mask) {
 		$langvar = 'threadfields_textmask_'.$type.'_desc';
 		if(property_exists($lang, $langvar))
-			echo '			\'<div id="textmask_selector_desc_', $type, '" style="display: none;">', strtr($lang->$langvar, array('\\' => '\\\\', "'" => "\\'")), '</div>\' +
+			echo '			\'<div id="textmask_selector_desc_', $type, '" style="display: none;">', xt_js_str_escape($lang->$langvar), '</div>\' +
 ';
 	}
 ?>
@@ -1069,7 +1094,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 <?php
 	$comma = '';
 	foreach($textmask_types as $type => &$mask) {
-		echo $comma, '		', $type, ': "', strtr($mask, array('\\' => '\\\\', '"' => '\\"')), '"';
+		echo $comma, '		', $type, ': "', xt_js_str_escape($mask), '"';
 		if(!$comma) $comma = ',
 ';
 	}
@@ -1193,7 +1218,7 @@ editValEditor.fields = [
 		o.style.width = '100%';
 		o.innerHTML = '<?php
 			foreach($GLOBALS['cache']->read('usergroups') as $group) {
-				echo '<option value="'.$group['gid'].'">'.strtr(htmlspecialchars_uni(strip_tags($group['title'])), array('\\'=>'\\\\','\''=>'\\\'')).'</option>';
+				echo '<option value="'.$group['gid'].'">'.xt_js_str_escape(htmlspecialchars_uni(strip_tags($group['title']))).'</option>';
 			}
 		?>';
 		return o;
@@ -1233,6 +1258,12 @@ function make_form_row($n, $it, $opts=array(), $html_append='') {
 	
 	$form_container->output_row($lang->$lang_n, $lang->$lang_d, $html.$html_append, $n, array(), array('id' => 'row_'.$n));
 
+}
+
+// escape text to put into a Javascript string; only needs to handle common stuffs
+function xt_js_str_escape($s) {
+	return strtr($s, array('\\'=>'\\\\','"'=>'\\"','\''=>'\\\'',
+		"\n"=>'\\n',"\r"=>'\\r',"\t"=>'\\t','<'=>'\\x3C','>'=>'\\x3E'));
 }
 
 // method copied from MyBB 1.6
