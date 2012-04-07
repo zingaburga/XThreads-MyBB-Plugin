@@ -1088,6 +1088,58 @@ function xthreads_admin_forumedit() {
 		$form_container->end();
 		
 		xthreads_admin_common_ofe('xthreads_defaultfilter');
+?>
+<script type="text/javascript">
+<!--
+var ofEditorSO = new xtOFEditor();
+ofEditorSO.src = $('xthreads_settingoverrides');
+ofEditorSO.loadFunc = ofEditor.loadFunc;
+ofEditorSO.saveFunc = ofEditor.saveFunc;
+ofEditorSO.fields = [
+	{title: "<?php echo $lang->xthreads_js_settingoverrides_setting; ?>", width: '45%', elemFunc: function(c) {
+		var o = appendNewChild(c, "select");
+		o.size = 1;
+		o.style.width = '100%';
+		o.innerHTML = '<option value=""></option><?php
+			global $db;
+			// cache settings
+			$qorder = array('order_by' => 'disporder', 'order_dir' => 'asc');
+			$query = $db->simple_select('settings','name,title,gid', '', $qorder);
+			$setting_cache = array();
+			while($stng = $db->fetch_array($query)) {
+				$setting_cache[$stng['gid']][$stng['name']] = $stng['title'];
+			}
+			$db->free_result($query);
+			$query = $db->simple_select('settinggroups', 'gid,name,title', '', $qorder);
+			while($settinggroup = $db->fetch_array($query)) {
+				$stngs =& $setting_cache[$settinggroup['gid']];
+				if(!empty($stngs)) {
+					$lang_group = 'setting_group_'.$settinggroup['name'];
+					if($lang->$lang_group)
+						$settinggroup['title'] = $lang->$lang_group;
+					echo '<optgroup label="'.strtr(htmlspecialchars_uni($settinggroup['title']), array('\\'=>'\\\\','\''=>'\\\'')).'">';
+					foreach($stngs as $name => &$title) {
+						$lang_setting = 'setting_'.$name;
+						if($lang->$lang_setting)
+							$title = $lang->$lang_setting;
+						echo '<option value="'.htmlspecialchars_uni($name).'">'.strtr(htmlspecialchars_uni($title), array('\\'=>'\\\\','\''=>'\\\'')).'</option>';
+					}
+					echo '</optgroup>';
+				}
+			}
+			$db->free_result($query);
+			unset($setting_cache);
+		?>';
+		return o;
+	}},
+	{title: "<?php echo $lang->xthreads_js_settingoverrides_value; ?>", width: '55%', elemFunc: ofEditorSO.textAreaFunc}
+];
+
+ofEditorSO.copyStyles=true;
+ofEditorSO.init();
+//-->
+</script>
+<?php
 	}
 }
 
@@ -1294,7 +1346,7 @@ ofEditor.loadFunc = function(s) {
 ofEditor.saveFunc = function(a) {
 	var ret = "";
 	for(var i=0; i<a.length; i++) {
-		ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
+		if(a[i][0]) ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
 	}
 	return ret;
 };

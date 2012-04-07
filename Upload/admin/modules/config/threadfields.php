@@ -1179,7 +1179,7 @@ editValEditor.fields = [
 		o.style.width = '100%';
 		o.innerHTML = '<?php
 			foreach($GLOBALS['cache']->read('usergroups') as $group) {
-				echo '<option value="'.$group['gid'].'">'.htmlspecialchars_uni(strip_tags($group['title'])).'</option>';
+				echo '<option value="'.$group['gid'].'">'.strtr(htmlspecialchars_uni(strip_tags($group['title'])), array('\\'=>'\\\\','\''=>'\\\'')).'</option>';
 			}
 		?>';
 		return o;

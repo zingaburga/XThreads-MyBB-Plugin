@@ -228,8 +228,9 @@ $l['xthreads_inlinesearch_desc'] = 'Replaces the search box on the forumdisplay 
 $l['xthreads_fdcolspan_offset'] = 'Offset forumdisplay {$colspan}';
 $l['xthreads_fdcolspan_offset_desc'] = 'If non-zero, will increase the value of the <code>{$colspan}</code> variable in the <em>forumdisplay_threadlist</em> template by specified amount (negative values accepted).  May be useful for adding additional columns on the forumdisplay page.';
 $l['xthreads_settingoverrides'] = 'Settings Overrides';
-$l['xthreads_settingoverrides_desc'] = 'Override MyBB settings specifically for this forum.  USE CAUTION! - overriding some settings may cause undesirable effects.  Separate entries with newlines; variables/conditionals supported (in filter value only).  Format of each line is <code><em>settingkey</em>=<em>value</em></code>.  Note that URI encoding is not supported.
-<br /><!-- more -->Example value for this field:
+$l['xthreads_settingoverrides_desc'] = 'Override MyBB settings specifically for this forum.  USE CAUTION! - overriding some settings may cause undesirable effects.
+<br /><!-- more -->Separate entries with newlines; variables/conditionals supported (in filter value only).  Format of each line is <code><em>settingkey</em>=<em>value</em></code>.  Note that URI encoding is not supported.
+<br />Example value for this field:
 <code style="display: block; margin-left: 2em;">bbname=New forum name<br />postmaxavatarsize=&lt;if $mybb-&gt;user[\'uid\'] then&gt;{$mybb-&gt;settings[\'postmaxavatarsize\']}&lt;else&gt;50x50&lt;/if&gt;</code>';
 $l['xthreads_postsperpage'] = 'Override Posts Per Page';
 $l['xthreads_postsperpage_desc'] = 'If non-zero, overrides the default and user chosen posts per page setting for showthread.';
@@ -243,8 +244,9 @@ $l['xthreads_allow_blankmsg_desc'] = 'If yes, new threads in this forum will not
 $l['xthreads_nostatcount'] = 'Don\'t include this forum\'s threads/posts in global forum statistics';
 $l['xthreads_nostatcount_desc'] = 'If yes, threads and posts made in this forum will not increase the forum\'s statistics on the number of threads and posts across all forums (eg at the bottom of the forum home, or stats.php).';
 $l['xthreads_defaultfilter'] = 'Default Thread Filter';
-$l['xthreads_defaultfilter_desc'] = 'This filter is applied to forumdisplay if no filter has been specified in the URL.  Separate entries with newlines; variables/conditionals supported (in filter value only).  Note that URI encoding is not supported.
-<br /><!-- more -->The default filter can also be disabled with no additional filter in use, by specifying <em>filterdisable</em> in the URL, eg <em>forumdisplay.php?fid=2&amp;filterdisable=1</em>
+$l['xthreads_defaultfilter_desc'] = 'This filter is applied to forumdisplay if no filter has been specified in the URL.
+<br /><!-- more -->Separate entries with newlines; variables/conditionals supported (in filter value only).  Note that URI encoding is not supported.
+<br />The default filter can also be disabled with no additional filter in use, by specifying <em>filterdisable</em> in the URL, eg <em>forumdisplay.php?fid=2&amp;filterdisable=1</em>
 <br />Example value for this field:
 <code style="display: block; margin-left: 2em;">myfield=something<br />__xt_uid=1<br />field2[]=value1<br />field2[]={$mybb-&gt;user[\'username\']}</code>';
 /* $l['xthreads_addfiltenable'] = 'Enable Thread Filters';
@@ -291,6 +293,8 @@ $l['xthreads_js_formatmap_to'] = 'Displayed Output';
 $l['xthreads_js_editable_values_groups'] = 'Editable by Groups';
 $l['xthreads_js_defaultfilter_field'] = 'Field';
 $l['xthreads_js_defaultfilter_value'] = 'Value';
+$l['xthreads_js_settingoverrides_setting'] = 'Setting';
+$l['xthreads_js_settingoverrides_value'] = 'Value';
 
 $l['xthreads_confirm_uninstall'] = 'Are you sure you wish to uninstall XThreads?  Uninstalling will cause all XThreads related modifications (excluding template modifications you have performed on those not added by XThreads) will be removed.<br />Well, obviously you\'re sure, cause you clicked on the link... this is just for those (like me) who accidentally click on the wrong things...';
 

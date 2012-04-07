@@ -217,9 +217,11 @@ xtOFEditor.prototype = {
 			if(this.selectFirstBox) {
 				this.selectFirstBox = false;
 				input.focus();
-				input.select();
+				if(input.select)
+					input.select();
 			}
-			Event.observe(input, "change", updatFunc);
+			//Event.observe(input, "change", updatFunc);
+			input.onchange = updatFunc;
 		}
 	},
 	
@@ -305,6 +307,8 @@ xtOFEditor.prototype = {
 					ret.push(o.options[i].value);
 			}
 			return ret;
+		} else if(o.options && o.selectedIndex >-1) {
+			return o.options[o.selectedIndex].value;
 		} else
 			return o.value;
 	},
