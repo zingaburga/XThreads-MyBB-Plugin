@@ -463,6 +463,12 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		} else
 			$mybb->input['multival'] = '';
 		
+		if($mybb->input['use_formhtml']) {
+			if(xthreads_empty($mybb->input['formhtml']))
+				$errors[] = $lang->error_require_formhtml;
+		} else
+			$mybb->input['formhtml'] = '';
+		
 		if($mybb->input['datatype'] !== XTHREADS_DATATYPE_TEXT) {
 			// verify value list if applicable
 			/* if($mybb->input['inputtype'] == XTHREADS_INPUT_SELECT || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) {
@@ -744,7 +750,6 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	make_form_row('fieldwidth', 'text_box');
 	make_form_row('fieldheight', 'text_box');
 	make_form_row('vallist', 'text_area');
-	make_form_row('formhtml', 'text_area', array('style' => 'font-family: monospace'));
 	make_form_row('fileexts', 'text_box');
 	
 	if(!is_int(2147483648)) // detect 32-bit PHP
@@ -876,6 +881,11 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	$form_container->output_row($lang->threadfields_viewable_gids, $lang->threadfields_viewable_gids_desc, xt_generate_group_select('viewable_gids[]', $data['viewable_gids'], array('multiple' => true, 'size' => 5, 'id' => 'viewable_gids')), 'viewable_gids', array(), array('id' => 'row_viewable_gids'));
 	make_form_row('unviewableval', 'text_area', array('style' => 'font-family: monospace'));
 	make_form_row('hideedit', 'yes_no_radio');
+	$data['use_formhtml'] = ($data['formhtml'] !== '' ? 1:0);
+	make_form_row('use_formhtml', 'yes_no_radio');
+	unset($data['use_formhtml']);
+	$lang->threadfields_formhtml .= ' <em>*</em>';
+	make_form_row('formhtml', 'text_area', array('style' => 'font-family: monospace'));
 	$form_container->end();
 	if($update)
 		$buttons[] = $form->generate_submit_button($lang->update_threadfield);
@@ -927,6 +937,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	}
 	$('multival_enable_yes').onclick = xt_multival_enable;
 	$('multival_enable_no').onclick = xt_multival_enable;
+	
+	($('use_formhtml_yes').onclick = $('use_formhtml_no').onclick = xt_use_formhtml = function() {
+		xt_visi('row_formhtml', $('use_formhtml_yes').checked);
+	})();
 	
 	function xt_filereqimg() {
 		var e = ($('filereqimg_yes').checked && $('row_filereqimg').style.display != 'none');

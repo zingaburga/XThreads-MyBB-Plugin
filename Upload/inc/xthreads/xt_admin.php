@@ -276,6 +276,86 @@ function &xthreads_threadfields_props() {
 	return $props;
 }
 
+function xthreads_default_threadfields_formhtml($type) {
+	$common_vars = array('KEY', 'NAME_PROP', 'VALUE', 'TABINDEX', 'TABINDEX_PROP');
+	switch($type) {
+		case XTHREADS_INPUT_TEXTAREA:
+			return array(
+				'<textarea{NAME_PROP}{MAXLEN_PROP}{HEIGHT_PROP_ROWS}{WIDTH_PROP_COLS}{TABINDEX_PROP}>{VALUE}</textarea>',
+				array_merge($common_vars,array('MAXLEN','MAXLEN_PROP','HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS'))
+			);
+			// <textarea name="xthreads_{KEY}"<if {MAXLEN} then> maxlength="{MAXLEN}"</if><if {HEIGHT} then> rows="{HEIGHT}"</if><if {WIDTH} then> cols="{WIDTH}"</if><if {TABSTOP} then> tabindex="__xt_{TABINDEX_SHIFT}"</if>>{VALUE}</textarea>
+		case XTHREADS_INPUT_SELECT:
+			return array(
+				'<select style="{WIDTH_CSS}"{NAME_PROP}{MULTIPLE_PROP}{HEIGHT_PROP_SIZE}{TABINDEX_PROP}>
+					<![ITEM[<option value="{VALUE}"{STYLE}{SELECTED}>{LABEL}</option>]]>
+				</select>',
+				array_merge($common_vars,array('MULTIPLE_PROP','HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','STYLE','SELECTED','CHECKED','LABEL'))
+			);
+		case XTHREADS_INPUT_CHECKBOX:
+			return array(
+				'<![ITEM[<label style="display: block;"><input{NAME_PROP} type="checkbox" class="checkbox" value="{VALUE}"{CHECKED}{TABINDEX_PROP} />{LABEL}</label>]]>',
+				array_merge($common_vars,array('SELECTED','CHECKED','LABEL'))
+			);
+		case XTHREADS_INPUT_RADIO:
+			return array(
+				'<![ITEM[<label style="display: block;"><input{NAME_PROP} type="radio" class="radio" value="{VALUE}"{CHECKED}{TABINDEX} />{LABEL}</label>]]>',
+				array_merge($common_vars,array('SELECTED','CHECKED','LABEL'))
+			);
+		case XTHREADS_INPUT_FILE:
+			return array('
+				<if {ATTACH_ID} then>
+					<div>
+						<span{ATTACH_MD5_TITLE}id="xtaname_{KEY}"><a href="{ATTACH_URL}" target="_blank">{ATTACH_FILENAME}</a> ({ATTACH_SIZE_FRIENDLY})</span>
+						<label id="xtarmlabel_{KEY}"<if {REQUIRED} then> style="display: none;"</if>><input type="checkbox" id="xtarm_{KEY}" name="xtarm_{KEY}" value="1"{REMOVE_CHECKED} /><if {REQUIRED} then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
+					</div>
+				</if>
+				<div id="xtarow_{KEY}">
+					<if {URLFETCH} then>
+						<div style="display: none; font-size: x-small;" id="xtasel_{KEY}"><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="file"{CHECKED_UPLOAD} id="xtaselopt_file_{KEY}" />{$lang->xthreads_attachfile}</label><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="url"{CHECKED_URL} id="xtaselopt_url_{KEY}" />{$lang->xthreads_attachurl}</label></div>
+						<div>
+							<span id="xtaseltext_file_{KEY}">{$lang->xthreads_attachfile}: </span>
+					</if>
+						<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="{MAXSIZE}" /></if>
+							<input type="file" class="fileupload"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP} id="xthreads_{KEY}" />
+						<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="0" /></if>
+					<if {URLFETCH} then>
+						</div>
+						<div><span id="xtaseltext_url_{KEY}">{$lang->xthreads_attachurl}: </span><input type="text" class="textbox" id="xtaurl_{KEY}" name="xtaurl_{KEY}"{WIDTH_PROP_SIZE} value="{VALUE_URL}" /></div>
+					</if>
+				</div>
+				<if {ATTACH_ID} || {URLFETCH} then>
+					<script type="text/javascript"><!--
+						<if {ATTACH_ID} then>
+							($("xtarm_{KEY}").onclick = function() {
+								var c=$("xtarm_{KEY}").checked;
+								$("xtarow_{KEY}").style.display = (c?"":"none");
+								$("xtaname_{KEY}").style.textDecoration = (c?"line-through":"");
+							})();
+							$("xtarmlabel_{KEY}").style.display="";
+						</if>
+						<if {URLFETCH} then>
+							$("xtasel_{KEY}").style.display="";
+							$("xtaseltext_file_{KEY}").style.display=$("xtaseltext_url_{KEY}").style.display="none";
+							($("xtaselopt_file_{KEY}").onclick = $("xtaselopt_url_{KEY}").onclick = function() {
+								var f=$("xtaselopt_file_{KEY}").checked;
+								$("xthreads_{KEY}").style.display = (f?"":"none");
+								$("xtaurl_{KEY}").style.display = (f?"none":"");
+								if(!f) $("xthreads_{KEY}").value = "";
+							})();
+						</if>
+					//-->
+					</script>
+				</if>
+			', array('KEY','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL')
+			);
+		default:
+			return array(
+				'<input type="text" class="textbox"{NAME_PROP}{MAXLEN_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP} value="{VALUE}" />',
+				array_merge($common_vars,array('MAXLEN','MAXLEN_PROP','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS'))
+			);
+	}
+}
 
 function xthreads_write_xtcachefile() {
 	if($fp = @fopen(MYBB_ROOT.'cache/xthreads.php', 'w')) {
@@ -507,7 +587,7 @@ function xthreads_buildtfcache() {
 		$evalcache .= '
 		function xthreads_evalcache_'.$tf['field'].'($field, $vars=array()) {
 			switch($field) {';
-		foreach(array('unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
+		foreach(array('unviewableval', 'dispformat', 'dispitemformat', 'blankval', 'formhtml', 'formhtml_item') as $field) {
 			if(isset($tf[$field])) {
 				if($tf[$field] !== '') {
 					// slight optimisation - reduces amount of code if will return empty string
@@ -541,8 +621,6 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 	// remove unnecessary fields
 	if($tf['editable_gids']) $tf['editable'] = 0;
 	if(!$tf['viewable_gids']) unset($tf['unviewableval']);
-	if($tf['inputtype'] != XTHREADS_INPUT_CUSTOM)
-		unset($tf['formhtml']);
 	switch($tf['inputtype']) {
 		case XTHREADS_INPUT_FILE:
 		case XTHREADS_INPUT_FILE_URL:
@@ -693,6 +771,27 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 				xthreads_sanitize_eval($tf[$field], $sanitise_fields);
 		}
 	}
+	$formhtml = xthreads_default_threadfields_formhtml($tf['inputtype']);
+	if($tf['formhtml'] === '') $tf['formhtml'] = $formhtml[0];
+	switch($tf['inputtype']) {
+		case XTHREADS_INPUT_SELECT:
+		case XTHREADS_INPUT_CHECKBOX:
+		case XTHREADS_INPUT_RADIO:
+			// item block extraction
+			$tf['formhtml_item'] = '';
+			$GLOBALS['__xt_formhtml_item'] =& $tf['formhtml_item'];
+			$GLOBALS['__xt_formhtml_sanitise_fields'] =& $formhtml[1];
+			$tf['formhtml'] = preg_replace_callback('~\<\!\[ITEM\[(.*?)\]\]\>~is','xthreads_buildcache_parseitem_formhtml_pr', $tf['formhtml'], 1);
+			unset($GLOBALS['__xt_formhtml_item'], $GLOBALS['__xt_formhtml_sanitise_fields']);
+			$formhtml[1][] = 'ITEMS';
+	}
+	xthreads_sanitize_eval($tf['formhtml'], $formhtml[1]);
+}
+function xthreads_buildcache_parseitem_formhtml_pr($s) {
+	if($GLOBALS['__xt_formhtml_item']) return ''; // multiple instance of replacement - BAD! (shouldn't happen because of limit specified in preg_replace)
+	xthreads_sanitize_eval($s[1], $GLOBALS['__xt_formhtml_sanitise_fields']);
+	$GLOBALS['__xt_formhtml_item'] = $s[1];
+	return '{ITEMS}';
 }
 
 // build xt_forums cache from forums cache (also reduce size of forums cache)

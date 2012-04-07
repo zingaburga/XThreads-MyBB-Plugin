@@ -115,6 +115,8 @@ $l['threadfields_vallist'] = 'Values List';
 $l['threadfields_vallist_desc'] = 'A list of valid values which can be entered for this field.  Separate values with newlines.  HTML can be used with checkbox/radio button input.  It is recommended that you do not exceed 255 characters for each value.';
 $l['threadfields_formatmap'] = 'Formatting Map List';
 $l['threadfields_formatmap_desc'] = 'A list of formatting definitions.  The format map will \'translate\' defined inputs to the defined outputs.  <noscript>Separate items with newlines, and input/output pairs with the 3 characters, <em>{|}</em>.  For example, if you specify, for this field, <em>Resolved{|}&lt;span style=&quot;color: green;&quot;&gt;Resolved&lt;/span&gt;</em>, then if the user enters/selects &quot;Resolved&quot; for this field, it will be outputted in green wherever {$GLOBALS[\'threadfields\'][...]} is used.  </noscript>Some variables will work like <code>{$fid}</code>.';
+$l['threadfields_use_formhtml'] = 'Use Custom Input HTML';
+$l['threadfields_use_formhtml_desc'] = 'If yes, you can use custom HTML to display this field.';
 $l['threadfields_formhtml'] = 'Input Field HTML';
 $l['threadfields_formhtml_desc'] = 'Enter HTML code for this custom input field.  Accepts variables like MyBB\'s template system.';
 $l['threadfields_order'] = 'Order';
@@ -195,6 +197,7 @@ $l['error_bad_textmask'] = 'Bad regular expression used for Text Mask. PHP retur
 $l['error_bad_conditional'] = 'Bad conditional syntax detected for {1}.';
 $l['error_require_valllist'] = 'Select/checkbox/radiobutton input types must have a defined (non-empty) Value List.';
 $l['error_require_multival_delimiter'] = 'No multiple value delimiter defined (tip, you can set this to be a space).';
+$l['error_require_formhtml'] = 'No Input Form HTML entered (tip, you can set this to be a space).';
 $l['error_invalid_min_dims'] = 'Invalid minimum dimensions specified.';
 $l['error_invalid_max_dims'] = 'Invalid maximum dimensions specified.';
 $l['error_invalid_thumb_dims'] = 'Invalid thumbnail dimensions specified.';

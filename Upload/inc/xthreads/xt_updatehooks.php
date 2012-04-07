@@ -580,7 +580,7 @@ function _xthreads_input_generate(&$data, $fid, $tid=0) {
 }
 
 function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
-	global $tfinput, $tfinputrow, $extra_threadfields, $lang, $xthreads_threadin_tabindex_shift;
+	global $tfinput, $tfinputrow, $extra_threadfields, $lang, $xthreads_threadin_tabindex_shift, $mybb;
 	if(!$lang->xthreads_attachfile) $lang->load('xthreads');
 	
 	// if a thread ID is supplied, grab the current values
@@ -600,16 +600,27 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		$tf['title'] = htmlspecialchars_uni($tf['title']);
 		$tf['field'] = htmlspecialchars_uni($tf['field']);
 		$tf['desc'] = htmlspecialchars_uni($tf['desc']);
-		$maxlen = '';
-		if($tf['maxlen'])
-			$maxlen = ' maxlength="'.(int)$tf['maxlen'].'"';
-		$tfname = ' name="xthreads_'.$tf['field'].'"';
-		
-		$tf_fw_style = $tf_fw_size = $tf_fw_cols = $tf_fh = '';
-		if($tf['fieldwidth']) {
-			$tf_fw_size = ' size="'.(int)$tf['fieldwidth'].'"';
-			$tf_fw_style = ' style="width: '.(((int)$tf['fieldwidth'])/2).'em;"'; // only used for select box [in Firefox, seems we need to divide by 2 to get the equivalent width]
-			$tf_fw_cols = ' cols="'.(int)$tf['fieldwidth'].'"';
+		$vars = array(
+			'KEY' => $tf['field'],
+			'NAME_PROP' => ' name="xthreads_'.$tf['field'].'"',
+			'MAXLEN' => (int)$tf['maxlen'],
+			'WIDTH' => (int)$tf['fieldwidth'],
+			'HEIGHT' => (int)$tf['fieldheight'],
+			'TABINDEX' => '',
+			'TABINDEX_PROP' => '',
+		);
+		if($vars['MAXLEN']) $vars['MAXLEN_PROP'] = ' maxlength="'.$vars['MAXLEN'].'"';
+		if($vars['WIDTH']) {
+			$vars['WIDTH_PROP_SIZE'] = ' size="'.$vars['WIDTH'].'"';
+			$vars['WIDTH_CSS'] = 'width: '.($vars['WIDTH']/2).'em;"'; // only used for select box [in Firefox, seems we need to divide by 2 to get the equivalent width]
+			$vars['WIDTH_PROP_COLS'] = ' cols="'.$vars['WIDTH'].'"';
+		}
+		if(!$vars['HEIGHT'] && !xthreads_empty($tf['multival']))
+			$vars['HEIGHT'] = 5;
+		if($vars['HEIGHT']) {
+			$vars['HEIGHT_PROP_SIZE'] = ' size="'.$vars['HEIGHT'].'"';
+			$vars['HEIGHT_CSS'] = 'height: '.($vars['HEIGHT']/2).'em;"';
+			$vars['HEIGHT_PROP_ROWS'] = ' rows="'.$vars['HEIGHT'].'"';
 		}
 		
 		$using_default = false;
@@ -652,56 +663,81 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		if(!isset($defvals) && ($tf['inputtype'] != XTHREADS_INPUT_FILE && $tf['inputtype'] != XTHREADS_INPUT_FILE_URL))
 			$defval = htmlspecialchars_uni($defval);
 		
-		$tabindex = '';
 		if($tf['tabstop']) {
-			++$xthreads_threadin_tabindex_shift;
-			$tabindex = ' tabindex="__xt_'.($xthreads_threadin_tabindex_shift+1).'"';
+			$vars['TABINDEX'] = ++$xthreads_threadin_tabindex_shift +1;
+			$vars['TABINDEX_PROP'] = ' tabindex="__xt_'.$vars['TABINDEX'].'"';
 			xthreads_fix_tabindexes();
 		}
 		
-		$tfinput[$k] = '';
+		$evalfunc = 'xthreads_evalcache_'.$tf['field'];
 		switch($tf['inputtype']) {
 			case XTHREADS_INPUT_TEXTAREA:
-				if($tf['fieldheight'])
-					$tf_fh = ' rows="'.(int)$tf['fieldheight'].'"';
-				$tfinput[$k] = '<textarea'.$tfname.$maxlen.$tf_fh.$tf_fw_cols.$tabindex.'>'.$defval.'</textarea>';
+				$vars['VALUE'] =& $defval;
 				break;
 			case XTHREADS_INPUT_SELECT:
-				if($tf['fieldheight'])
-					$tf_fh = ' size="'.(int)$tf['fieldheight'].'"';
-				elseif(!xthreads_empty($tf['multival']))
-					$tf_fh = ' size="5"';
-				$tfinput[$k] = '<select name="xthreads_'.$tf['field'].(!xthreads_empty($tf['multival']) ? '[]" multiple="multiple"':'"').$tf_fh.$tf_fw_style.$tabindex.'>';
+				if(!xthreads_empty($tf['multival'])) {
+					$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
+					$vars['MULTIPLE_PROP'] = ' multiple="multiple"';
+				}
+				$vars['ITEMS'] = '';
 				foreach($vals as $val => $valdisp) {
 					$val = htmlspecialchars_uni($val);
 					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
-					$selected = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' selected="selected"':'');
+					$vars['VALUE'] =& $val;
+					$vars['SELECTED'] = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' selected="selected"':'');
 					
 					if(preg_match('~^\<span style\="([^"]*?)"\>(.*)\</span\>$~is', $valdisp, $style)) {
-						$valdisp = $style[2];
-						$style = ' style="'.$style[1].'"';
-					} else
-						$style = '';
-					$tfinput[$k] .= '<option value="'.$val.'"'.$style.$selected.'>'.htmlspecialchars_uni($valdisp).'</option>';
+						$vars['LABEL'] = $style[2];
+						$vars['STYLE'] = ' style="'.$style[1].'"';
+					} else {
+						$vars['LABEL'] = $valdisp;
+						$vars['STYLE'] = '';
+					}
+					$vars['LABEL'] = htmlspecialchars_uni($vars['LABEL']);
+					$vars['ITEMS'] .= $evalfunc('formhtml_item', $vars);
 				}
-				$tfinput[$k] .= '</select>';
 				break;
 			case XTHREADS_INPUT_CHECKBOX:
-				$tfname = ' name="xthreads_'.$tf['field'].'[]"';
+				$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
 				// fall through
 			case XTHREADS_INPUT_RADIO:
-				$tftype = ($tf['inputtype'] == XTHREADS_INPUT_RADIO ? 'radio':'checkbox');
+				$vars['ITEMS'] = '';
 				foreach($vals as $val => &$valdisp) {
 					$val = htmlspecialchars_uni($val);
 					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
-					$checked = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' checked="checked"':'');
-					$tfinput[$k] .= '<label style="display: block;"><input'.$tfname.' type="'.$tftype.'" class="'.$tftype.'" value="'.$val.'"'.$checked.$tabindex.' />'.$valdisp.'</label>';
-					$tabindex = ''; // or maybe make each thing tabbable?
+					
+					if((isset($defvals) && in_array($val, $defvals)) || $defval === $val) {
+						$vars['SELECTED'] = ' selected="selected"';
+						$vars['CHECKED'] = ' checked="checked"';
+					} else
+						$vars['SELECTED'] = $vars['CHECKED'] = '';
+					
+					$vars['VALUE'] =& $val;
+					$vars['LABEL'] =& $valdisp;
+					$vars['ITEMS'] .= $evalfunc('formhtml_item', $vars);
+					$vars['TABINDEX_PROP'] = ''; // or maybe make each thing tabbable?
 				}
 				break;
 			case XTHREADS_INPUT_FILE:
-				$tfinput[$k] = '';
-				$jsext = '';
+				$vars['REQUIRED'] = ($tf['editable'] == XTHREADS_EDITABLE_REQ);
+				$vars['MAXSIZE'] = $tf['filemaxsize'];
+				$vars['URLFETCH'] = (XTHREADS_ALLOW_URL_FETCH?1:0);
+				if(XTHREADS_ALLOW_URL_FETCH) {
+					// TODO: test if this environment can really fetch URLs
+					$vars['VALUE_URL'] = htmlspecialchars_uni($mybb->input['xtaurl_'.$tf['field']]);
+					if(xthreads_empty($vars['VALUE_URL'])) $vars['VALUE_URL'] = 'http://';
+					if($vars['VALUE_URL'] != 'http://' || $mybb->input['xtasel_'.$tf['field']] == 'url') {
+						$vars['CHECKED_UPLOAD'] = '';
+						$vars['SELECTED_UPLOAD'] = '';
+						$vars['CHECKED_URL'] = ' checked="checked"';
+						$vars['SELECTED_URL'] = ' selected="selected"';
+					} else {
+						$vars['CHECKED_UPLOAD'] = ' checked="checked"';
+						$vars['SELECTED_UPLOAD'] = ' selected="selected"';
+						$vars['CHECKED_URL'] = '';
+						$vars['SELECTED_URL'] = '';
+					}
+				}
 				if($defval) {
 					if(is_numeric($defval)) {
 						global $xta_cache, $db;
@@ -711,8 +747,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 							if(!$done_xta_cache) {
 								$done_xta_cache = true;
 								$qextra = '';
-								if($GLOBALS['mybb']->input['posthash'])
-									$qextra .= ' OR posthash="'.$db->escape_string($GLOBALS['mybb']->input['posthash']).'"';
+								if($mybb->input['posthash'])
+									$qextra .= ' OR posthash="'.$db->escape_string($mybb->input['posthash']).'"';
 								if($GLOBALS['thread']['tid'])
 									$qextra .= ' OR tid='.$GLOBALS['thread']['tid'];
 								$query = $db->simple_select('xtattachments', '*', 'aid='.$defval.$qextra);
@@ -722,87 +758,42 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 							}
 						}
 						$this_xta =& $xta_cache[$defval];
-						$md5title = '';
-						$url = xthreads_get_xta_url($this_xta);
+						$vars['ATTACH_ID'] = $this_xta['aid'];
+						$vars['ATTACH_FILENAME'] = htmlspecialchars_uni($this_xta['filename']);
+						$vars['ATTACH_FILEEXT'] = htmlspecialchars_uni(get_extension($this_xta['filename']));
+						$vars['ATTACH_SIZE'] = $this_xta['filesize'];
+						$vars['ATTACH_SIZE_FRIENDLY'] = get_friendly_size($this_xta['filesize']);
+						$vars['ATTACH_MIME'] = htmlspecialchars_uni($this_xta['uploadmime']);
+						$vars['ATTACH_DOWNLOADS'] = $this_xta['downloads'];
+						$vars['ATTACH_DOWNLOADS_FRIENDLY'] = my_number_format($this_xta['downloads']);
+						
+						if(!$this_xta['updatetime']) $this_xta['updatetime'] = $this_xta['uploadtime'];
+						$vars['ATTACH_UPLOAD_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['uploadtime']);
+						$vars['ATTACH_UPLOAD_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['uploadtime']);
+						$vars['ATTACH_UDATE_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['updatetime']);
+						$vars['ATTACH_UDATE_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['updatetime']);
+						
+						$vars['ATTACH_URL'] = xthreads_get_xta_url($this_xta);
 						if(isset($this_xta['md5hash'])) {
-							$md5hash = bin2hex($this_xta['md5hash']);
-							$md5title = 'title="'.$lang->sprintf($lang->xthreads_md5hash, $md5hash).'" ';
+							$vars['ATTACH_MD5'] = bin2hex($this_xta['md5hash']);
+							$vars['ATTACH_MD5_TITLE'] = 'title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH_MD5']).'" ';
 						}
-						// <input type="hidden"'.$tfname.' value="'.$defval.'" />
-						$tfinput[$k] = '<div><span '.$md5title.'id="xtaname_'.$tf['field'].'"><a href="'.$url.'" target="_blank">'.htmlspecialchars_uni($this_xta['filename']).'</a> ('.get_friendly_size($this_xta['filesize']).')</span>';
-						if($GLOBALS['mybb']->input['xtarm_'.$tf['field']])
-							$rmcheck = ' checked="checked"';
-						else
-							$rmcheck = '';
-						if($tf['editable'] != XTHREADS_EDITABLE_REQ) {
-							$tfinput[$k] .= ' <label id="xtarmlabel_'.$tf['field'].'"><input type="checkbox" id="xtarm_'.$tf['field'].'" name="xtarm_'.$tf['field'].'" value="1"'.$rmcheck.' />'.$lang->xthreads_rmattach.'</label>';
-						} else {
-							// javascript checkbox
-							$tfinput[$k] .= ' <label id="xtarmlabel_'.$tf['field'].'" style="display: none;"><input type="checkbox" id="xtarm_'.$tf['field'].'" name="xtarm_'.$tf['field'].'" value="1"'.$rmcheck.' />'.$lang->xthreads_replaceattach.'</label>';
-						}
-						$tfinput[$k] .= '</div>';
-						$jsext .= '($("xtarm_'.$tf['field'].'").onclick = function() {
-							var c=$("xtarm_'.$tf['field'].'").checked;
-							$("xtarow_'.$tf['field'].'").style.display = (c?"":"none");
-							$("xtaname_'.$tf['field'].'").style.textDecoration = (c?"line-through":"");
-						})();
-						$("xtarmlabel_'.$tf['field'].'").style.display="";';
+						if($mybb->input['xtarm_'.$tf['field']])
+							$vars['REMOVE_CHECKED'] = ' checked="checked"';
 					}
-				}
-				
-				$fileinput = '<input type="file" class="fileupload"'.$tfname.$tf_fw_size.$tabindex.' id="xthreads_'.$tf['field'].'" />';
-				if($tf['filemaxsize'])
-					$fileinput = '<input type="hidden" name="MAX_FILE_SIZE" value="'.$tf['filemaxsize'].'" />'.$fileinput.'<input type="hidden" name="MAX_FILE_SIZE" value="0" />';
-				if(XTHREADS_ALLOW_URL_FETCH) {
-					// TODO: test if this environment can really fetch URLs
-					// no =& because we change $input_url potentially
-					$input_url = $GLOBALS['mybb']->input['xtaurl_'.$tf['field']];
-					if(xthreads_empty($input_url)) $input_url = 'http://';
-					if($input_url != 'http://' || $GLOBALS['mybb']->input['xtasel_'.$tf['field']] == 'url') {
-						$check_file = '';
-						$check_url = ' checked="checked"';
-					} else {
-						$check_file = ' checked="checked"';
-						$check_url = '';
-					}
-					
-					$fileinput = '<div style="display: none; font-size: x-small;" id="xtasel_'.$tf['field'].'"><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_'.$tf['field'].'" value="file"'.$check_file.' id="xtaselopt_file_'.$tf['field'].'" />'.$lang->xthreads_attachfile.'</label><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_'.$tf['field'].'" value="url"'.$check_url.' id="xtaselopt_url_'.$tf['field'].'" />'.$lang->xthreads_attachurl.'</label></div>
-					<div><span id="xtaseltext_file_'.$tf['field'].'">'.$lang->xthreads_attachfile.': </span>'.$fileinput.'</div>
-					<div><span id="xtaseltext_url_'.$tf['field'].'">'.$lang->xthreads_attachurl.': </span><input type="text" class="textbox" id="xtaurl_'.$tf['field'].'" name="xtaurl_'.$tf['field'].'"'.$tf_fw_size.' value="'.htmlspecialchars($input_url).'" /></div>';
-					$jsext .= '
-						$("xtasel_'.$tf['field'].'").style.display="";
-						$("xtaseltext_file_'.$tf['field'].'").style.display=$("xtaseltext_url_'.$tf['field'].'").style.display="none";
-						($("xtaselopt_file_'.$tf['field'].'").onclick = $("xtaselopt_url_'.$tf['field'].'").onclick = function() {
-							var f=$("xtaselopt_file_'.$tf['field'].'").checked;
-							$("xthreads_'.$tf['field'].'").style.display = (f?"":"none");
-							$("xtaurl_'.$tf['field'].'").style.display = (f?"none":"");
-							if(!f) $("xthreads_'.$tf['field'].'").value = "";
-						})();
-					';
-				}
-				
-				$tfinput[$k] .= '<div id="xtarow_'.$tf['field'].'">'.$fileinput.'</div>';
-				if($jsext) {
-					$tfinput[$k] .= '<script type="text/javascript"><!--
-					'.$jsext.'
-					//-->
-					</script>';
 				}
 				break;
 				
 			case XTHREADS_INPUT_FILE_URL: // TODO:
 				break;
 				
-			case XTHREADS_INPUT_CUSTOM:
-				$tfinput[$k] = preg_replace('~\\{\\$([a-zA-Z_0-9]+)((-\\>[a-zA-Z_0-9]+|\\[[\'"]?[a-zA-Z_ 0-9]+[\'"]?\\])*)\\}~e', 'eval("return \\\\$$1".str_replace("\\\\\'", "\'", "$2").";")', $tf['formhtml']);
-				break;
-				
 			default: // text
+				$vars['VALUE'] =& $defval;
 				if(!xthreads_empty($tf['multival']))
 					$defval = str_replace("\n", ', ', $defval);
-				$tfinput[$k] = '<input type="text" class="textbox"'.$tfname.$maxlen.$tf_fw_size.$tabindex.' value="'.$defval.'" />';
 				break;
 		}
+		$tfinput[$k] = $evalfunc('formhtml', $vars);
 		
 		$altbg = alt_trow();
 		$inputfield =& $tfinput[$k];
