@@ -231,15 +231,8 @@ $l['xthreads_settingoverrides'] = 'Settings Overrides';
 $l['xthreads_settingoverrides_desc'] = 'Override MyBB settings specifically for this forum.  USE CAUTION! - overriding some settings may cause undesirable effects.  Separate entries with newlines; variables/conditionals supported (in filter value only).  Format of each line is <code><em>settingkey</em>=<em>value</em></code>.  Note that URI encoding is not supported.
 <br /><!-- more -->Example value for this field:
 <code style="display: block; margin-left: 2em;">bbname=New forum name<br />postmaxavatarsize=&lt;if $mybb-&gt;user[\'uid\'] then&gt;{$mybb-&gt;settings[\'postmaxavatarsize\']}&lt;else&gt;50x50&lt;/if&gt;</code>';
-$l['xthreads_threadsperpage'] = 'Override Threads Per Page';
-$l['xthreads_threadsperpage_desc'] = 'If non-zero, overrides the default and user chosen threads per page setting for forumdisplay.';
 $l['xthreads_postsperpage'] = 'Override Posts Per Page';
 $l['xthreads_postsperpage_desc'] = 'If non-zero, overrides the default and user chosen posts per page setting for showthread.';
-$l['xthreads_force_postlayout'] = 'Force Postbit Layout';
-$l['xthreads_force_postlayout_desc'] = 'This can be used to force a postbit layout in this forum.';
-$l['xthreads_force_postlayout_none'] = 'Don\'t force layout';
-$l['xthreads_force_postlayout_horizontal'] = 'Force horizontal postbit layout';
-$l['xthreads_force_postlayout_classic'] = 'Force classic postbit layout';
 $l['xthreads_hideforum'] = 'Hide Forum';
 $l['xthreads_hideforum_desc'] = 'If yes, will hide this forum on your index and forumdisplay pages.
 <br /><!-- more -->This is slightly different to disabling the Can View Forum permission in that this does not affect permissions, it just merely hides it from display (so, for example, you could put a link to it in your main menu).';

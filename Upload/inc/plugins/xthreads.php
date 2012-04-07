@@ -296,10 +296,6 @@ function xthreads_global() {
 			}
 		//}
 		// settings overrides
-		if($forum['xthreads_force_postlayout'])
-			$mybb->settings['postlayout'] = $forum['xthreads_force_postlayout'];
-		if($forum['xthreads_threadsperpage'])
-			$mybb->settings['threadsperpage'] = $forum['xthreads_threadsperpage'];
 		if($forum['xthreads_postsperpage'])
 			$mybb->settings['postsperpage'] = $forum['xthreads_postsperpage'];
 		

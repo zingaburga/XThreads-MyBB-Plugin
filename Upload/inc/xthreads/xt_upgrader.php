@@ -208,13 +208,30 @@ if(XTHREADS_INSTALLED_VERSION < 1.45 && XTHREADS_INSTALLED_VERSION > 1.32) {
 }
 
 if(XTHREADS_INSTALLED_VERSION < 1.48) {
+	// template modification
 	$tpl_threadfields_inputrow = $db->fetch_field($db->simple_select('templates', 'template', 'title="threadfields_inputrow" AND sid=-1'), 'template');
 	if($tpl_threadfields_inputrow) {
 		$newtpl = preg_replace('~^(\s*\<tr)\>~i', '$1 class="xthreads_inputrow">', $tpl_threadfields_inputrow);
 		if($newtpl != $tpl_threadfields_inputrow)
-			$db->update('templates', array('template' => $db->escape_string($newtpl)), 'title="threadfields_inputrow" AND sid=-1')
+			$db->update_query('templates', array('template' => $db->escape_string($newtpl)), 'title="threadfields_inputrow" AND sid=-1');
 	}
+	
+	// settings overrides
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_settingoverrides` text not null');
+	// migrate old settings across
+	$query = $db->simple_select('forums', 'fid,xthreads_force_postlayout,xthreads_threadsperpage');
+	while($forum = $db->fetch_array($query)) {
+		$override = '';
+		if($forum['xthreads_force_postlayout'])
+			$override .= 'postlayout='.$forum['xthreads_force_postlayout']."\n";
+		if($forum['xthreads_threadsperpage'])
+			$override .= 'threadsperpage='.$forum['xthreads_threadsperpage']."\n";
+		if($override)
+			$db->update_query('forums', array('xthreads_settingoverrides' => $db->escape_string($override)), 'fid='.$forum['fid']);
+	}
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_force_postlayout`, DROP COLUMN `xthreads_threadsperpage`');
+	
+	$cache->update_forums(); // the forum cache rebuild reads from here
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 
