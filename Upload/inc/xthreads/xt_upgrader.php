@@ -214,6 +214,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.48) {
 		if($newtpl != $tpl_threadfields_inputrow)
 			$db->update('templates', array('template' => $db->escape_string($newtpl)), 'title="threadfields_inputrow" AND sid=-1')
 	}
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` ADD COLUMN `xthreads_settingoverrides` text not null');
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 

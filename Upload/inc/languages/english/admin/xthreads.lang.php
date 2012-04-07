@@ -227,6 +227,10 @@ $l['xthreads_inlinesearch'] = 'Enable XThreads\' Inline Forum Search';
 $l['xthreads_inlinesearch_desc'] = 'Replaces the search box on the forumdisplay page with XThreads\' inline search system, ignoring the search permission set for this forum.  This allows the search to display threads the same way as forumdisplay does.  The downside is that this may cause additional server load.';
 $l['xthreads_fdcolspan_offset'] = 'Offset forumdisplay {$colspan}';
 $l['xthreads_fdcolspan_offset_desc'] = 'If non-zero, will increase the value of the <code>{$colspan}</code> variable in the <em>forumdisplay_threadlist</em> template by specified amount (negative values accepted).  May be useful for adding additional columns on the forumdisplay page.';
+$l['xthreads_settingoverrides'] = 'Settings Overrides';
+$l['xthreads_settingoverrides_desc'] = 'Override MyBB settings specifically for this forum.  USE CAUTION! - overriding some settings may cause undesirable effects.  Separate entries with newlines; variables/conditionals supported (in filter value only).  Format of each line is <code><em>settingkey</em>=<em>value</em></code>.  Note that URI encoding is not supported.
+<br /><!-- more -->Example value for this field:
+<code style="display: block; margin-left: 2em;">bbname=New forum name<br />postmaxavatarsize=&lt;if $mybb-&gt;user[\'uid\'] then&gt;{$mybb-&gt;settings[\'postmaxavatarsize\']}&lt;else&gt;50x50&lt;/if&gt;</code>';
 $l['xthreads_threadsperpage'] = 'Override Threads Per Page';
 $l['xthreads_threadsperpage_desc'] = 'If non-zero, overrides the default and user chosen threads per page setting for forumdisplay.';
 $l['xthreads_postsperpage'] = 'Override Posts Per Page';

@@ -264,6 +264,10 @@ function xthreads_global() {
 					$lang->__xt_load($pref.'messages', false, true);
 				}
 			}
+			if($xtforum['settingoverrides'] !== '') {
+				foreach($xtforum['settingoverrides'] as $k => &$v)
+					$mybb->settings[$k] = $v;
+			}
 		}
 		//if($forum['xthreads_firstpostattop']) {
 			switch($current_page) {

@@ -710,11 +710,22 @@ function xthreads_buildcache_forums($fp) {
 		xthreads_sanitize_eval($tplprefix);
 		$langprefix = $forum['xthreads_langprefix'];
 		xthreads_sanitize_eval($langprefix);
-		if(!xthreads_empty($tplprefix) || !xthreads_empty($langprefix)) // slight optimisation: only write if there's something interesting
+		
+		$settingoverrides = '';
+		foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r", '', $forum['xthreads_settingoverrides']))) as $override) {
+			list($n, $v) = explode('=', str_replace("\r", "\n", $override), 2);
+			if(!isset($v)) continue;
+			$n = strtr($n, array('\\' => '', '\'' => ''));
+			xthreads_sanitize_eval($v);
+			$settingoverrides .= '\''.$n.'\' => "'.$v.'", ';
+		}
+		
+		if(!xthreads_empty($tplprefix) || !xthreads_empty($langprefix) || $settingoverrides !== '') // slight optimisation: only write if there's something interesting
 			fwrite($fp, '
 				case '.$fid.': return array(
 					\'tplprefix\' => '.(xthreads_empty($tplprefix) ? '\'\'' : 'array_map(\'trim\', explode(\',\', "'.$tplprefix.'"))').',
 					\'langprefix\' => '.(xthreads_empty($langprefix) ? '\'\'' : 'array_map(\'trim\', explode(\',\', "'.$langprefix.'"))').',
+					\'settingoverrides\' => '.($settingoverrides==='' ? '\'\'' : 'array('.$settingoverrides.')').',
 				);');
 		$xtforum = array(
 			'defaultfilter_tf' => array(),
@@ -724,6 +735,7 @@ function xthreads_buildcache_forums($fp) {
 		foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r", '', $forum['xthreads_defaultfilter']))) as $filter) {
 			list($n, $v) = explode('=', str_replace("\r", "\n", $filter), 2);
 			if(!isset($v)) continue;
+			$n = strtr($n, array('\\' => '', '\'' => ''));
 			//$n = urldecode($n); // - this is not necessary, since $n can never contain newlines or = signs
 			$isarray = false;
 			if($p = strrpos($n, '[')) {
@@ -750,7 +762,7 @@ function xthreads_buildcache_forums($fp) {
 			}
 		}
 		
-		unset($forum['xthreads_tplprefix'], $forum['xthreads_langprefix'], $forum['xthreads_defaultfilter']);
+		unset($forum['xthreads_tplprefix'], $forum['xthreads_langprefix'], $forum['xthreads_defaultfilter'], $forum['xthreads_settingoverrides']);
 		if(!empty($xtforum)) $xtforums[$fid] = $xtforum;
 	}
 	fwrite($fp, '
@@ -872,6 +884,16 @@ function xthreads_admin_forumedit() {
 				}
 			}
 		}
+		// do same for setting overrides
+		if($mybb->input['xthreads_settingoverrides']) {
+			foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r", '', $mybb->input['xthreads_settingoverrides']))) as $override) {
+				list($n, $v) = explode('=', str_replace("\r", "\n", $override), 2);
+				if($v && !xthreads_check_condstr($v)) {
+					$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->xthreads_settingoverrides);
+					break;
+				}
+			}
+		}
 	}
 	
 	function xthreads_admin_forumedit_hook(&$args) {
@@ -971,6 +993,7 @@ function xthreads_admin_forumedit() {
 				'xthreads_firstpostattop' => 0,
 				'xthreads_inlinesearch' => 0,
 				'xthreads_fdcolspan_offset' => 0,
+				'xthreads_settingoverrides' => '',
 				'xthreads_threadsperpage' => 0,
 				'xthreads_postsperpage' => 0,
 				'xthreads_force_postlayout' => '',
@@ -1000,6 +1023,7 @@ function xthreads_admin_forumedit() {
 			'firstpostattop' => 'yes_no_radio',
 			'inlinesearch' => 'yes_no_radio',
 			'fdcolspan_offset' => 'text_box',
+			'settingoverrides' => 'text_area',
 			'threadsperpage' => 'text_box',
 			'postsperpage' => 'text_box',
 			'force_postlayout' => array('' => 'none', 'horizontal' => 'horizontal', 'classic' => 'classic'),
@@ -1138,6 +1162,7 @@ function xthreads_admin_forumcommit() {
 		'xthreads_nostatcount' => (int)trim($mybb->input['xthreads_nostatcount']),
 		'xthreads_inlinesearch' => (int)trim($mybb->input['xthreads_inlinesearch']),
 		'xthreads_fdcolspan_offset' => (int)trim($mybb->input['xthreads_fdcolspan_offset']),
+		'xthreads_settingoverrides' => $db->escape_string($mybb->input['xthreads_settingoverrides']),
 		'xthreads_threadsperpage' => (int)trim($mybb->input['xthreads_threadsperpage']),
 		'xthreads_postsperpage' => (int)trim($mybb->input['xthreads_postsperpage']),
 		'xthreads_force_postlayout' => trim($mybb->input['xthreads_force_postlayout']),
