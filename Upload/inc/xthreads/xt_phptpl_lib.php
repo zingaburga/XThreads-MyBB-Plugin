@@ -96,7 +96,7 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	foreach($fields as &$f) {
 		$tr['{'.$f.'}'] = '"".$vars[\''.$f.'\'].""';
 		
-		if($f == 'VALUE') $do_value_repl = true;
+		if($f == 'RAWVALUE') $do_value_repl = true;
 	}
 	if($do_value_repl) $str = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '"".$vars[\'$1$\'][$2].""', $str);
 	$str = strtr($str, $tr);
@@ -229,7 +229,7 @@ function xthreads_sanitize_eval(&$s, $fields=array(), $evalvarname=null) {
 		foreach($fields as &$f) {
 			$tr['{'.$f.'}'] = '{$vars[\''.$f.'\']}';
 			
-			if($f == 'VALUE') $do_value_repl = true;
+			if($f == 'RAWVALUE') $do_value_repl = true;
 		}
 		if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '{$vars[\'$1$\'][$2]}', $s);
 		$s = strtr($s, $tr);
