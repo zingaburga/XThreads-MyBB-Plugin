@@ -551,9 +551,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		foreach(array(
 			'defaultval', 'blankval',
 			'dispformat', 'dispitemformat',
-			'unviewableval',
+			'unviewableval', 'formhtml', 'formhtml_item',
 		) as $condcheck) {
 			if($test_tf[$condcheck] && !xthreads_check_evalstr($test_tf[$condcheck])) {
+				if($condcheck == 'formhtml_item') $condcheck = 'formhtml';
 				$tflangkey = 'threadfields_'.$condcheck;
 				$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->$tflangkey);
 			}
@@ -896,7 +897,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	
 ?><script type="text/javascript">
 <!--
-	
+	var xt_inited = false;
 	function xt_visi(o,v) {
 		$(o).style.display = (v ? '':'none');
 	}
@@ -1012,7 +1013,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		var setFormhtml = true;
 		if($('use_formhtml_yes').checked) {
-			setFormhtml = confirm("<?php echo xt_js_str_escape($lang->threadfields_formhtml_js_reset_warning); ?>");
+			if(!xt_inited)
+				setFormhtml = ($("formhtml").value == "");
+			else
+				setFormhtml = confirm("<?php echo xt_js_str_escape($lang->threadfields_formhtml_js_reset_warning); ?>");
 			if(setFormhtml) {
 				$('use_formhtml_no').checked = true;
 			}
@@ -1150,7 +1154,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		if(this.readOnly)
 			$('textmask_select').focus();
 	};
-	
+	xt_inited = true;
 //-->
 </script>
 <script type="text/javascript" src="jscripts/xtofedit.js?xtver=<?php echo XTHREADS_VERSION; ?>"></script>
