@@ -594,7 +594,10 @@ function xthreads_buildtfcache() {
 					$evalcache .= '
 				case \''.$field.'\': return "'.$tf[$field].'";';
 				}
-				$tf[$field] = (bool)preg_match('~\$vars[^a-z0-9_]~i', $tf[$field]); // whether to evaluate vars
+				if($field == 'formhtml' || $field == 'formhtml_item')
+					$tf[$field] = ($tf[$field] !== '');
+				else
+					$tf[$field] = (bool)preg_match('~\$vars[^a-z0-9_]~i', $tf[$field]); // whether to evaluate vars
 				// ^ above preg_match is a simple optimisation - not the best, but simple and usually effective
 			} else
 				$tf[$field] = false;
@@ -772,20 +775,21 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 		}
 	}
 	$formhtml = xthreads_default_threadfields_formhtml($tf['inputtype']);
-	if($tf['formhtml'] === '') $tf['formhtml'] = $formhtml[0];
-	switch($tf['inputtype']) {
-		case XTHREADS_INPUT_SELECT:
-		case XTHREADS_INPUT_CHECKBOX:
-		case XTHREADS_INPUT_RADIO:
-			// item block extraction
-			$tf['formhtml_item'] = '';
-			$GLOBALS['__xt_formhtml_item'] =& $tf['formhtml_item'];
-			$GLOBALS['__xt_formhtml_sanitise_fields'] =& $formhtml[1];
-			$tf['formhtml'] = preg_replace_callback('~\<\!\[ITEM\[(.*?)\]\]\>~is','xthreads_buildcache_parseitem_formhtml_pr', $tf['formhtml'], 1);
-			unset($GLOBALS['__xt_formhtml_item'], $GLOBALS['__xt_formhtml_sanitise_fields']);
-			$formhtml[1][] = 'ITEMS';
+	if($tf['formhtml'] !== '') {
+		switch($tf['inputtype']) {
+			case XTHREADS_INPUT_SELECT:
+			case XTHREADS_INPUT_CHECKBOX:
+			case XTHREADS_INPUT_RADIO:
+				// item block extraction
+				$tf['formhtml_item'] = '';
+				$GLOBALS['__xt_formhtml_item'] =& $tf['formhtml_item'];
+				$GLOBALS['__xt_formhtml_sanitise_fields'] =& $formhtml[1];
+				$tf['formhtml'] = preg_replace_callback('~\<\!\[ITEM\[(.*?)\]\]\>~is','xthreads_buildcache_parseitem_formhtml_pr', $tf['formhtml'], 1);
+				unset($GLOBALS['__xt_formhtml_item'], $GLOBALS['__xt_formhtml_sanitise_fields']);
+				$formhtml[1][] = 'ITEMS';
+		}
+		xthreads_sanitize_eval($tf['formhtml'], $formhtml[1]);
 	}
-	xthreads_sanitize_eval($tf['formhtml'], $formhtml[1]);
 }
 function xthreads_buildcache_parseitem_formhtml_pr($s) {
 	if($GLOBALS['__xt_formhtml_item']) return ''; // multiple instance of replacement - BAD! (shouldn't happen because of limit specified in preg_replace)
