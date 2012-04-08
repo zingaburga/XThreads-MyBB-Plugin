@@ -783,7 +783,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 						$vars['ATTACH_URL'] = xthreads_get_xta_url($this_xta);
 						if(isset($this_xta['md5hash'])) {
 							$vars['ATTACH_MD5'] = bin2hex($this_xta['md5hash']);
-							$vars['ATTACH_MD5_TITLE'] = 'title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH_MD5']).'" ';
+							$vars['ATTACH_MD5_TITLE'] = ' title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH_MD5']).'" ';
 						}
 						if($mybb->input['xtarm_'.$tf['field']])
 							$vars['REMOVE_CHECKED'] = ' checked="checked"';

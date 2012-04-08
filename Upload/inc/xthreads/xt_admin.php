@@ -287,9 +287,9 @@ function xthreads_default_threadfields_formhtml($type) {
 			// <textarea name="xthreads_{KEY}"<if {MAXLEN} then> maxlength="{MAXLEN}"</if><if {HEIGHT} then> rows="{HEIGHT}"</if><if {WIDTH} then> cols="{WIDTH}"</if><if {TABSTOP} then> tabindex="__xt_{TABINDEX_SHIFT}"</if>>{VALUE}</textarea>
 		case XTHREADS_INPUT_SELECT:
 			return array(
-				'<select style="{WIDTH_CSS}"{NAME_PROP}{MULTIPLE_PROP}{HEIGHT_PROP_SIZE}{TABINDEX_PROP}>
-					<![ITEM[<option value="{VALUE}"{STYLE}{SELECTED}>{LABEL}</option>]]>
-				</select>',
+'<select style="{WIDTH_CSS}"{NAME_PROP}{MULTIPLE_PROP}{HEIGHT_PROP_SIZE}{TABINDEX_PROP}>
+	<![ITEM[<option value="{VALUE}"{STYLE}{SELECTED}>{LABEL}</option>]]>
+</select>',
 				array_merge($common_vars,array('MULTIPLE_PROP','HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','STYLE','SELECTED','CHECKED','LABEL'))
 			);
 		case XTHREADS_INPUT_CHECKBOX:
@@ -303,51 +303,50 @@ function xthreads_default_threadfields_formhtml($type) {
 				array_merge($common_vars,array('SELECTED','CHECKED','LABEL'))
 			);
 		case XTHREADS_INPUT_FILE:
-			return array('
-				<if {ATTACH_ID} then>
-					<div>
-						<span{ATTACH_MD5_TITLE}id="xtaname_{KEY}"><a href="{ATTACH_URL}" target="_blank">{ATTACH_FILENAME}</a> ({ATTACH_SIZE_FRIENDLY})</span>
-						<label id="xtarmlabel_{KEY}"<if {REQUIRED} then> style="display: none;"</if>><input type="checkbox" id="xtarm_{KEY}" name="xtarm_{KEY}" value="1"{REMOVE_CHECKED} /><if {REQUIRED} then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
-					</div>
-				</if>
-				<div id="xtarow_{KEY}">
-					<if {URLFETCH} then>
-						<div style="display: none; font-size: x-small;" id="xtasel_{KEY}"><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="file"{CHECKED_UPLOAD} id="xtaselopt_file_{KEY}" />{$lang->xthreads_attachfile}</label><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="url"{CHECKED_URL} id="xtaselopt_url_{KEY}" />{$lang->xthreads_attachurl}</label></div>
-						<div>
-							<span id="xtaseltext_file_{KEY}">{$lang->xthreads_attachfile}: </span>
-					</if>
-						<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="{MAXSIZE}" /></if>
-							<input type="file" class="fileupload"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP} id="xthreads_{KEY}" />
-						<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="0" /></if>
-					<if {URLFETCH} then>
-						</div>
-						<div><span id="xtaseltext_url_{KEY}">{$lang->xthreads_attachurl}: </span><input type="text" class="textbox" id="xtaurl_{KEY}" name="xtaurl_{KEY}"{WIDTH_PROP_SIZE} value="{VALUE_URL}" /></div>
-					</if>
-				</div>
-				<if {ATTACH_ID} || {URLFETCH} then>
-					<script type="text/javascript"><!--
-						<if {ATTACH_ID} then>
-							($("xtarm_{KEY}").onclick = function() {
-								var c=$("xtarm_{KEY}").checked;
-								$("xtarow_{KEY}").style.display = (c?"":"none");
-								$("xtaname_{KEY}").style.textDecoration = (c?"line-through":"");
-							})();
-							$("xtarmlabel_{KEY}").style.display="";
-						</if>
-						<if {URLFETCH} then>
-							$("xtasel_{KEY}").style.display="";
-							$("xtaseltext_file_{KEY}").style.display=$("xtaseltext_url_{KEY}").style.display="none";
-							($("xtaselopt_file_{KEY}").onclick = $("xtaselopt_url_{KEY}").onclick = function() {
-								var f=$("xtaselopt_file_{KEY}").checked;
-								$("xthreads_{KEY}").style.display = (f?"":"none");
-								$("xtaurl_{KEY}").style.display = (f?"none":"");
-								if(!f) $("xthreads_{KEY}").value = "";
-							})();
-						</if>
-					//-->
-					</script>
-				</if>
-			', array('KEY','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL')
+			return array(
+'<if {ATTACH_ID} then>
+	<div>
+		<span{ATTACH_MD5_TITLE}id="xtaname_{KEY}"><a href="{ATTACH_URL}" target="_blank">{ATTACH_FILENAME}</a> ({ATTACH_SIZE_FRIENDLY})</span>
+		<label id="xtarmlabel_{KEY}"<if {REQUIRED} then> style="display: none;"</if>><input type="checkbox" id="xtarm_{KEY}" name="xtarm_{KEY}" value="1"{REMOVE_CHECKED} /><if {REQUIRED} then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
+	</div>
+</if>
+<div id="xtarow_{KEY}">
+	<if {URLFETCH} then>
+		<div style="display: none; font-size: x-small;" id="xtasel_{KEY}"><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="file"{CHECKED_UPLOAD} id="xtaselopt_file_{KEY}" />{$lang->xthreads_attachfile}</label><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="url"{CHECKED_URL} id="xtaselopt_url_{KEY}" />{$lang->xthreads_attachurl}</label></div>
+		<div>
+			<span id="xtaseltext_file_{KEY}">{$lang->xthreads_attachfile}: </span>
+	</if>
+		<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="{MAXSIZE}" /></if>
+			<input type="file" class="fileupload"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP} id="xthreads_{KEY}" />
+		<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="0" /></if>
+	<if {URLFETCH} then>
+		</div>
+		<div><span id="xtaseltext_url_{KEY}">{$lang->xthreads_attachurl}: </span><input type="text" class="textbox" id="xtaurl_{KEY}" name="xtaurl_{KEY}"{WIDTH_PROP_SIZE} value="{VALUE_URL}" /></div>
+	</if>
+</div>
+<if {ATTACH_ID} || {URLFETCH} then>
+	<script type="text/javascript"><!--
+		<if {ATTACH_ID} then>
+			($("xtarm_{KEY}").onclick = function() {
+				var c=$("xtarm_{KEY}").checked;
+				$("xtarow_{KEY}").style.display = (c?"":"none");
+				$("xtaname_{KEY}").style.textDecoration = (c?"line-through":"");
+			})();
+			$("xtarmlabel_{KEY}").style.display="";
+		</if>
+		<if {URLFETCH} then>
+			$("xtasel_{KEY}").style.display="";
+			$("xtaseltext_file_{KEY}").style.display=$("xtaseltext_url_{KEY}").style.display="none";
+			($("xtaselopt_file_{KEY}").onclick = $("xtaselopt_url_{KEY}").onclick = function() {
+				var f=$("xtaselopt_file_{KEY}").checked;
+				$("xthreads_{KEY}").style.display = (f?"":"none");
+				$("xtaurl_{KEY}").style.display = (f?"none":"");
+				if(!f) $("xthreads_{KEY}").value = "";
+			})();
+		</if>
+	//-->
+	</script>
+</if>', array('KEY','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL')
 			);
 		default:
 			return array(
@@ -869,7 +868,7 @@ function xthreads_buildcache_forums($fp) {
 		if(!empty($xtforum)) $xtforums[$fid] = $xtforum;
 	}
 	fwrite($fp, '
-			} return array(\'tplprefix\' => \'\', \'langprefix\' => \'\');
+			} return array(\'tplprefix\' => \'\', \'langprefix\' => \'\', \'settingoverrides\' => \'\');
 		}
 		
 		function xthreads_evalcacheForumFilters($fid) {
