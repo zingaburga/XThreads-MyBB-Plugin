@@ -207,7 +207,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.45 && XTHREADS_INSTALLED_VERSION > 1.32) {
 	$rows_changed += $db->affected_rows();
 }
 
-if(XTHREADS_INSTALLED_VERSION < 1.48) {
+if(XTHREADS_INSTALLED_VERSION < 1.50) {
 	// template modification
 	$tpl_threadfields_inputrow = $db->fetch_field($db->simple_select('templates', 'template', 'title="threadfields_inputrow" AND sid=-1'), 'template');
 	if($tpl_threadfields_inputrow) {

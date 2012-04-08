@@ -19,7 +19,7 @@
    <p>This page will describe a number of things not documented in the interface, due to lack of space or otherwise.</p>
    <h2>Thread Filtering</h2>
    <p>XThreads offers a <code>{$filters_set}</code> array variable on the forumdisplay page when thread filters are used.  This section describes this array.</p>
-   <p>The general format to use in templates is something like this: <code>{$filters_set['<span class="token1">key</span>']['<span class="token2">var</span>']}</code>.  <span class="token1">key</span> refers to the filter; for example, if you've enabled filtering on a thread field named &quot;myfield&quot;, the corresponding <span class="token1">key</span> is <em>myfield</em>.  As for <span class="token2">var</span>, the following are available:</p>
+   <p>The general format to use in templates is something like this: <code>{$filters_set['<span class="token1">key</span>']['<span class="token2">var</span>']}</code>.  <span class="token1">key</span> refers to the filter; for example, if you've enabled filtering on a thread field having a key of &quot;myfield&quot;, the corresponding <span class="token1">key</span> is <em>myfield</em>.  As for <span class="token2">var</span>, the following are available:</p>
    <ul>
     <li><strong>value</strong>: value of selected filter, for example, if the user is filtering &quot;myfield&quot; by &quot;label_a&quot;, sticking <code>{$filters_set['myfield']['value']}</code> in the appropriate template will display <code>label_a</code>.  Note, if an array of filters have been used, this will contain all values selected, separated by commas.</li>
     <li><strong>urlarg</strong>: URL parameter with selected filter, for example, <code>filtertf_myfield=label_a</code></li>
