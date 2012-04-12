@@ -13,6 +13,7 @@ function &upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $t
 	// perform user flood checking
 	static $done_flood_check = false;
 	if($uid && !$done_flood_check && $attacharray['aid']) {
+        require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
 		$done_flood_check = true;
 		xthreads_rm_attach_query('tid=0 AND uid='.(int)$uid.' AND aid != '.$attacharray['aid'].' AND updatetime < '.(TIME_NOW-XTHREADS_UPLOAD_EXPIRE_TIME));
 		// we'll do an extra query to get around the issue of delete queries not supporting offsets

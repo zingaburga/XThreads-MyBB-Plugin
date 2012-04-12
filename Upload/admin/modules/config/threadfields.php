@@ -120,7 +120,7 @@ if($mybb->input['action'] == 'inline')
 		if(!empty($delattach)) {
 			@ignore_user_abort(true);
 			@set_time_limit(0);
-			require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+			require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
 			xthreads_rm_attach_query('field IN ("'.implode('","', $delattach).'")');
 		}
 	}

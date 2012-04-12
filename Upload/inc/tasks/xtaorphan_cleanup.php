@@ -6,7 +6,7 @@ function task_xtaorphan_cleanup(&$task) {
 		$plugins->run_hooks('xthreads_task_xtacleanup', $task);
 	
 	// clean out orphaned xtattachments more than 1 day old
-	require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+	require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
 	$count = xthreads_rm_attach_query('tid=0 AND uploadtime<'.(TIME_NOW-86400));
 	
 	// setting "isdatahandler" to true is destructive!!!

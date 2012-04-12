@@ -180,7 +180,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.43) {
 	
 	if($tids) {
 		$db->delete_query('threadfields_data', 'tid IN ('.$tids.')');
-		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+		require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
 		xthreads_rm_attach_query('tid IN ('.$tids.')');
 	}
 	

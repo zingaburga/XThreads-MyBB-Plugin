@@ -1345,7 +1345,7 @@ function xthreads_admin_forumdel() {
 	');
 }
 function xthreads_admin_forumdel_do($where) {
-	require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+	require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
 	global $db;
 	//$query = $db->simple_select('threads', 'tid', $where);
 	$query = $db->query('
