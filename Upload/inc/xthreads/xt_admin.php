@@ -1388,7 +1388,7 @@ function xthreads_admin_userprune() {
 				$done = true;
 				xthreads_admin_userprune_do();
 			}
-			return parent::delete_query(4table, $where, $limit);
+			return parent::delete_query($table, $where, $limit);
 		}
 	');
 }
