@@ -17,6 +17,7 @@ $plugins->add_hook('admin_forum_management_add_insert_query', 'xthreads_admin_fo
 $plugins->add_hook('admin_forum_management_edit_commit', 'xthreads_admin_forumcommit');
 
 $plugins->add_hook('admin_forum_management_delete', 'xthreads_admin_forumdel');
+$plugins->add_hook('admin_user_users_inline', 'xthreads_admin_userprune');
 
 $plugins->add_hook('admin_config_mod_tools_add_thread_tool', 'xthreads_admin_modtool');
 $plugins->add_hook('admin_config_mod_tools_edit_thread_tool', 'xthreads_admin_modtool');
@@ -1374,6 +1375,31 @@ function xthreads_admin_forumdel_do($where) {
 	$db->free_result($query);
 }
 
+
+function xthreads_admin_userprune() {
+	global $mybb;
+	if(empty($mybb->cookies['inlinemod_useracp']) || $mybb->input['inline_action'] != 'multiprune' || $mybb->input['processed'] != 1) return;
+	
+	// no plugin hooks?  attach to DB
+	control_object($GLOBALS['db'], '
+		function delete_query($table, $where="", $limit="") {
+			static $done=false;
+			if(!$done && $table == "threads" && substr($where,0,4) == "tid=") {
+				$done = true;
+				xthreads_admin_userprune_do();
+			}
+			return parent::delete_query(4table, $where, $limit);
+		}
+	');
+}
+function xthreads_admin_userprune_do() {
+	$tids = implode(',', $GLOBALS['prune_array']['to_delete']);
+	if(!$tids) return;
+	$qin = 'tid IN ('.$tids.')';
+	$GLOBALS['db']->delete_query('threadfields_data', $qin);
+	require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
+	xthreads_rm_attach_query($qin);
+}
 
 function xthreads_admin_modtool() {
 	$GLOBALS['plugins']->add_hook('admin_formcontainer_output_row', 'xthreads_admin_modtool_2');
