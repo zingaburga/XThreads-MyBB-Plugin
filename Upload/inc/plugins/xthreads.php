@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.50);
+define('XTHREADS_VERSION', 1.51);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines/settings
 if(!defined('IN_ADMINCP')) {
 	@include_once MYBB_ROOT.'cache/xthreads_evalcache.php'; // if missing, we'll regenerate only in the AdminCP; weird heuristic, but one would imagine that a visit there is likely if the evalcache stuffs up
@@ -54,7 +54,7 @@ $plugins->add_hook('editpost_do_editpost_start', 'xthreads_editpost_autofill', 1
 
 $plugins->add_hook('newreply_do_newreply_end', 'xthreads_js_remove_noreplies_notice', 10, $updatehooks_file);
 
-$modupdhooks_file = MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+$modupdhooks_file = MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
 $plugins->add_hook('class_moderation_delete_thread', 'xthreads_delete_thread', 10, $modupdhooks_file);
 $plugins->add_hook('class_moderation_copy_thread', 'xthreads_copy_thread', 10, $modupdhooks_file);
 $plugins->add_hook('moderation_start', 'xthreads_moderation', 10, $modupdhooks_file);
