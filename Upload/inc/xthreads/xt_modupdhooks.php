@@ -9,6 +9,30 @@ if(!defined('IN_MYBB'))
 
 require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 
+
+function xthreads_purge_draft() {
+	global $mybb, $db;
+	if(!$mybb->input['deletedraft']) return;
+	// unfortunately, we need to grab a list of all the valid tids
+	$tidin = '';
+	foreach($mybb->input['deletedraft'] as $id => &$val) {
+		if($val == 'thread')
+			$tidin .= ($tidin===''?'':',') . (int)$id;
+	}
+	
+	if(!$tidin) return;
+	$query = $db->simple_select('threads', 'tid', 'tid IN ('.$tidin.') AND visible=-2 AND uid='.$mybb->user['uid']);
+	$tidin = '';
+	while($tid = $db->fetch_field($query, 'tid'))
+		$tidin .= ($tidin==''?'':',') . $tid;
+	$db->free_result($query);
+	
+	if(!$tidin) return;
+	$db->delete_query('threadfields_data', 'tid IN ('.$tidin.')');
+	require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
+	xthreads_rm_attach_query('tid IN ('.$tidin.')');
+}
+
 function xthreads_delete_thread($tid) {
 	global $db;
 	// awesome thing about this is that it will delete threadfields even if the thread was moved to a different forum

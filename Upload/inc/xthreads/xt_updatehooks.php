@@ -489,6 +489,7 @@ function xthreads_posthandler_add_errors(&$ph, &$errors) {
 // also can potentially be problematic too, but deleting an attachment not abandoned is perhaps even rarer
 function xthreads_attach_clear_posthash() {
 	if(mt_rand(0, 10) > 1) return; // dirty hack to speed things up a little
+	require_once MYBB_ROOT.'inc/xthreads/xt_modupdhooks.php';
 	xthreads_rm_attach_query('posthash="'.$GLOBALS['db']->escape_string($GLOBALS['posthash']).'"');
 }
 function xthreads_editpost_first_tplhack() {
@@ -547,14 +548,14 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		if($vars['MAXLEN']) $vars['MAXLEN_PROP'] = ' maxlength="'.$vars['MAXLEN'].'"';
 		if($vars['WIDTH']) {
 			$vars['WIDTH_PROP_SIZE'] = ' size="'.$vars['WIDTH'].'"';
-			$vars['WIDTH_CSS'] = 'width: '.($vars['WIDTH']/2).'em;"'; // only used for select box [in Firefox, seems we need to divide by 2 to get the equivalent width]
+			$vars['WIDTH_CSS'] = 'width: '.($vars['WIDTH']/2).'em;'; // only used for select box [in Firefox, seems we need to divide by 2 to get the equivalent width]
 			$vars['WIDTH_PROP_COLS'] = ' cols="'.$vars['WIDTH'].'"';
 		}
 		if(!$vars['HEIGHT'] && !xthreads_empty($tf['multival']))
 			$vars['HEIGHT'] = 5;
 		if($vars['HEIGHT']) {
 			$vars['HEIGHT_PROP_SIZE'] = ' size="'.$vars['HEIGHT'].'"';
-			$vars['HEIGHT_CSS'] = 'height: '.($vars['HEIGHT']/2).'em;"';
+			$vars['HEIGHT_CSS'] = 'height: '.($vars['HEIGHT']/2).'em;';
 			$vars['HEIGHT_PROP_ROWS'] = ' rows="'.$vars['HEIGHT'].'"';
 		}
 		
@@ -591,7 +592,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				elseif($tf['editable'] != XTHREADS_EDITABLE_REQ && $tf['inputtype'] != XTHREADS_INPUT_CHECKBOX) {
 					if(!isset($vals['']))
 						// can't array_unshift with a key...
-						$vals = array_merge(array('' => '<span style="font-style: italic;">'.$lang->xthreads_val_blank.'</span>'), $vals);
+						$vals = array('' => '<span style="font-style: italic;">'.$lang->xthreads_val_blank.'</span>') + $vals;
 				} else
 					unset($vals['']);
 		}
@@ -620,17 +621,18 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				}
 				$vars['ITEMS'] = '';
 				foreach($vals as $val => $valdisp) {
-					$val = htmlspecialchars_uni($val);
 					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
+					$val = htmlspecialchars_uni($val);
 					$vars['VALUE'] =& $val;
 					$vars['SELECTED'] = ((isset($defvals) && in_array($val, $defvals)) || $defval === $val ? ' selected="selected"':'');
 					
 					if(preg_match('~^\<span style\="([^"]*?)"\>(.*)\</span\>$~is', $valdisp, $style)) {
 						$vars['LABEL'] = $style[2];
-						$vars['STYLE'] = ' style="'.$style[1].'"';
+						$vars['STYLECSS'] = $style[1];
+						$vars['STYLE'] = ' style="'.$vars['STYLECSS'].'"';
 					} else {
 						$vars['LABEL'] = $valdisp;
-						$vars['STYLE'] = '';
+						$vars['STYLE'] = $vars['STYLECSS'] = '';
 					}
 					$vars['LABEL'] = htmlspecialchars_uni($vars['LABEL']);
 					$vars['ITEMS'] .= $evalfunc('formhtml_item', $vars);
@@ -644,8 +646,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_radio';
 				$vars['ITEMS'] = '';
 				foreach($vals as $val => &$valdisp) {
-					$val = htmlspecialchars_uni($val);
 					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
+					$val = htmlspecialchars_uni($val);
 					
 					if((isset($defvals) && in_array($val, $defvals)) || $defval === $val) {
 						$vars['SELECTED'] = ' selected="selected"';
@@ -1138,28 +1140,6 @@ function xthreads_js_remove_noreplies_notice() {
 ';
 	$templates->cache['postbit'] = $js.$templates->cache['postbit'];
 	$templates->cache['postbit_classic'] = $js.$templates->cache['postbit_classic'];
-}
-
-function xthreads_purge_draft() {
-	global $mybb, $db;
-	if(!$mybb->input['deletedraft']) return;
-	// unfortunately, we need to grab a list of all the valid tids
-	$tidin = '';
-	foreach($mybb->input['deletedraft'] as $id => &$val) {
-		if($val == 'thread')
-			$tidin .= ($tidin===''?'':',') . (int)$id;
-	}
-	
-	if(!$tidin) return;
-	$query = $db->simple_select('threads', 'tid', 'tid IN ('.$tidin.') AND visible=-2 AND uid='.$mybb->user['uid']);
-	$tidin = '';
-	while($tid = $db->fetch_field($query, 'tid'))
-		$tidin .= ($tidin==''?'':',') . $tid;
-	$db->free_result($query);
-	
-	if(!$tidin) return;
-	$db->delete_query('threadfields_data', 'tid IN ('.$tidin.')');
-	xthreads_rm_attach_query('tid IN ('.$tidin.')');
 }
 
 // because MyBB's str_ireplace workaround is buggy...

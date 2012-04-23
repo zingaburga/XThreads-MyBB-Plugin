@@ -192,6 +192,7 @@ $l['threadfields_formhtml_desc_maxlen'] = 'Defined field maximum length';
 $l['threadfields_formhtml_desc_maxlen_prop'] = 'Shortcut for <code>&lt;if {MAXLEN} then&gt; maxlength=&quot;{MAXLEN}&quot;&lt;/if&gt;</code>';
 $l['threadfields_formhtml_desc_multiple_prop'] = 'If accepting multiple values, set to <code> multiple=&quot;multiple&quot;</code>';
 $l['threadfields_formhtml_desc_style'] = 'Custom CSS for the item, including <em>style</em> attribute';
+$l['threadfields_formhtml_desc_stylecss'] = 'Custom CSS for the item, without <em>style</em> attribute';
 $l['threadfields_formhtml_desc_label'] = 'Item label text';
 $l['threadfields_formhtml_desc_selected'] = 'If selected, set to <code> selected=&quot;selected&quot;</code>';
 $l['threadfields_formhtml_desc_checked'] = 'If selected, set to <code> checked=&quot;checked&quot;</code>';

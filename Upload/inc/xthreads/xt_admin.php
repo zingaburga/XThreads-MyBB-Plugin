@@ -291,7 +291,7 @@ function xthreads_default_threadfields_formhtml($type) {
 '<select style="{WIDTH_CSS}"{NAME_PROP}{MULTIPLE_PROP}{HEIGHT_PROP_SIZE}{TABINDEX_PROP}>
 	<![ITEM[<option value="{VALUE}"{STYLE}{SELECTED}>{LABEL}</option>]]>
 </select>',
-				array_merge($common_vars,array('MULTIPLE_PROP','HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','STYLE','SELECTED','CHECKED','LABEL'))
+				array_merge($common_vars,array('MULTIPLE_PROP','HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','STYLE','STYLECSS','SELECTED','CHECKED','LABEL'))
 			);
 		case XTHREADS_INPUT_CHECKBOX:
 			return array(

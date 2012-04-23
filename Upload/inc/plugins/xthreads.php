@@ -46,7 +46,6 @@ $plugins->add_hook('datahandler_post_validate_thread', 'xthreads_input_posthandl
 $plugins->add_hook('datahandler_post_insert_thread_post', 'xthreads_input_posthandler_insert', 10, $updatehooks_file);
 $plugins->add_hook('datahandler_post_update_thread', 'xthreads_input_posthandler_insert', 10, $updatehooks_file);
 $plugins->add_hook('datahandler_post_validate_post', 'xthreads_input_posthandler_postvalidate', 10, $updatehooks_file);
-$plugins->add_hook('usercp_do_drafts_start', 'xthreads_purge_draft', 10, $updatehooks_file);
 
 $plugins->add_hook('newthread_start', 'xthreads_inputdisp', 10, $updatehooks_file);
 $plugins->add_hook(($GLOBALS['mybb']->version_code >= 1412 ? 'editpost_action_start' : 'editpost_start'), 'xthreads_inputdisp', 10, $updatehooks_file);
@@ -59,6 +58,7 @@ $plugins->add_hook('class_moderation_delete_thread', 'xthreads_delete_thread', 1
 $plugins->add_hook('class_moderation_copy_thread', 'xthreads_copy_thread', 10, $modupdhooks_file);
 $plugins->add_hook('moderation_start', 'xthreads_moderation', 10, $modupdhooks_file);
 //$plugins->add_hook('class_moderation_split_posts', 'xthreads_split_posts', 10, $modupdhooks_file);
+$plugins->add_hook('usercp_do_drafts_start', 'xthreads_purge_draft', 10, $modupdhooks_file);
 
 
 // uses lower 2 bits
