@@ -649,7 +649,6 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 			unset($tf['allowfilter']);
 			// fall through
 		case XTHREADS_INPUT_TEXT:
-		//case XTHREADS_INPUT_CUSTOM:
 			unset($tf['vallist']);
 			break;
 		case XTHREADS_INPUT_RADIO:

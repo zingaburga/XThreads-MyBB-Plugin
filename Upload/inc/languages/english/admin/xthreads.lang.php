@@ -132,7 +132,6 @@ $l['threadfields_inputtype_radio'] = 'Option Buttons';
 $l['threadfields_inputtype_checkbox'] = 'Checkboxes';
 $l['threadfields_inputtype_file'] = 'File';
 $l['threadfields_inputtype_file_url'] = 'File/URL';
-$l['threadfields_inputtype_custom'] = 'Custom';
 $l['threadfields_editable_everyone'] = 'Everyone';
 $l['threadfields_editable_requied'] = 'Everyone (required)';
 $l['threadfields_editable_mod'] = 'Moderators';

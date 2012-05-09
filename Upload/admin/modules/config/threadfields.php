@@ -196,7 +196,6 @@ if(!$mybb->input['action'])
 			case XTHREADS_INPUT_CHECKBOX: $inputtype_lang = 'threadfields_inputtype_checkbox'; break;
 			case XTHREADS_INPUT_FILE: $inputtype_lang = 'threadfields_inputtype_file'; break;
 			case XTHREADS_INPUT_FILE_URL: $inputtype_lang = 'threadfields_inputtype_file_url'; break;
-			case XTHREADS_INPUT_CUSTOM: $inputtype_lang = 'threadfields_inputtype_custom'; break;
 		}
 		$table->construct_cell($lang->$inputtype_lang);
 		if($tf['editable_gids']) {
@@ -409,7 +408,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				if($mybb->input[$opt])
 					$mybb->input['sanitize'] |= $n;
 		//}
-		$mybb->input['inputtype'] = min_max((int)$mybb->input['inputtype'], XTHREADS_INPUT_TEXT, XTHREADS_INPUT_CUSTOM);
+		$mybb->input['inputtype'] = min_max((int)$mybb->input['inputtype'], XTHREADS_INPUT_TEXT, XTHREADS_INPUT_FILE_URL);
 		
 		if(xthreads_empty($mybb->input['title']))		$errors[] = $lang->error_missing_title;
 		if(xthreads_empty($mybb->input['newfield']))	$errors[] = $lang->error_missing_field;
@@ -728,7 +727,6 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		XTHREADS_INPUT_CHECKBOX => $lang->threadfields_inputtype_checkbox,
 		XTHREADS_INPUT_FILE => $lang->threadfields_inputtype_file,
 		//XTHREADS_INPUT_FILE_URL => $lang->threadfields_inputtype_file_url,
-		//XTHREADS_INPUT_CUSTOM => $lang->threadfields_inputtype_custom,
 	);
 	if($update) { // disable some conversions as they are not possible
 		if(isset($errors['error_invalid_inputtype'])) { // but if invalid type is supplied, don't lock the user in either
@@ -977,13 +975,12 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_editable_values', !fileIn);
 		xt_visi('row_defaultval', !pureFileIn);
 		
-		xt_visi('row_textmask', textIn || si == <?php echo XTHREADS_INPUT_CUSTOM; ?>);
+		xt_visi('row_textmask', textIn);
 		xt_visi('row_maxlen', textIn);
 		xt_visi('row_fieldwidth', textIn || fileIn || selectBoxIn);
 		xt_visi('row_fieldheight', textAreaIn || selectBoxIn);
 		
 		xt_visi('row_vallist', selectIn);
-		xt_visi('row_formhtml', si == <?php echo XTHREADS_INPUT_CUSTOM; ?>);
 		
 		//xt_visi('row_datatype', !checkboxIn && !fileIn);
 		//xt_visi('row_multival_enable', !checkboxIn && !radioIn && !fileIn);
