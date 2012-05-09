@@ -300,7 +300,7 @@ function xthreads_default_threadfields_formhtml($type) {
 			);
 		case XTHREADS_INPUT_RADIO:
 			return array(
-				'<![ITEM[<label style="display: block;"><input{NAME_PROP} type="radio" class="radio" value="{VALUE}"{CHECKED}{TABINDEX} />{LABEL}</label>]]>',
+				'<![ITEM[<label style="display: block;"><input{NAME_PROP} type="radio" class="radio" value="{VALUE}"{CHECKED}{TABINDEX_PROP} />{LABEL}</label>]]>',
 				array_merge($common_vars,array('SELECTED','CHECKED','LABEL'))
 			);
 		case XTHREADS_INPUT_FILE:
