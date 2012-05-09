@@ -752,7 +752,7 @@ function xthreads_input_generate_defhtml_textbox($field, &$vars) {
 	return '<input type="text" class="textbox"'.$vars['NAME_PROP'].$vars['MAXLEN_PROP'].$vars['WIDTH_PROP_SIZE'].$vars['TABINDEX_PROP'].' value="'.$vars['VALUE'].'" />';
 }
 function xthreads_input_generate_defhtml_textarea($field, &$vars) {
-	return '<textarea'.$vars['NAME_PROP'].$vars['MAXLEN_PROP'].$vars['HEIGHT_PROP_ROWS'].$vars['WIDTH_PROP_SIZE'].$vars['TABINDEX_PROP'].'>'.$vars['VALUE'].'</textarea>';
+	return '<textarea'.$vars['NAME_PROP'].$vars['MAXLEN_PROP'].$vars['HEIGHT_PROP_ROWS'].$vars['WIDTH_PROP_COLS'].$vars['TABINDEX_PROP'].'>'.$vars['VALUE'].'</textarea>';
 }
 function xthreads_input_generate_defhtml_select($field, &$vars) {
 	if($field == 'formhtml_item')
