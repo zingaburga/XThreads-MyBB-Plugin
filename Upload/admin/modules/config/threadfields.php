@@ -576,44 +576,46 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					$new_tf[$field] = $db->escape_string($mybb->input[$field]);
 			}
 			
-			switch($mybb->input['inputtype']) {
-				case XTHREADS_INPUT_FILE:
-					$fieldtype = xthreads_db_fielddef('int', null, true).' not null default 0';
-					break;
-				case XTHREADS_INPUT_FILE_URL:
-					$fieldtype = 'varchar(255) not null default ""';
-					//$using_long_varchar = true;
-					break;
-				case XTHREADS_INPUT_SELECT:
-				case XTHREADS_INPUT_RADIO:
-				//case XTHREADS_INPUT_CHECKBOX:
-					if(($new_tf['multival'] === '' || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) && $new_tf['datatype'] != XTHREADS_DATATYPE_TEXT) {
-						$fieldtype = 'varchar(255) not null default ""';
+			if($mybb->input['inputtype'] == XTHREADS_INPUT_FILE)
+				$fieldtype = xthreads_db_fielddef('int', null, true).' not null default 0';
+			elseif($mybb->input['inputtype'] == XTHREADS_INPUT_FILE_URL)
+				$fieldtype = 'varchar(255) not null default ""';
+				//$using_long_varchar = false;
+			else {
+				switch($new_tf['datatype']) {
+					case XTHREADS_DATATYPE_INT:
+					case XTHREADS_DATATYPE_UINT:
+						$fieldtype = xthreads_db_fielddef('int', null, $new_tf['datatype']==XTHREADS_DATATYPE_UINT).' default null';
 						break;
-					}
-					
-				default:
-					switch($new_tf['datatype']) {
-						case XTHREADS_DATATYPE_INT:
-						case XTHREADS_DATATYPE_UINT:
-							$fieldtype = xthreads_db_fielddef('int', null, $new_tf['datatype']==XTHREADS_DATATYPE_UINT).' default null';
-							break;
-						case XTHREADS_DATATYPE_BIGINT:
-						case XTHREADS_DATATYPE_BIGUINT:
-							$fieldtype = xthreads_db_fielddef('bigint', null, $new_tf['datatype']==XTHREADS_DATATYPE_BIGUINT).' default null';
-							break;
-						case XTHREADS_DATATYPE_FLOAT:
-							$fieldtype = 'double default null';
-							break;
-						default:
-							if($new_tf['allowfilter'] && $mybb->input['inputtype'] != XTHREADS_INPUT_TEXTAREA) {
-								// initially, try 1024 chars
-								$fieldtype = 'varchar(1024) not null default ""';
-								$using_long_varchar = true;
-							} else {
+					case XTHREADS_DATATYPE_BIGINT:
+					case XTHREADS_DATATYPE_BIGUINT:
+						$fieldtype = xthreads_db_fielddef('bigint', null, $new_tf['datatype']==XTHREADS_DATATYPE_BIGUINT).' default null';
+						break;
+					case XTHREADS_DATATYPE_FLOAT:
+						$fieldtype = 'double default null';
+						break;
+					default:
+						switch($mybb->input['inputtype']) {
+							case XTHREADS_INPUT_TEXTAREA:
 								$fieldtype = 'text not null';
-							}
-					}
+								break;
+							case XTHREADS_INPUT_SELECT:
+							case XTHREADS_INPUT_RADIO:
+								if($new_tf['multival'] === '' || $mybb->input['inputtype'] == XTHREADS_INPUT_RADIO) {
+									$fieldtype = 'varchar(255) not null default ""';
+									$using_long_varchar = false;
+									break;
+								}
+							default:
+								if($new_tf['allowfilter']) {
+									// initially, try 1024 chars
+									$fieldtype = 'varchar(1024) not null default ""';
+									$using_long_varchar = true;
+								} else {
+									$fieldtype = 'text not null';
+								}
+						}
+				}
 			}
 			if($update) {
 				$plugins->run_hooks('admin_config_threadfields_edit_commit');

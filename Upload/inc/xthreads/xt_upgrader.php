@@ -235,4 +235,32 @@ if(XTHREADS_INSTALLED_VERSION < 1.50) {
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 
+if(XTHREADS_INSTALLED_VERSION < 1.53) {
+	// fix up non-text select/radio inputs
+	$query = $db->simple_select('threadfields', 'field, datatype', 'datatype!='.XTHREADS_DATATYPE_TEXT.' AND inputtype IN('.XTHREADS_INPUT_RADIO.','.XTHREADS_INPUT_SELECT.')');
+	$fixsql = '';
+	while($tf = $db->fetch_array($query)) {
+		switch($tf['datatype']) {
+			case XTHREADS_DATATYPE_INT:
+			case XTHREADS_DATATYPE_UINT:
+				$fieldtype = xthreads_db_fielddef('int', null, $tf['datatype']==XTHREADS_DATATYPE_UINT).' default null';
+				break;
+			case XTHREADS_DATATYPE_BIGINT:
+			case XTHREADS_DATATYPE_BIGUINT:
+				$fieldtype = xthreads_db_fielddef('bigint', null, $tf['datatype']==XTHREADS_DATATYPE_BIGUINT).' default null';
+				break;
+			case XTHREADS_DATATYPE_FLOAT:
+				$fieldtype = 'double default null';
+				break;
+			default: // paranoia
+				$fieldtype = '';
+		}
+		if($fieldtype)
+			$fixsql .= ($fixsql?', ':'').'MODIFY `'.$db->escape_string($tf['field']).'` '.$fieldtype;
+	}
+	$db->free_result($query);
+	if($fixsql)
+		$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields_data` '.$fixsql);
+}
+
 return true;
