@@ -50,6 +50,8 @@ else {
 	@ini_set('magic_quotes_runtime', 0); 
 	// will also work with register globals, so we won't bother with these
 	
+	if(function_exists('date_default_timezone_set') && !ini_get('date.timezone'))
+		date_default_timezone_set('GMT'); // what MyBB does
 	
 	define('MYBB_ROOT', dirname(__FILE__).'/');
 	@include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
