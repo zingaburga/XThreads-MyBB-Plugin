@@ -717,9 +717,12 @@ function xthreads_get_xta_url(&$xta, $thumb='') {
 	
 	static $use_qstr = null;
 	// to use query strings, or not to use; that is the question...
-	if(!isset($use_qstr))
-		$use_qstr = ((DIRECTORY_SEPARATOR == '\\' && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') === false) || stripos(SAPI_NAME, 'cgi') !== false || (defined('XTHREADS_ATTACH_USE_QUERY') && XTHREADS_ATTACH_USE_QUERY) || defined('ARCHIVE_QUERY_STRINGS'));
-	// yes, above is copied from the archive
+	if(!isset($use_qstr)) {
+		if(defined('XTHREADS_ATTACH_USE_QUERY') && XTHREADS_ATTACH_USE_QUERY)
+			$use_qstr = (XTHREADS_ATTACH_USE_QUERY > 0);
+		else
+			$use_qstr = (!in_array(PHP_SAPI, array('apache', 'apache2filter', 'apache2handler', 'cgi', 'cgi-fcgi')) || defined('ARCHIVE_QUERY_STRINGS'));
+	}
 	
 	if($thumb) $thumb = $delim.'thumb'.$thumb;
 	else $thumb = '';
