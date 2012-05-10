@@ -209,6 +209,20 @@ function xthreads_install() {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` MODIFY `defaultsortby` varchar(255) NOT NULL default \'\'');
 	$cache->update_forums();
 	
+	// check for xthreads_attachment.php supported URL type
+	if(file_exists(MYBB_ROOT.'xthreads_attach.php')) { // if not, our admin is a dufus
+		$rand = 'aA0._|'.mt_rand();
+		$rand_md5 = md5($rand);
+		$baseurl = $GLOBALS['mybb']->settings['bburl'].'/xthreads_attach.php';
+		if(fetch_remote_file($baseurl.'/test/'.$rand) == $rand_md5)
+			define('XTHREADS_ATTACH_USE_QUERY', -1); // our default works
+		elseif(fetch_remote_file($baseurl.'?file=test/'.$rand) == $rand_md5)
+			define('XTHREADS_ATTACH_USE_QUERY', 1);
+		elseif(fetch_remote_file($baseurl.'?file=test|'.$rand) == $rand_md5)
+			define('XTHREADS_ATTACH_USE_QUERY', 2);
+		// else, well, sucks for the user...
+	}
+	
 	xthreads_buildtfcache();
 	xthreads_write_xtcachefile();
 	

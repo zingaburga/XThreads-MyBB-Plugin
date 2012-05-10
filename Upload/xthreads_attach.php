@@ -101,7 +101,12 @@ function do_processing() {
 			die('No parameters specified.');
 		}
 	}
-
+	
+	// xtattachment URL test during installation
+	if(substr($_SERVER['PATH_INFO'], 0, 5) == '/test') {
+		die(md5(substr($_SERVER['PATH_INFO'], 6)));
+	}
+	
 	// maybe disallow \:*?"<>| in filenames, but then, they're valid *nix names...
 	if(!preg_match('~^[/|]([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})[/|]([0-9a-fA-F]{32}[/|])?([^/]*)([/|]thumb([0-9]+x[0-9]+))?$~', $_SERVER['PATH_INFO'], $match)) {
 		header('HTTP/1.1 400 Bad Request');
