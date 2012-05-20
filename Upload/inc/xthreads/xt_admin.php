@@ -601,6 +601,8 @@ function xthreads_buildtfcache() {
 				}
 				if($field == 'formhtml' || $field == 'formhtml_item')
 					$tf[$field] = ($tf[$field] !== '');
+				elseif($field == 'inputformat')
+					$tf[$field] = ($tf[$field] !== '{$vars[\'VALUE\']}');
 				else
 					$tf[$field] = (bool)preg_match('~\$vars[^a-z0-9_]~i', $tf[$field]); // whether to evaluate vars
 				// ^ above preg_match is a simple optimisation - not the best, but simple and usually effective
