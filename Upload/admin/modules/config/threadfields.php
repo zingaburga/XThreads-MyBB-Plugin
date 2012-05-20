@@ -286,7 +286,7 @@ if(!$mybb->input['action'])
 
 function threadfields_add_edit_handler(&$tf, $update) {
 	global $mybb, $page, $lang, $db, $plugins, $sub_tabs;
-	global $form_container, $form;
+	global $form;
 	
 	if($update) $title = $lang->edit_threadfield;
 		else $title = $lang->add_threadfield;
@@ -706,188 +706,237 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$GLOBALS['data'] =& $tf;
 	}
 	global $data;
-
-	$form_container = new FormContainer($title);
-	$form_container->output_row($lang->threadfields_title.' <em>*</em>', $lang->threadfields_title_desc, $form->generate_text_box('title', $data['title'], array('id' => 'title')), 'title');
-	if(isset($data['newfield']))
-		$key =& $data['newfield'];
-	else
-		$key =& $data['field'];
-	$form_container->output_row($lang->threadfields_name.' <em>*</em>', $lang->threadfields_name_desc, $form->generate_text_box('newfield', $key, array('id' => 'newfield')), 'newfield');
-	make_form_row('desc', 'text_box');
-	if($data['forums'] && !is_array($data['forums']))
-		$data['forums'] = array_map('intval',array_map('trim',explode(',', $data['forums'])));
-	$form_container->output_row($lang->threadfields_forums, $lang->threadfields_forums_desc, $form->generate_forum_select('forums[]', $data['forums'], array('multiple' => true, 'size' => 5)), 'forums');
 	
-	$inputtypes = array(
-		XTHREADS_INPUT_TEXT => $lang->threadfields_inputtype_text,
-		XTHREADS_INPUT_TEXTAREA => $lang->threadfields_inputtype_textarea,
-		XTHREADS_INPUT_SELECT => $lang->threadfields_inputtype_select,
-		XTHREADS_INPUT_RADIO => $lang->threadfields_inputtype_radio,
-		XTHREADS_INPUT_CHECKBOX => $lang->threadfields_inputtype_checkbox,
-		XTHREADS_INPUT_FILE => $lang->threadfields_inputtype_file,
-		//XTHREADS_INPUT_FILE_URL => $lang->threadfields_inputtype_file_url,
-	);
-	if($update) { // disable some conversions as they are not possible
-		if(isset($errors['error_invalid_inputtype'])) { // but if invalid type is supplied, don't lock the user in either
-			$inputtype = $oldfield['inputtype'];
-		} else {
-			$inputtype = $data['inputtype'];
+	// if you're actually reading this code, and wondering why I'm sticking in useless braces, it's because it allows me to collapse these sections in my text editor (I refuse to break stuff into seperate functions)
+	{
+		global $form_container;
+		$form_container = new FormContainer($title);
+		
+		$form_container->output_row($lang->threadfields_title.' <em>*</em>', $lang->threadfields_title_desc, $form->generate_text_box('title', $data['title'], array('id' => 'title')), 'title');
+		if(isset($data['newfield']))
+			$key =& $data['newfield'];
+		else
+			$key =& $data['field'];
+		$form_container->output_row($lang->threadfields_name.' <em>*</em>', $lang->threadfields_name_desc, $form->generate_text_box('newfield', $key, array('id' => 'newfield')), 'newfield');
+		if($data['forums'] && !is_array($data['forums']))
+			$data['forums'] = array_map('intval',array_map('trim',explode(',', $data['forums'])));
+		$form_container->output_row($lang->threadfields_forums, $lang->threadfields_forums_desc, $form->generate_forum_select('forums[]', $data['forums'], array('multiple' => true, 'size' => 5)), 'forums');
+		
+		$inputtypes = array(
+			XTHREADS_INPUT_TEXT => $lang->threadfields_inputtype_text,
+			XTHREADS_INPUT_TEXTAREA => $lang->threadfields_inputtype_textarea,
+			XTHREADS_INPUT_SELECT => $lang->threadfields_inputtype_select,
+			XTHREADS_INPUT_RADIO => $lang->threadfields_inputtype_radio,
+			XTHREADS_INPUT_CHECKBOX => $lang->threadfields_inputtype_checkbox,
+			XTHREADS_INPUT_FILE => $lang->threadfields_inputtype_file,
+			//XTHREADS_INPUT_FILE_URL => $lang->threadfields_inputtype_file_url,
+		);
+		if($update) { // disable some conversions as they are not possible
+			if(isset($errors['error_invalid_inputtype'])) { // but if invalid type is supplied, don't lock the user in either
+				$inputtype = $oldfield['inputtype'];
+			} else {
+				$inputtype = $data['inputtype'];
+			}
+			if($inputtype == XTHREADS_INPUT_FILE || $inputtype == XTHREADS_INPUT_FILE_URL) {
+				foreach($inputtypes as $k => &$v)
+					if($k != $inputtype)
+						unset($inputtypes[$k]);
+			}
+			else {
+				unset($inputtypes[XTHREADS_INPUT_FILE], $inputtypes[XTHREADS_INPUT_FILE_URL]);
+			}
 		}
-		if($inputtype == XTHREADS_INPUT_FILE || $inputtype == XTHREADS_INPUT_FILE_URL) {
-			foreach($inputtypes as $k => &$v)
-				if($k != $inputtype)
-					unset($inputtypes[$k]);
+		// TODO: weird issue where inputtype isn't being set...
+		if(!ini_get('file_uploads'))
+			$lang->threadfields_file_name_info .= '<div style="color: red; font-style: italic;">'.$lang->threadfields_file_upload_disabled_warning.'</div>';
+		make_form_row('inputtype', 'select_box', $inputtypes, '<div id="inputtype_file_explain" style="font-size: 0.95em; margin-top: 1em;">'.$lang->threadfields_file_name_info.'</div>');
+		
+		$form_container->end();
+		unset($GLOBALS['form_container']);
+		
+	}
+	
+	{
+		global $form_container;
+		$form_container = new FormContainer($lang->threadfields_cat_input);
+		
+		if($data['editable_gids'] && !is_array($data['editable_gids']))
+			$data['editable_gids'] = array_map('intval',array_map('trim',explode(',', $data['editable_gids'])));
+		if(!empty($data['editable_gids']))
+			$data['editable'] = 99;
+		make_form_row('editable', 'select_box', array(
+			XTHREADS_EDITABLE_ALL => $lang->threadfields_editable_everyone,
+			XTHREADS_EDITABLE_REQ => $lang->threadfields_editable_requied,
+			XTHREADS_EDITABLE_MOD => $lang->threadfields_editable_mod,
+			XTHREADS_EDITABLE_ADMIN => $lang->threadfields_editable_admin,
+			XTHREADS_EDITABLE_NONE => $lang->threadfields_editable_none,
+			99 => $lang->threadfields_editable_bygroup,
+		));
+		$form_container->output_row($lang->threadfields_editable_gids, $lang->threadfields_editable_gids_desc, xt_generate_group_select('editable_gids[]', $data['editable_gids'], array('multiple' => true, 'size' => 5)), 'editable_gids', array(), array('id' => 'row_editable_gids'));
+		
+		make_form_row('maxlen', 'text_box');
+		make_form_row('vallist', 'text_area');
+		make_form_row('fileexts', 'text_box');
+		
+		if(!is_int(2147483648)) // detect 32-bit PHP
+			$lang->threadfields_filemaxsize_desc .= $lang->threadfields_filemaxsize_desc_2gbwarn;
+		// PHP upload limits
+		$upload_max_filesize = @ini_get('upload_max_filesize');
+		$post_max_size = @ini_get('post_max_size');
+		// TODO: maybe also pull in [ file_uploads, max_file_uploads, max_input_time ] ?
+		if($upload_max_filesize || $post_max_size) {
+			$lang->threadfields_filemaxsize_desc .= '<br /><br />'.$lang->threadfields_filemaxsize_desc_phplimit;
+			if(!$lang->limit_upload_max_filesize)
+				$lang->load('config_attachment_types');
+			if($upload_max_filesize)
+				$lang->threadfields_filemaxsize_desc .= '<br />'.$lang->sprintf($lang->limit_upload_max_filesize, $upload_max_filesize);
+			if($post_max_size)
+				$lang->threadfields_filemaxsize_desc .= '<br />'.$lang->sprintf($lang->limit_post_max_size, $post_max_size);
 		}
-		else {
-			unset($inputtypes[XTHREADS_INPUT_FILE], $inputtypes[XTHREADS_INPUT_FILE_URL]);
+		make_form_row('filemaxsize', 'text_box');
+		
+		make_form_row('filemagic', 'text_box');
+		$data['filereqimg'] = ($data['fileimage'] ? 1:0);
+		make_form_row('filereqimg', 'yes_no_radio');
+		unset($data['filereqimg']);
+		$data['fileimage_mindim'] = $data['fileimage_maxdim'] = '';
+		if($data['fileimage']) {
+			list($min, $max) = explode('|', $data['fileimage']);
+			if($min == '0x0') $min = '';
+			$data['fileimage_mindim'] = $min;
+			$data['fileimage_maxdim'] = $max;
 		}
+		make_form_row('fileimage_mindim', 'text_box');
+		make_form_row('fileimage_maxdim', 'text_box');
+		unset($data['fileimage_mindim'], $data['fileimage_maxdim']);
+		make_form_row('fileimgthumbs', 'text_box');
+		
+		$data['multival_enable'] = ($data['multival'] !== '' ? 1:0);
+		make_form_row('multival_enable', 'yes_no_radio');
+		unset($data['multival_enable']);
+		
+		make_form_row('textmask', 'text_box');
+		
+		if(!is_array($data['editable_values'])) {
+			$ev = @unserialize($data['editable_values']);
+			if(is_array($ev))
+				$data['editable_values'] =& $ev;
+		}
+		if(is_array($data['editable_values'])) {
+			$evtxt = '';
+			foreach($data['editable_values'] as $k => &$v)
+				// don't need to htmlspecialchar - it'll be done for us
+				$evtxt .= str_replace("\n", "{\n}", $k).'{|}'.implode(',', $v)."\n";
+			$data['editable_values'] =& $evtxt;
+		}
+		make_form_row('editable_values', 'text_area', array('style' => 'font-family: monospace'));
+		
+		$form_container->end();
+		unset($GLOBALS['form_container']);
 	}
-	// TODO: weird issue where inputtype isn't being set...
-	if(!ini_get('file_uploads'))
-		$lang->threadfields_file_name_info .= '<div style="color: red; font-style: italic;">'.$lang->threadfields_file_upload_disabled_warning.'</div>';
-	make_form_row('inputtype', 'select_box', $inputtypes, '<div id="inputtype_file_explain" style="font-size: 0.95em; margin-top: 1em;">'.$lang->threadfields_file_name_info.'</div>');
-	make_form_row('maxlen', 'text_box');
-	make_form_row('fieldwidth', 'text_box');
-	make_form_row('fieldheight', 'text_box');
-	make_form_row('vallist', 'text_area');
-	make_form_row('fileexts', 'text_box');
 	
-	if(!is_int(2147483648)) // detect 32-bit PHP
-		$lang->threadfields_filemaxsize_desc .= $lang->threadfields_filemaxsize_desc_2gbwarn;
-	// PHP upload limits
-	$upload_max_filesize = @ini_get('upload_max_filesize');
-	$post_max_size = @ini_get('post_max_size');
-	// TODO: maybe also pull in [ file_uploads, max_file_uploads, max_input_time ] ?
-	if($upload_max_filesize || $post_max_size) {
-		$lang->threadfields_filemaxsize_desc .= '<br /><br />'.$lang->threadfields_filemaxsize_desc_phplimit;
-		if(!$lang->limit_upload_max_filesize)
-			$lang->load('config_attachment_types');
-		if($upload_max_filesize)
-			$lang->threadfields_filemaxsize_desc .= '<br />'.$lang->sprintf($lang->limit_upload_max_filesize, $upload_max_filesize);
-		if($post_max_size)
-			$lang->threadfields_filemaxsize_desc .= '<br />'.$lang->sprintf($lang->limit_post_max_size, $post_max_size);
+	{
+		global $form_container;
+		$form_container = new FormContainer($lang->threadfields_cat_inputfield);
+		
+		make_form_row('desc', 'text_box');
+		make_form_row('defaultval', 'text_area', array('style' => 'font-family: monospace'));
+		
+		make_form_row('fieldwidth', 'text_box');
+		make_form_row('fieldheight', 'text_box');
+		
+		make_form_row('disporder', 'text_box');
+		make_form_row('tabstop', 'yes_no_radio');
+		
+		make_form_row('hideedit', 'yes_no_radio');
+		$data['use_formhtml'] = ($data['formhtml'] !== '' ? 1:0);
+		make_form_row('use_formhtml', 'yes_no_radio');
+		unset($data['use_formhtml']);
+		$lang->threadfields_formhtml .= ' <em>*</em>';
+		make_form_row('formhtml', 'text_area', array('style' => 'font-family: monospace'));
+		
+		$form_container->end();
+		unset($GLOBALS['form_container']);
 	}
-	make_form_row('filemaxsize', 'text_box');
 	
-	if($data['editable_gids'] && !is_array($data['editable_gids']))
-		$data['editable_gids'] = array_map('intval',array_map('trim',explode(',', $data['editable_gids'])));
-	if(!empty($data['editable_gids']))
-		$data['editable'] = 99;
-	make_form_row('editable', 'select_box', array(
-		XTHREADS_EDITABLE_ALL => $lang->threadfields_editable_everyone,
-		XTHREADS_EDITABLE_REQ => $lang->threadfields_editable_requied,
-		XTHREADS_EDITABLE_MOD => $lang->threadfields_editable_mod,
-		XTHREADS_EDITABLE_ADMIN => $lang->threadfields_editable_admin,
-		XTHREADS_EDITABLE_NONE => $lang->threadfields_editable_none,
-		99 => $lang->threadfields_editable_bygroup,
-	));
-	$form_container->output_row($lang->threadfields_editable_gids, $lang->threadfields_editable_gids_desc, xt_generate_group_select('editable_gids[]', $data['editable_gids'], array('multiple' => true, 'size' => 5)), 'editable_gids', array(), array('id' => 'row_editable_gids'));
-	$sanitize = $data['sanitize'];
-	$data['sanitize'] &= XTHREADS_SANITIZE_MASK;
-	make_form_row('sanitize', 'select_box', array(
-		XTHREADS_SANITIZE_HTML => $lang->threadfields_sanitize_plain,
-		XTHREADS_SANITIZE_HTML_NL => $lang->threadfields_sanitize_plain_nl,
-		XTHREADS_SANITIZE_PARSER => $lang->threadfields_sanitize_mycode,
-		XTHREADS_SANITIZE_NONE => $lang->threadfields_sanitize_none,
-	));
-	$parser_opts = array(
-		'parser_nl2br' => $sanitize & XTHREADS_SANITIZE_PARSER_NL2BR,
-		'parser_nobadw' => $sanitize & XTHREADS_SANITIZE_PARSER_NOBADW,
-		'parser_html' => $sanitize & XTHREADS_SANITIZE_PARSER_HTML,
-		'parser_mycode' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODE,
-		'parser_mycodeimg' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODEIMG,
-		'parser_mycodevid' => $sanitize & XTHREADS_SANITIZE_PARSER_VIDEOCODE,
-		'parser_smilies' => $sanitize & XTHREADS_SANITIZE_PARSER_SMILIES,
-	);
-	if($mybb->version_code < 1600) unset($parser_opts['parser_mycodevid']);
-	$parser_opts_str = '';
-	foreach($parser_opts as $opt => $checked) {
-		$langstr = 'threadfields_sanitize_'.$opt;
-		$parser_opts_str .= '<div style="display: block;">'.$form->generate_check_box($opt, 1, $lang->$langstr, array('checked' => ($checked ? 1:0))).'</div>';
+	{
+		global $form_container;
+		$form_container = new FormContainer($lang->threadfields_cat_output);
+		
+		$sanitize = $data['sanitize'];
+		$data['sanitize'] &= XTHREADS_SANITIZE_MASK;
+		make_form_row('sanitize', 'select_box', array(
+			XTHREADS_SANITIZE_HTML => $lang->threadfields_sanitize_plain,
+			XTHREADS_SANITIZE_HTML_NL => $lang->threadfields_sanitize_plain_nl,
+			XTHREADS_SANITIZE_PARSER => $lang->threadfields_sanitize_mycode,
+			XTHREADS_SANITIZE_NONE => $lang->threadfields_sanitize_none,
+		));
+		$parser_opts = array(
+			'parser_nl2br' => $sanitize & XTHREADS_SANITIZE_PARSER_NL2BR,
+			'parser_nobadw' => $sanitize & XTHREADS_SANITIZE_PARSER_NOBADW,
+			'parser_html' => $sanitize & XTHREADS_SANITIZE_PARSER_HTML,
+			'parser_mycode' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODE,
+			'parser_mycodeimg' => $sanitize & XTHREADS_SANITIZE_PARSER_MYCODEIMG,
+			'parser_mycodevid' => $sanitize & XTHREADS_SANITIZE_PARSER_VIDEOCODE,
+			'parser_smilies' => $sanitize & XTHREADS_SANITIZE_PARSER_SMILIES,
+		);
+		if($mybb->version_code < 1600) unset($parser_opts['parser_mycodevid']);
+		$parser_opts_str = '';
+		foreach($parser_opts as $opt => $checked) {
+			$langstr = 'threadfields_sanitize_'.$opt;
+			$parser_opts_str .= '<div style="display: block;">'.$form->generate_check_box($opt, 1, $lang->$langstr, array('checked' => ($checked ? 1:0))).'</div>';
+		}
+		$form_container->output_row($lang->threadfields_sanitize_parser, $lang->threadfields_sanitize_parser_desc, $parser_opts_str, 'sanitize_parser', array(), array('id' => 'parser_opts'));
+		
+		make_form_row('blankval', 'text_area', array('style' => 'font-family: monospace'));
+		make_form_row('dispformat', 'text_area', array('style' => 'font-family: monospace'));
+		
+		$lang->threadfields_multival .= ' <em>*</em>';
+		make_form_row('multival', 'text_box');
+		$lang->threadfields_multival = substr($lang->threadfields_multival, 0, -11);
+		make_form_row('dispitemformat', 'text_area', array('style' => 'font-family: monospace'));
+		
+		if(!is_array($data['formatmap'])) {
+			$fm = @unserialize($data['formatmap']);
+			if(is_array($fm))
+				$data['formatmap'] =& $fm;
+		}
+		if(is_array($data['formatmap'])) {
+			$fmtxt = '';
+			foreach($data['formatmap'] as $k => &$v)
+				// don't need to htmlspecialchar - it'll be done for us
+				$fmtxt .= str_replace("\n", "{\n}", $k.'{|}'.$v)."\n";
+			$data['formatmap'] =& $fmtxt;
+		}
+		make_form_row('formatmap', 'text_area', array('style' => 'font-family: monospace'));
+		
+		if($data['viewable_gids'] && !is_array($data['viewable_gids']))
+			$data['viewable_gids'] = array_map('intval',array_map('trim',explode(',', $data['viewable_gids'])));
+		$form_container->output_row($lang->threadfields_viewable_gids, $lang->threadfields_viewable_gids_desc, xt_generate_group_select('viewable_gids[]', $data['viewable_gids'], array('multiple' => true, 'size' => 5, 'id' => 'viewable_gids')), 'viewable_gids', array(), array('id' => 'row_viewable_gids'));
+		make_form_row('unviewableval', 'text_area', array('style' => 'font-family: monospace'));
+		
+		$form_container->end();
+		unset($GLOBALS['form_container']);
 	}
-	$form_container->output_row($lang->threadfields_sanitize_parser, $lang->threadfields_sanitize_parser_desc, $parser_opts_str, 'sanitize_parser', array(), array('id' => 'parser_opts'));
 	
-	make_form_row('disporder', 'text_box');
-	make_form_row('tabstop', 'yes_no_radio');
-	$form_container->end();
-	unset($GLOBALS['form_container']);
+	{ // this will currently be empty if a file input is chosen...
+		global $form_container;
+		$form_container = new FormContainer($lang->threadfields_cat_misc);
+		
+		make_form_row('allowfilter', 'yes_no_radio');
+		make_form_row('datatype', 'select_box', array(
+			XTHREADS_DATATYPE_TEXT => $lang->threadfields_datatype_text,
+			XTHREADS_DATATYPE_INT => $lang->threadfields_datatype_int,
+			XTHREADS_DATATYPE_UINT => $lang->threadfields_datatype_uint,
+			XTHREADS_DATATYPE_BIGINT => $lang->threadfields_datatype_bigint,
+			XTHREADS_DATATYPE_BIGUINT => $lang->threadfields_datatype_biguint,
+			XTHREADS_DATATYPE_FLOAT => $lang->threadfields_datatype_float,
+		));
+		
+		$form_container->end();
+		unset($GLOBALS['form_container']);
+	}
 	
-	global $form_container;
-	$form_container = new FormContainer($lang->threadfields_advanced_opts);
-	make_form_row('allowfilter', 'yes_no_radio');
-	make_form_row('filemagic', 'text_box');
-	$data['filereqimg'] = ($data['fileimage'] ? 1:0);
-	make_form_row('filereqimg', 'yes_no_radio');
-	unset($data['filereqimg']);
-	$data['fileimage_mindim'] = $data['fileimage_maxdim'] = '';
-	if($data['fileimage']) {
-		list($min, $max) = explode('|', $data['fileimage']);
-		if($min == '0x0') $min = '';
-		$data['fileimage_mindim'] = $min;
-		$data['fileimage_maxdim'] = $max;
-	}
-	make_form_row('fileimage_mindim', 'text_box');
-	make_form_row('fileimage_maxdim', 'text_box');
-	unset($data['fileimage_mindim'], $data['fileimage_maxdim']);
-	make_form_row('fileimgthumbs', 'text_box');
-	make_form_row('blankval', 'text_area', array('style' => 'font-family: monospace'));
-	make_form_row('defaultval', 'text_area', array('style' => 'font-family: monospace'));
-	make_form_row('dispformat', 'text_area', array('style' => 'font-family: monospace'));
-	make_form_row('datatype', 'select_box', array(
-		XTHREADS_DATATYPE_TEXT => $lang->threadfields_datatype_text,
-		XTHREADS_DATATYPE_INT => $lang->threadfields_datatype_int,
-		XTHREADS_DATATYPE_UINT => $lang->threadfields_datatype_uint,
-		XTHREADS_DATATYPE_BIGINT => $lang->threadfields_datatype_bigint,
-		XTHREADS_DATATYPE_BIGUINT => $lang->threadfields_datatype_biguint,
-		XTHREADS_DATATYPE_FLOAT => $lang->threadfields_datatype_float,
-	));
-	$data['multival_enable'] = ($data['multival'] !== '' ? 1:0);
-	make_form_row('multival_enable', 'yes_no_radio');
-	unset($data['multival_enable']);
-	$lang->threadfields_multival .= ' <em>*</em>';
-	make_form_row('multival', 'text_box');
-	$lang->threadfields_multival = substr($lang->threadfields_multival, 0, -11);
-	make_form_row('dispitemformat', 'text_area', array('style' => 'font-family: monospace'));
-	make_form_row('textmask', 'text_box');
-	
-	if(!is_array($data['formatmap'])) {
-		$fm = @unserialize($data['formatmap']);
-		if(is_array($fm))
-			$data['formatmap'] =& $fm;
-	}
-	if(is_array($data['formatmap'])) {
-		$fmtxt = '';
-		foreach($data['formatmap'] as $k => &$v)
-			// don't need to htmlspecialchar - it'll be done for us
-			$fmtxt .= str_replace("\n", "{\n}", $k.'{|}'.$v)."\n";
-		$data['formatmap'] =& $fmtxt;
-	}
-	make_form_row('formatmap', 'text_area', array('style' => 'font-family: monospace'));
-	if(!is_array($data['editable_values'])) {
-		$ev = @unserialize($data['editable_values']);
-		if(is_array($ev))
-			$data['editable_values'] =& $ev;
-	}
-	if(is_array($data['editable_values'])) {
-		$evtxt = '';
-		foreach($data['editable_values'] as $k => &$v)
-			// don't need to htmlspecialchar - it'll be done for us
-			$evtxt .= str_replace("\n", "{\n}", $k).'{|}'.implode(',', $v)."\n";
-		$data['editable_values'] =& $evtxt;
-	}
-	make_form_row('editable_values', 'text_area', array('style' => 'font-family: monospace'));
-	if($data['viewable_gids'] && !is_array($data['viewable_gids']))
-		$data['viewable_gids'] = array_map('intval',array_map('trim',explode(',', $data['viewable_gids'])));
-	$form_container->output_row($lang->threadfields_viewable_gids, $lang->threadfields_viewable_gids_desc, xt_generate_group_select('viewable_gids[]', $data['viewable_gids'], array('multiple' => true, 'size' => 5, 'id' => 'viewable_gids')), 'viewable_gids', array(), array('id' => 'row_viewable_gids'));
-	make_form_row('unviewableval', 'text_area', array('style' => 'font-family: monospace'));
-	make_form_row('hideedit', 'yes_no_radio');
-	$data['use_formhtml'] = ($data['formhtml'] !== '' ? 1:0);
-	make_form_row('use_formhtml', 'yes_no_radio');
-	unset($data['use_formhtml']);
-	$lang->threadfields_formhtml .= ' <em>*</em>';
-	make_form_row('formhtml', 'text_area', array('style' => 'font-family: monospace'));
-	$form_container->end();
 	if($update)
 		$buttons[] = $form->generate_submit_button($lang->update_threadfield);
 	else
