@@ -68,16 +68,16 @@
    <ol>
     <li>If the value is blank, the <em>Blank Replacement Value</em> will be displayed</li>
     <li>If the user is in a group which cannot view the value, the process will continue, however <em>Unviewable Value</em> will be used in place of <em>Display Format</em></li>
-    <li>At this point, file thread fields will go off and do its own thing; other thread fields continue</li>
+    <li>At this point, file thread fields will go off and do its own thing and pass finally through <em>Display Format</em>; other thread fields continue</li>
     <li>If the value matches one defined in the <em>Formatting Value List</em>, the defined replacement will be used here and the following step will be skipped</li>
     <li>The value will be sanitised according to the <em>Display Parsing</em> option chosen, at this point (eg, MyCode parsed)</li>
-    <li>If a capturing <em>Text Mask Filter</em> is used, components are captured and sent through the sanitiser (as above)</li>
+    <li>If a capturing <em>Text Mask Filter</em> is used, components are captured (from the raw input, not the output of above step) and sent through the sanitiser (as above)</li>
     <li>If multiple values are supported, the above goes into <em>Display Item Format</em>, and the above two steps are repeated for each value.  Once done, all these values are aggregated together, separated by the <em>Multiple Value Delimiter</em></li>
     <li>Finally, the value goes into the <em>Display Format</em>, for display</li>
    </ol>
    
    <h2>Additional Custom Thread Field Variables</h2>
-   <p>In addition to the <code>{$GLOBALS['threadfields']['<em>key</em>']</code> variable (which displays the value of the thread field), there are other values which can be displayed via the additional variable, <code>{$GLOBALS['threadfields<strong style="color: brown;">_x</strong>']['<em>key</em>']['<span class="token1">valuename</span>']</code> variable, where <span class="token1">valuename</span> can be one of the following:</p>
+   <p>In addition to the <code>{$GLOBALS['threadfields']['<em>key</em>']}</code> variable (which displays the value of the thread field), there are other values which can be displayed via the additional variable, <code>{$GLOBALS['threadfields<strong style="color: brown;">_x</strong>']['<em>key</em>']['<span class="token1">valuename</span>']}</code> variable, where <span class="token1">valuename</span> can be one of the following:</p>
    <ul>
     <li><strong>title</strong> - displays the title given to the thread field</li>
     <li><strong>desc</strong> - displays the description given to the thread field</li>
@@ -89,7 +89,7 @@
    <h2>Additional Template Variables</h2>
    <p>XThreads adds some variables which can be used in templates for convenience.</p>
    <ul>
-    <li>Thread/forum URL variables through <code>{$forumurl}</code>, <code>{$forumurl_q}</code>, <code>{$threadurl}</code> and <code>{$threadurl_q}</code> (the <code>_q</code> variants append a <code>?</code> or <code>&amp;amp;</code> depending on the context of the URL).  Example: <code>&lt;a href=&quot;{$forumurl?}filtertf_myfield=something&quot;&gt;filter by something&lt;/a&gt;</code></li>
+    <li>Thread/forum URL variables through <code>{$forumurl}</code>, <code>{$forumurl_q}</code>, <code>{$threadurl}</code> and <code>{$threadurl_q}</code> (the <code>_q</code> variants append a <code>?</code> or <code>&amp;amp;</code> depending on the context of the URL).  Example: <code>&lt;a href=&quot;{$forumurl_q}filtertf_myfield=something&quot;&gt;filter by something&lt;/a&gt;</code></li>
     <li>Thread start date is evaluated in a variable through <code>{$thread['threaddate']}</code> and <code>{$thread['threadtime']}</code>; available in forumdisplay/showthread/search</li>
    </ul>
    
@@ -103,7 +103,7 @@
      <br />To sort by a thread field, prefix its key with <code>tf_</code>, for example, <em>forumdisplay.php?fid=2&amp;sortby=tf_myfield</em> will sort the threads by <em>myfield</em>.  File input fields are a bit different, they need to be prefixed with <code>tfa_<span class="token1">component</span>_</code> where <span class="token1">component</span> is either <code>filename</code>, <code>filesize</code>, <code>uploadtime</code>, <code>updatetime</code> or <code>downloads</code>.
      <br />Although XThreads adds this ability transparently (and to the list of default sort bys in the AdminCP), it is up to you to add appropriate options to the forumdisplay sorter listbox, if you want to.
      <br />As this uses MyBB's system, template variables will be the same, eg <code>{$sortsel['tf_myfield']}</code> will be <code>selected=&quot;selected&quot;</code> if sorting by <em>myfield</em>.
-     <br />Note that this is not indexed, like MyBB's sorting options aren't.
+     <br />Note that this is not indexed, like MyBB's sorting options aren't, so these custom sorting options can be slow on a large number of threads.
     </li>
     <li>XThreads can filter forumdisplay by thread starter, last poster, thread icon and thread prefix (MyBB 1.6 only); to do this, supply <em>filterxt_<span class="token1">field</span>=<span class="token2">value</span></em> to the URL, where <span class="token1">field</span> is either <em>uid</em>, <em>lastposteruid</em>, <em>icon</em>, <em>prefix</em>.  For example, <em>forumdisplay.php?fid=2&amp;filterxt_uid=1</em></li>
     <li>In a thread field's <em>Display Format Fields</em> (includes <em>Display Format</em>, <em>Display Item Format</em>, <em>Blank Replacement Value</em>, <em>Unviewable Value</em> and replacement values for <em>Formatting Map List</em>), references to other thread fields are possible, only if the <em>Display Order</em> is set lower than the thread field making the reference (for those with the same <em>Display Order</em>, whether or not it'll work will depend on your luck).  For example, if we have two thread fields, the first having a <em>Display Order</em> of 1 and the second having a <em>Display Format</em> of 2, then this second field can refer to the first field via <code>{$GLOBALS['threadfields']['<span class="token1">key</span>']}</code> in any of its <em>Display Format Fields</em> (where <span class="token1">key</span> is the <em>Key</em> of the first thread field, which also isn't a File input field).</li>
