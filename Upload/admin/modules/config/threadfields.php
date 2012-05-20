@@ -31,44 +31,6 @@ if($mybb->input['action'] == 'add')
 		else
 			$tf[$field] = $prop['default'];
 	}
-	/*
-	$tf = array(
-		'field' => '',
-		'title' => '',
-		'forums' => '',
-		'editable' => XTHREADS_EDITABLE_ALL,
-		'editable_gids' => '',
-		'viewable_gids' => '',
-		'unviewableval' => '',
-		'blankval' => '',
-		'defaultval' => '',
-		'dispformat' => '{VALUE}',
-		'dispitemformat' => '{VALUE}',
-		'formatmap' => '',
-		'textmask' => '^.*$',
-		'maxlen' => 0,
-		'fieldwidth' => 40,
-		'fieldheight' => 5,
-		'vallist' => '',
-		'multival' => '',
-		'sanitize' => XTHREADS_SANITIZE_HTML | XTHREADS_SANITIZE_PARSER_NOBADW | XTHREADS_SANITIZE_PARSER_MYCODE | XTHREADS_SANITIZE_PARSER_SMILIES | XTHREADS_SANITIZE_PARSER_VIDEOCODE,
-		'allowfilter' => 0,
-		
-		'desc' => '',
-		'inputtype' => XTHREADS_INPUT_TEXT,
-		'disporder' => 1,
-		'tabstop' => 1,
-		'hideedit' => 0,
-		'formhtml' => '',
-		
-		'filemagic' => '',
-		'fileexts' => '',
-		'filemaxsize' => 0,
-		'fileimage' => '',
-		'fileimgthumbs' => '',
-		
-	);
-	*/
 	threadfields_add_edit_handler($tf, false);
 }
 
@@ -548,7 +510,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xthreads_buildtfcache_parseitem($test_tf);
 		// test for bad conditional syntax
 		foreach(array(
-			'defaultval', 'blankval',
+			'defaultval', 'blankval', 'inputformat',
 			'dispformat', 'dispitemformat',
 			'unviewableval', 'formhtml', 'formhtml_item',
 		) as $condcheck) {
@@ -816,6 +778,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		unset($data['multival_enable']);
 		
 		make_form_row('textmask', 'text_box');
+		make_form_row('inputformat', 'text_area', array('style' => 'font-family: monospace'));
 		
 		if(!is_array($data['editable_values'])) {
 			$ev = @unserialize($data['editable_values']);
@@ -1025,6 +988,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_defaultval', !pureFileIn);
 		
 		xt_visi('row_textmask', textIn);
+		xt_visi('row_inputformat', !fileIn);
 		xt_visi('row_maxlen', textIn);
 		xt_visi('row_fieldwidth', textIn || fileIn || selectBoxIn);
 		xt_visi('row_fieldheight', textAreaIn || selectBoxIn);

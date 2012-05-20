@@ -89,6 +89,8 @@ $l['threadfields_multival'] = 'Multiple Value Delimiter';
 $l['threadfields_multival_desc'] = 'The delimiter used to separate multiple values when displayed.  This value is not parsed (i.e. you can use HTML etc here).';
 $l['threadfields_textmask'] = 'Text Mask Filter';
 $l['threadfields_textmask_desc'] = 'Enter a regular expression which entered text must match (evaluated with <a href="http://php.net/manual/en/function.preg-match.php" target="_blank">preg_match</a>, using <em>s</em> and <em>i</em> flags) for it to be valid.  Captured patterns can be used in Display Format and similar fields through <code>{VALUE$1}</code> etc';
+$l['threadfields_inputformat'] = 'Input Formatter';
+$l['threadfields_inputformat_desc'] = 'Similar to the <em>Display Format</em> option, however this is applied before saving the value to the database (as opposed to formatting on page view).  Note that this is always applied on newthread, but only applied on edit if the user supplies a value; if the user does not supply a value for newthread, <code>{VALUE}</code> will be null.  Also note that if you\'ve enabled multiple values for this field, this is applied after the multiple values have been joined together.';
 $l['threadfields_maxlen'] = 'Maximum Text Length';
 $l['threadfields_maxlen_desc'] = 'The maximum valid length for the entered value.  0 means no maximum, however, note that the database engine will probably enforce a maximum length.  You should assume this length does not exceed 255 characters (or 65535 characters for the multiline textbox).';
 $l['threadfields_fieldwidth'] = 'Field Input Width';

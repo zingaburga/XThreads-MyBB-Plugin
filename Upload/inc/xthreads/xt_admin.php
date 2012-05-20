@@ -160,6 +160,10 @@ function &xthreads_threadfields_props() {
 			'db_size' => 150,
 			'default' => '^.*$',
 		),
+		'inputformat' => array(
+			'db_type' => 'text',
+			'default' => '{VALUE}',
+		),
 		'maxlen' => array(
 			'default' => 0,
 		),
@@ -588,7 +592,7 @@ function xthreads_buildtfcache() {
 		$evalcache .= '
 		function xthreads_evalcache_'.$tf['field'].'($field, $vars=array()) {
 			switch($field) {';
-		foreach(array('unviewableval', 'dispformat', 'dispitemformat', 'blankval', 'formhtml', 'formhtml_item') as $field) {
+		foreach(array('inputformat', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval', 'formhtml', 'formhtml_item') as $field) {
 			if(isset($tf[$field])) {
 				if($tf[$field] !== '') {
 					// slight optimisation - reduces amount of code if will return empty string
@@ -633,6 +637,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 				$tf['dispitemformat'],
 				$tf['formatmap'],
 				$tf['textmask'],
+				$tf['inputformat'],
 				$tf['maxlen'],
 				$tf['vallist'],
 				$tf['multival'],
@@ -766,10 +771,12 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 		foreach($tf['formatmap'] as &$fm)
 			xthreads_sanitize_eval($fm);
 	
-	foreach(array('unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
+	foreach(array('inputformat', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
 		if(isset($tf[$field])) {
 			if($field == 'blankval' || $field == 'defaultval')
 				xthreads_sanitize_eval($tf[$field]);
+			elseif($field == 'inputformat')
+				xthreads_sanitize_eval($tf[$field], array('VALUE'));
 			else
 				xthreads_sanitize_eval($tf[$field], $sanitise_fields);
 		}

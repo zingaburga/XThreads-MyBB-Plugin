@@ -208,8 +208,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 							break;
 						}
 					}
-					// we'll apply datatype restrictions before testing textmask
-					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', (string)xthreads_convert_str_to_datatype($val, $v['datatype']))) {
+					elseif($v['textmask'] && !preg_match('~'.str_replace('~', '\\~', $v['textmask']).'~si', $val)) {
 						$errors[] = array('threadfield_invalidvalue', htmlspecialchars_uni($v['title']));
 						break;
 					}
@@ -252,12 +251,24 @@ function xthreads_input_posthandler_insert(&$ph) {
 	$updates = array();
 	$xtaupdates = array();
 	foreach($threadfield_cache as $k => &$v) {
+		$evalfunc = 'xthreads_evalcache_'.$k;
 		if(isset($ph->data['xthreads_'.$k])) {
 			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric($ph->data['xthreads_'.$k]))
 				$xtaupdates[] = $ph->data['xthreads_'.$k];
 			
-			$updates[$k] = xthreads_convert_str_to_datatype($ph->data['xthreads_'.$k], $v['datatype']);
+			$updates[$k] = $ph->data['xthreads_'.$k];
+			if($v['inputformat']) {
+				$updates[$k] = $evalfunc('inputformat', array('VALUE' => $updates[$k]));
+			}
 		}
+		// special case for newthread: value not supplied and there's a custom input format -> we need to run through it
+		elseif(!$update && $v['inputformat']) {
+			$updates[$k] = $evalfunc('inputformat', array('VALUE' => null));
+		}
+		if(isset($updates[$k]))
+			$updates[$k] = xthreads_convert_str_to_datatype($updates[$k], $v['datatype']);
+		else
+			unset($updates[$k]); // I don't think this will ever do anything, because inputformat is forced to a string, but we'll stick it here nonetheless :P
 	}
 	
 	if(empty($updates)) return;
