@@ -164,6 +164,10 @@ function &xthreads_threadfields_props() {
 			'db_type' => 'text',
 			'default' => '{VALUE}',
 		),
+		'inputvalidate' => array(
+			'db_type' => 'text',
+			'default' => '',
+		),
 		'maxlen' => array(
 			'default' => 0,
 		),
@@ -592,14 +596,14 @@ function xthreads_buildtfcache() {
 		$evalcache .= '
 		function xthreads_evalcache_'.$tf['field'].'($field, $vars=array()) {
 			switch($field) {';
-		foreach(array('inputformat', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval', 'formhtml', 'formhtml_item') as $field) {
+		foreach(array('inputformat', 'inputvalidate', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval', 'formhtml', 'formhtml_item') as $field) {
 			if(isset($tf[$field])) {
 				if($tf[$field] !== '') {
 					// slight optimisation - reduces amount of code if will return empty string
 					$evalcache .= '
 				case \''.$field.'\': return "'.$tf[$field].'";';
 				}
-				if($field == 'formhtml' || $field == 'formhtml_item')
+				if($field == 'formhtml' || $field == 'formhtml_item' || $field == 'inputvalidate')
 					$tf[$field] = ($tf[$field] !== '');
 				elseif($field == 'inputformat')
 					$tf[$field] = ($tf[$field] !== '{$vars[\'VALUE\']}');
@@ -759,6 +763,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 	// sanitise eval'd stuff
 	if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
 		$sanitise_fields = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
+		$validate_fields = array('FILENAME', 'FILESIZE');
 	}
 	else {
 		$sanitise_fields = array('VALUE', 'RAWVALUE');
@@ -767,18 +772,21 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 			($tf['dispformat']     && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispformat'])) ||
 			($tf['dispitemformat'] && preg_match('~\{(?:RAW)?VALUE\$\d+\}~', $tf['dispitemformat']))
 		);
+		$validate_fields = array('VALUE');
 	}
 	if($tf['defaultval']) xthreads_sanitize_eval($tf['defaultval']);
 	if(!empty($tf['formatmap']) && is_array($tf['formatmap']))
 		foreach($tf['formatmap'] as &$fm)
 			xthreads_sanitize_eval($fm);
 	
-	foreach(array('inputformat', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
+	foreach(array('inputformat', 'inputvalidate', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval') as $field) {
 		if(isset($tf[$field])) {
 			if($field == 'blankval' || $field == 'defaultval')
 				xthreads_sanitize_eval($tf[$field]);
 			elseif($field == 'inputformat')
 				xthreads_sanitize_eval($tf[$field], array('VALUE'));
+			elseif($field == 'inputvalidate')
+				xthreads_sanitize_eval($tf[$field], $validate_fields);
 			else
 				xthreads_sanitize_eval($tf[$field], $sanitise_fields);
 		}

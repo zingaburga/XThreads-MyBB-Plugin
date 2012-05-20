@@ -265,7 +265,8 @@ if(XTHREADS_INSTALLED_VERSION < 1.53) {
 
 if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
-		`inputformat` text not null
+		`inputformat` text not null,
+		`inputvalidate` text not null
 	)');
 }
 

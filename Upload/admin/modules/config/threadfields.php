@@ -510,7 +510,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xthreads_buildtfcache_parseitem($test_tf);
 		// test for bad conditional syntax
 		foreach(array(
-			'defaultval', 'blankval', 'inputformat',
+			'defaultval', 'blankval', 'inputformat', 'inputvalidate',
 			'dispformat', 'dispitemformat',
 			'unviewableval', 'formhtml', 'formhtml_item',
 		) as $condcheck) {
@@ -779,6 +779,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		make_form_row('textmask', 'text_box');
 		make_form_row('inputformat', 'text_area', array('style' => 'font-family: monospace'));
+		make_form_row('inputvalidate', 'text_area', array('style' => 'font-family: monospace'));
 		
 		if(!is_array($data['editable_values'])) {
 			$ev = @unserialize($data['editable_values']);

@@ -160,12 +160,19 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 			if($update) continue;
 		}
 		
+		$evalfunc = 'xthreads_evalcache_'.$k;
 		if($v['editable'] == XTHREADS_EDITABLE_REQ && (!isset($inval) || xthreads_empty($inval))) {
 			$errors[] = array('threadfield_required', htmlspecialchars_uni($v['title']));
 		}
 		elseif(isset($inval)) {
 			if($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
 				// TODO: perhaps have URL validation here (for type FILE_URL)
+				if($v['inputvalidate']) {
+					$attachedfile =& $xta_cache[$inval];
+					if(!empty($attachedfile) && ($error = trim($evalfunc('inputvalidate', array('FILENAME' => $attachedfile['filename'], 'FILESIZE' => $attachedfile['filesize'])))) !== '') {
+						$errors[] = $error;
+					}
+				}
 				$data[$k] = $inval;
 			}
 			else {
@@ -218,10 +225,22 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 					$data[$k] = implode("\n", $inval);
 				else
 					$data[$k] = $inval;
+				
+				if($v['inputvalidate']) {
+					if(($error = trim($evalfunc('inputvalidate', array('VALUE' => $data[$k])))) !== '') {
+						$errors[] = $error;
+					}
+				}
 			}
 		}
-		elseif(!$update && !xthreads_tfvalue_settable($v, null)) { // value not set - double check that this isn't denied by value permissions
-			$errors[] = array('threadfield_cant_set', htmlspecialchars_uni($v['title']));
+		elseif(!$update)) {
+			if(!xthreads_tfvalue_settable($v, null)) // value not set - double check that this isn't denied by value permissions
+				$errors[] = array('threadfield_cant_set', htmlspecialchars_uni($v['title']));
+			if($v['inputvalidate']) {
+				if(($error = trim($evalfunc('inputvalidate', array('VALUE' => null)))) !== '') {
+					$errors[] = $error;
+				}
+			}
 		}
 	}
 	return $errors;
@@ -485,13 +504,19 @@ function xthreads_posthandler_add_errors(&$ph, &$errors) {
 	global $lang;
 	foreach($errors as $error) {
 		// ugly hack; alternative is to push errors directly into the property, since it's declared public, which is ugly too
-		$newname = $error[0].'__'.($cnt++);
-		$langname = $ph->language_prefix.'_'.$error[0];
-		$newlangname = $ph->language_prefix.'_'.$newname;
-		$lang->$newlangname =& $lang->$langname;
-		isset($error[1]) or $error[1] = '';
-		$ph->set_error($newname, $error[1]);
-		//call_user_func_array(array($ph, 'set_error'), $error);
+		if(is_string($error)) {
+			$ph->set_error($newname = 'strerror__'.($cnt++));
+			$newlangname = $ph->language_prefix.'_'.$newname;
+			$lang->$newlangname = $error;
+		} else {
+			$newname = $error[0].'__'.($cnt++);
+			$langname = $ph->language_prefix.'_'.$error[0];
+			$newlangname = $ph->language_prefix.'_'.$newname;
+			$lang->$newlangname =& $lang->$langname;
+			isset($error[1]) or $error[1] = '';
+			$ph->set_error($newname, $error[1]);
+			//call_user_func_array(array($ph, 'set_error'), $error);
+		}
 	}
 }
 
