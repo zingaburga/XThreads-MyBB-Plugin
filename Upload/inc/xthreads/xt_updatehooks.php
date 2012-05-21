@@ -233,7 +233,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				}
 			}
 		}
-		elseif(!$update)) {
+		elseif(!$update) {
 			if(!xthreads_tfvalue_settable($v, null)) // value not set - double check that this isn't denied by value permissions
 				$errors[] = array('threadfield_cant_set', htmlspecialchars_uni($v['title']));
 			if($v['inputvalidate']) {
