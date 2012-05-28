@@ -168,7 +168,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 			if($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
 				// TODO: perhaps have URL validation here (for type FILE_URL)
 				if($v['inputvalidate']) {
-					$attachedfile =& $xta_cache[$inval];
+					$attachedfile =& $GLOBALS['xta_cache'][$inval];
 					if(!empty($attachedfile) && ($error = trim($evalfunc('inputvalidate', array('FILENAME' => $attachedfile['filename'], 'FILESIZE' => $attachedfile['filesize'])))) !== '') {
 						$errors[] = $error;
 					}

@@ -98,7 +98,7 @@ $l['threadfields_inputvalidate_desc'] = 'If evaluates to a non-empty value, disp
 <br />&nbsp;&nbsp;You must enter a value between 1 and 5.
 <br />&lt;/if&gt;
 </code>
-Like the <em>Input Formatter</em> option, this is not evaluated when editing a thread and the user has sent no value, and is evaluated after multiple values are joined together.';
+Like the <em>Input Formatter</em> option, this is not evaluated when editing a thread and the user has sent no value, and is evaluated after multiple values are joined together.  <code>{VALUE}</code> is not available for file inputs, instead use <code>{FILENAME}</code> and <code>{FILESIZE}</code>.';
 $l['threadfields_maxlen'] = 'Maximum Text Length';
 $l['threadfields_maxlen_desc'] = 'The maximum valid length for the entered value.  0 means no maximum, however, note that the database engine will probably enforce a maximum length.  You should assume this length does not exceed 255 characters (or 65535 characters for the multiline textbox).';
 $l['threadfields_fieldwidth'] = 'Field Input Width';
