@@ -189,7 +189,6 @@ function xthreads_install() {
 		'wol_attachment' => 'varchar(255) not null default \'\'',
 		'wol_newreply' => 'varchar(255) not null default \'\'',
 		'wol_showthread' => 'varchar(255) not null default \'\'',
-		'wol_xtattachment' => 'varchar(255) not null default \'\''
 	) as $field => $fdef) {
 		if(!$db->field_exists($field, 'forums')) {
 			$db->write_query('ALTER TABLE '.$db->table_prefix.'forums ADD COLUMN xthreads_'.$field.' '.$fdef);
@@ -412,7 +411,6 @@ function xthreads_uninstall() {
 		'xthreads_wol_attachment',
 		'xthreads_wol_newreply',
 		'xthreads_wol_showthread',
-		'xthreads_wol_xtattachment',
 	);
 	foreach($fields as $k => &$f)
 		if(!$db->field_exists($f, 'forums'))

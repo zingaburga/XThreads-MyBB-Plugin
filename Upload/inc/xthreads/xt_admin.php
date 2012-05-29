@@ -1130,7 +1130,6 @@ function xthreads_admin_forumedit() {
 				'xthreads_wol_attachment' => '',
 				'xthreads_wol_newreply' => '',
 				'xthreads_wol_showthread' => '',
-				'xthreads_wol_xtattachment' => '',
 			);
 		
 		
@@ -1197,7 +1196,6 @@ function xthreads_admin_forumedit() {
 			'xthreads_wol_attachment',
 			'xthreads_wol_newreply',
 			'xthreads_wol_showthread',
-			//'xthreads_wol_xtattachment',
 		);
 		$wolhtml = '';
 		foreach($wolfields as &$w) {
@@ -1343,7 +1341,6 @@ function xthreads_admin_forumcommit() {
 		'xthreads_wol_attachment' => $db->escape_string(trim($mybb->input['xthreads_wol_attachment'])),
 		'xthreads_wol_newreply' => $db->escape_string(trim($mybb->input['xthreads_wol_newreply'])),
 		'xthreads_wol_showthread' => $db->escape_string(trim($mybb->input['xthreads_wol_showthread'])),
-		'xthreads_wol_xtattachment' => $db->escape_string(trim($mybb->input['xthreads_wol_xtattachment'])),
 	), 'fid='.$fid);
 	
 	$cache->update_forums();

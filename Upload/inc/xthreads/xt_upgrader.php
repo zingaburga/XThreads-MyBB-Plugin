@@ -268,6 +268,8 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 		`inputformat` text not null,
 		`inputvalidate` text not null
 	)');
+	// we never used this, so may as well get rid of it
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_wol_xtattachment`');
 }
 
 return true;

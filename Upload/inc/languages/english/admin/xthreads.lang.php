@@ -327,7 +327,6 @@ $l['xthreads_wol_newthread'] = 'New Thread';
 $l['xthreads_wol_attachment'] = 'Attachment Download';
 $l['xthreads_wol_newreply'] = 'New Reply';
 $l['xthreads_wol_showthread'] = 'Show Thread';
-$l['xthreads_wol_xtattachment'] = 'XThreads File Download';
 
 $l['xthreads_sort_threadfield_prefix'] = 'Thread Field: ';
 $l['xthreads_sort_filename'] = 'file name';
