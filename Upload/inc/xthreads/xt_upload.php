@@ -177,7 +177,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 	if($update_attachment) {
 		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid,attachname,indir,md5hash', 'aid='.(int)$update_attachment));
 		if(!$prevattach['aid']) $update_attachment = false;
-	} else {
+	} /* else {
 		// Check if attachment already uploaded
 		// TODO: this is actually a little problematic - perhaps verify that this is attached to this field (or maybe rely on checks in xt_updatehooks file)
 		if(isset($file_md5))
@@ -190,7 +190,7 @@ function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0
 			// TODO: maybe return aid instead?
 			return array('error' => $lang->error_alreadyuploaded);
 		}
-	}
+	} */
 	
 	
 	// We won't use MyBB's nice monthly directories, instead, we'll use a more confusing system based on the timestamps
