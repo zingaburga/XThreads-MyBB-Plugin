@@ -95,18 +95,6 @@ function xta_load() {
 		};
 		input.onchange = changeFunc(e, input, changeFunc);
 	});
-	
-	// re-arrangable multi-attachments
-	// TODO: update this with jQuery version if necessary
-	if(typeof Sortable != 'undefined') s('.xta_file_list').each(function(e) {
-		items = child(e, '.xta_file');
-		if(items.length < 2) return;
-		
-		items.each(function(c) {
-			c.style.cursor = "move";
-		});
-		Sortable.create(e, {tag: items[0].tagName});
-	});
 }
 
 if(typeof jQuery != 'undefined') jQuery(document).ready(xta_load);

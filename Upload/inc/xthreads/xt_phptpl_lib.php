@@ -7,11 +7,9 @@ if(!defined('IN_MYBB'))
 
 function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 {
+	$GLOBALS['__phptpl_if'] = array();
 	$find = array(
-		'#\<if\s+(.*?)\s+then\>#sie',
-		'#\<elseif\s+(.*?)\s+then\>#sie',
-		'#\<else(\s*/)?\>#i',
-		'#\</if\>#i',
+		'#\<((?:else)?if\s+(.*?)\s+then|else\s*/?|/if)\>#sie', // note that this relies on preg_replace working in a forward order
 		'#\<func (htmlspecialchars|htmlspecialchars_uni|intval|floatval|urlencode|rawurlencode|addslashes|stripslashes|trim|crc32|ltrim|rtrim|chop|md5|nl2br|sha1|strrev|strtoupper|strtolower|my_strtoupper|my_strtolower|alt_trow|get_friendly_size|filesize|strlen|my_strlen|my_wordwrap|random_str|unicode_chr|bin2hex|str_rot13|str_shuffle|strip_tags|ucfirst|ucwords|basename|dirname|unhtmlentities)\>#i',
 		'#\</func\>#i',
 		//'#\<template\s+([a-z0-9_ \-+!(),.]+)(\s*/)?\>#i',
@@ -19,10 +17,7 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 		'#\<setvar\s+([a-z0-9_\-+!(),.]+)\>(.*?)\</setvar\>#ie',
 	);
 	$repl = array(
-		'\'".xthreads_phptpl_iif(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\',"\'',
-		'\'",\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\',"\'',
-		'","',
-		'")."',
+		'xthreads_phptpl_if(\'$1\', \'$2\', $fields)',
 		'".$1("',
 		'")."',
 		//'".eval("return \"".$GLOBALS[\'templates\']->get(\'$1\')."\";")."',
@@ -54,6 +49,33 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 	$ourtpl = preg_replace($find, $repl, $ourtpl);
 }
 
+function xthreads_phptpl_if($s, $e, $fields)
+{
+	if($s[0] == '/') {
+		// end if tag
+		$last = array_pop($GLOBALS['__phptpl_if']);
+		$suf = str_repeat(')', (int)substr($last, 1));
+		if($last[0] == 'i')
+			$suf = ':""'.$suf;
+		return '"'.$suf.')."';
+	} else {
+		$s = strtolower(substr($s, 0, strpos($s, ' ')));
+		if($s == 'if') {
+			$GLOBALS['__phptpl_if'][] = 'i0';
+			return '".(('._xthreads_phptpl_expr_parse($e, $fields).')?"';
+		} elseif($s == 'elseif') {
+			$last = array_pop($GLOBALS['__phptpl_if']);
+			$last = 'i'.((int)substr($last, 1) + 1);
+			$GLOBALS['__phptpl_if'][] = $last;
+			return '":(('._xthreads_phptpl_expr_parse($e, $fields).')?"';
+		} else {
+			$last = array_pop($GLOBALS['__phptpl_if']);
+			$last[0] = 'e';
+			$GLOBALS['__phptpl_if'][] = $last;
+			return '":"';
+		}
+	}
+}
 
 function xthreads_phptpl_expr_parse_fixstr_simple($match) {
 	return preg_replace('~\$GLOBALS\\[\\s*\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\s*\\]~', '$GLOBALS[$1]', $match[0]);

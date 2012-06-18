@@ -802,14 +802,6 @@ function xthreads_get_threadfields($tid, &$threadfields, $noextra=true, $thread=
 }
 
 
-function xthreads_phptpl_iif($condition, $true)
-{
-	$args = func_get_args();
-	for($i=1, $c=count($args); $i<$c; $i+=2)
-		if($args[$i-1]) return $args[$i];
-	return (isset($args[$i-1]) ? $args[$i-1] : '');
-}
-
 function xthreads_phptpl_eval_expr($s) {
 	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
 	return eval('return ('.xthreads_phptpl_expr_parse($s).');');
