@@ -592,6 +592,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 			'TABINDEX' => '',
 			'TABINDEX_PROP' => '',
 			'REQUIRED' => ($tf['editable'] == XTHREADS_EDITABLE_REQ),
+			'MULTIPLE' => (xthreads_empty($tf['multival'])?'':1),
+			'MULTIPLE_PROP' => '',
 		);
 		if($vars['MAXLEN']) $vars['MAXLEN_PROP'] = ' maxlength="'.$vars['MAXLEN'].'"';
 		if($vars['WIDTH']) {
@@ -605,6 +607,9 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 			$vars['HEIGHT_PROP_SIZE'] = ' size="'.$vars['HEIGHT'].'"';
 			$vars['HEIGHT_CSS'] = 'height: '.($vars['HEIGHT']/2).'em;';
 			$vars['HEIGHT_PROP_ROWS'] = ' rows="'.$vars['HEIGHT'].'"';
+		}
+		if($vars['MULTIPLE']) {
+			$vars['MULTIPLE_PROP'] = ' multiple="multiple"';
 		}
 		
 		$using_default = false;
@@ -671,7 +676,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_select';
 				if(!xthreads_empty($tf['multival'])) {
 					$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
-					$vars['MULTIPLE_PROP'] = ' multiple="multiple"';
 				}
 				$vars['ITEMS'] = '';
 				foreach($vals as $val => $valdisp) {
@@ -719,14 +723,10 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_file';
 				if(!xthreads_empty($tf['multival'])) {
 					$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
-					$vars['MULTIPLE_PROP'] = ' multiple="multiple"';
-					$vars['MULTIPLE'] = 1;
-					
 					// lame language hack
 					$GLOBALS['lang_xthreads_attachfile'] = $lang->xthreads_attachfile_plural;
 					$GLOBALS['lang_xthreads_attachurl'] = $lang->xthreads_attachurl_plural;
 				} else {
-					$vars['MULTIPLE'] = '';
 					$GLOBALS['lang_xthreads_attachfile'] = $lang->xthreads_attachfile;
 					$GLOBALS['lang_xthreads_attachurl'] = $lang->xthreads_attachurl;
 				}
@@ -1005,6 +1005,14 @@ function xthreads_upload_attachments() {
 					$aid = (int)reset($attach_fields[$k]);
 				else {
 					$aid = array_unique(array_map('intval', $attach_fields[$k]));
+					// re-ordering support
+					if(is_array($mybb->input['xtaorder'])) {
+						$aid_order = array_unique(array_map('intval', $mybb->input['xtaorder']));
+						if(count($aid) == count($aid_order) && $aid != $aid_order && !count(array_diff($aid, $aid_order))) {
+							$aid = $aid_order;
+							$threadfield_updates[$k] = implode(',', $aid);
+						}
+					}
 					$aid = array_combine($aid, $aid);
 				}
 			} else
