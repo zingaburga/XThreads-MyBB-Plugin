@@ -257,10 +257,10 @@ class XTUrlFetcher_Curl extends XTUrlFetcher {
 			return $success;
 	}
 	
-	function getError() {
+	function getError(&$code=null) {
 		$this->errno = curl_errno($this->_ch);
 		$this->errstr = curl_error($this->_ch);
-		return parent::getError();
+		return parent::getError($code);
 	}
 	
 	function curl_header_func(&$ch, $header) {
