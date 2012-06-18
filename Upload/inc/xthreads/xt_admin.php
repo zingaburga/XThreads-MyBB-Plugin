@@ -313,49 +313,41 @@ function xthreads_default_threadfields_formhtml($type) {
 			);
 		case XTHREADS_INPUT_FILE:
 			return array(
-'<if {ATTACH_ID} then>
-	<div>
-		<span{ATTACH_MD5_TITLE}id="xtaname_{KEY}"><a href="{ATTACH_URL}" target="_blank">{ATTACH_FILENAME}</a> ({ATTACH_SIZE_FRIENDLY})</span>
-		<label id="xtarmlabel_{KEY}"<if {REQUIRED} then> style="display: none;"</if>><input type="checkbox" id="xtarm_{KEY}" name="xtarm_{KEY}" value="1"{REMOVE_CHECKED} /><if {REQUIRED} then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
-	</div>
-</if>
-<div id="xtarow_{KEY}">
+'<table border="0" cellspacing="0" cellpadding="0"><![ITEM[
+	<tr class="xta_file">
+		<td class="xta_file_link"{ATTACH_MD5_TITLE}><a href="{ATTACH_URL}" target="_blank">{ATTACH_FILENAME}</a> ({ATTACH_SIZE_FRIENDLY})</td>
+		<td><label class="xtarm_label"<if {REQUIRED} and !({MULTIPLE}) then> style="display: none;"</if>><input type="checkbox" class="xtarm" name="xtarm_{KEY}<if {MULTIPLE} then>[{ATTACH_ID}]</if>"<if !({MULTIPLE}) then> data="xtarow_{KEY}"</if> value="1"{REMOVE_CHECKED} /><if {REQUIRED} and !({MULTIPLE}) then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label></td>
+	</tr>
+]]></table>
+<div id="xtarow_{KEY}" class="xta_input">
 	<if {URLFETCH} then>
-		<div style="display: none; font-size: x-small;" id="xtasel_{KEY}"><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="file"{CHECKED_UPLOAD} id="xtaselopt_file_{KEY}" />{$lang->xthreads_attachfile}</label><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_{KEY}" value="url"{CHECKED_URL} id="xtaselopt_url_{KEY}" />{$lang->xthreads_attachurl}</label></div>
-		<div>
-			<span id="xtaseltext_file_{KEY}">{$lang->xthreads_attachfile}: </span>
+		<if !({MULTIPLE}) then>
+			<div class="xtasel" style="display: none; font-size: x-small;"><label style="margin: 0 0.6em;"><input type="radio" class="xtasel_opt" name="xtasel_{KEY}" value="file"{CHECKED_UPLOAD} />{$lang->xthreads_attachfile}</label><label style="margin: 0 0.6em;"><input type="radio" class="xtasel_opt" name="xtasel_{KEY}" value="url"{CHECKED_URL} />{$lang->xthreads_attachurl}</label></div>
+		</if>
+		<table border="0" cellspacing="0" cellpadding="1"><tr class="xta_input_file_row">
+			<td class="xtasel_label" style="vertical-align: top;">{$lang_xthreads_attachfile}: </td>
+			<td>
 	</if>
 		<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="{MAXSIZE}" /></if>
-			<input type="file" class="fileupload"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP} id="xthreads_{KEY}" />
+			<div class="xta_input_file_container"><div class="xta_input_file_wrapper">
+				<input type="file" class="fileupload xta_input_file"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP}{MULTIPLE_PROP} />
+			</div></div>
 		<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="0" /></if>
 	<if {URLFETCH} then>
-		</div>
-		<div><span id="xtaseltext_url_{KEY}">{$lang->xthreads_attachurl}: </span><input type="text" class="textbox" id="xtaurl_{KEY}" name="xtaurl_{KEY}"{WIDTH_PROP_SIZE} value="{VALUE_URL}" /></div>
+			</td>
+		</tr>
+		<tr class="xta_input_url_row">
+			<td class="xtasel_label" style="vertical-align: top;">{$lang_xthreads_attachurl}: </td>
+			<td>
+				<if {MULTIPLE} then><textarea name="xtaurl_{KEY}"{WIDTH_PROP_COLS} rows="3" class="xta_input_url">{VALUE_URL}</textarea><else /><input type="url" class="textbox xta_input_url" name="xtaurl_{KEY}"{WIDTH_PROP_SIZE} value="{VALUE_URL}" /></if>
+			</td>
+		</tr></table>
 	</if>
 </div>
-<if {ATTACH_ID} || {URLFETCH} then>
-	<script type="text/javascript"><!--
-		<if {ATTACH_ID} then>
-			($("xtarm_{KEY}").onclick = function() {
-				var c=$("xtarm_{KEY}").checked;
-				$("xtarow_{KEY}").style.display = (c?"":"none");
-				$("xtaname_{KEY}").style.textDecoration = (c?"line-through":"");
-			})();
-			$("xtarmlabel_{KEY}").style.display="";
-		</if>
-		<if {URLFETCH} then>
-			$("xtasel_{KEY}").style.display="";
-			$("xtaseltext_file_{KEY}").style.display=$("xtaseltext_url_{KEY}").style.display="none";
-			($("xtaselopt_file_{KEY}").onclick = $("xtaselopt_url_{KEY}").onclick = function() {
-				var f=$("xtaselopt_file_{KEY}").checked;
-				$("xthreads_{KEY}").style.display = (f?"":"none");
-				$("xtaurl_{KEY}").style.display = (f?"none":"");
-				if(!f) $("xthreads_{KEY}").value = "";
-			})();
-		</if>
-	//-->
-	</script>
-</if>', array('KEY','NAME_PROP','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL')
+<if !$tplvars[\'xta_js_added\'] and ({ATTACH_ID} or {URLFETCH} or {MULTIPLE}) then>
+	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/xthreads_attach_input.js"></script>
+</if>
+<setvar xta_js_added>1</setvar>', array('KEY','NAME_PROP','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP')
 			);
 		default:
 			return array(
@@ -636,17 +628,16 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 	if($tf['editable_gids']) $tf['editable'] = 0;
 	if(!$tf['viewable_gids']) unset($tf['unviewableval']);
 	switch($tf['inputtype']) {
-		case XTHREADS_INPUT_FILE:
 		case XTHREADS_INPUT_FILE_URL:
+			unset($tf['multival'], $tf['dispitemformat']);
+		case XTHREADS_INPUT_FILE:
 			unset(
 				$tf['editable_values'],
-				$tf['dispitemformat'],
 				$tf['formatmap'],
 				$tf['textmask'],
 				$tf['inputformat'],
 				$tf['maxlen'],
 				$tf['vallist'],
-				$tf['multival'],
 				$tf['sanitize'],
 				$tf['allowfilter'],
 				$tf['defaultval'],
@@ -787,6 +778,9 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 				xthreads_sanitize_eval($tf[$field], array('VALUE'));
 			elseif($field == 'inputvalidate')
 				xthreads_sanitize_eval($tf[$field], $validate_fields);
+			elseif($tf['inputtype'] == XTHREADS_INPUT_FILE && !xthreads_empty($tf['multival']) && ($field == 'unviewableval' || $field == 'dispformat'))
+				// special case for multi file inputs
+				xthreads_sanitize_eval($tf[$field], array('VALUE'));
 			else
 				xthreads_sanitize_eval($tf[$field], $sanitise_fields);
 		}
@@ -797,6 +791,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 			case XTHREADS_INPUT_SELECT:
 			case XTHREADS_INPUT_CHECKBOX:
 			case XTHREADS_INPUT_RADIO:
+			case XTHREADS_INPUT_FILE:
 				// item block extraction
 				$tf['formhtml_item'] = '';
 				$GLOBALS['__xt_formhtml_item'] =& $tf['formhtml_item'];
@@ -1190,18 +1185,22 @@ function xthreads_admin_forumedit() {
 		*/
 		
 		$wolfields = array(
-			'xthreads_wol_announcements',
-			'xthreads_wol_forumdisplay',
-			'xthreads_wol_newthread',
-			'xthreads_wol_attachment',
-			'xthreads_wol_newreply',
-			'xthreads_wol_showthread',
+			array('xthreads_wol_announcements', 'xthreads_wol_attachment'),
+			array('xthreads_wol_forumdisplay', 'xthreads_wol_newthread'),
+			array('xthreads_wol_showthread', 'xthreads_wol_newreply'),
 		);
 		$wolhtml = '';
-		foreach($wolfields as &$w) {
-			$wolhtml .= '<tr><td width="40%" style="border: 0; padding: 1px;"><label for="'.$w.'">'.$lang->$w.':</label></td><td style="border: 0; padding: 1px;">'.$form->generate_text_box($w, $data[$w], array('id' => $w, 'style' => 'margin-top: 0;')).'</td></tr>';
+		foreach($wolfields as &$r) {
+			$wolhtml .= '<tr>';
+			foreach($r as &$w) {
+				$wolhtml .= '<td width="15%" style="border: 0; padding: 1px 5px 1px 15px;"><label for="'.$w.'" style="white-space: nowrap;">'.$lang->$w.':</label></td><td style="border: 0; padding: 1px;">'.$form->generate_text_box($w, $data[$w], array('id' => $w, 'style' => 'margin-top: 0; width: 250px;')).'</td>';
+			}
+			$wolhtml .= '</tr>';
 		}
-		$form_container->output_row($lang->xthreads_cust_wolstr, xthreads_admin_forumedit_get_description('xthreads_cust_wolstr'), '<table style="border: 0; margin-left: 2em;" cellspacing="0" cellpadding="0">'.$wolhtml.'</table>');
+		$form_container->output_row($lang->xthreads_cust_wolstr, xthreads_admin_forumedit_get_description('xthreads_cust_wolstr'), '<table style="border: 0;" cellspacing="0" cellpadding="0">'.$wolhtml.'</table>', '', array(
+			// hack to change style
+			'id' => 'xthreads_wol" style="margin: 10px 15px 10px 0px'
+		));
 		
 		$form_container->end();
 		

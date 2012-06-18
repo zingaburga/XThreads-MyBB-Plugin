@@ -33,6 +33,18 @@ $l['threadfields_file_name_info'] = 'Variables are referenced with <code>{$GLOBA
 	<li><em>value</em> - if no file is uploaded, will be Blank Value (see below), otherwise, will be Display Format</li>
 	<li><em>dims</em> - an array containing width/height of uploaded image if the option to require image uploads is chosen.  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'dims\'][\'w\']}</code> would get the width of the uploaded image.</li>
 	<li><em>thumbs</em> - an array containing width/height/URL of thumbnails (if used).  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'thumbs\'][\'320x240\'][\'w\']}</code> would get the real image width of the 320x240 thumbnail.</li>
+</ul>
+For file inputs accepting multiple values, the above only exists in an array as <code>{$GLOBALS[\'threadfields_x\'][\'<em style="color: #00A000;">key</em>\'][\'items\'][<em>index</em>][\'<em style="color: #0000A0;">item</em>\']}</code>, where <em>index</em> is 0 for the 1st attachment, 1 for the 2nd etc.  The <code><em style="color: #0000A0;">value</em></code> can also be accessed through <code>{$GLOBALS[\'threadfields_x\'][\'<em style="color: #00A000;">key</em>\'][\'value\'][<em>index</em>]}</code>. For <code>{$GLOBALS[\'threadfields\'][\'<em style="color: #00A000;">key</em>\'][\'<em style="color: #0000A0;">item</em>\']}</code>, <em style="color: #0000A0;">item</em> can be one of the following:
+<ul style="margin-top: 0.2em;">
+	<li><em>num_files</em> - number of files uploaded</li>
+	<li><em>num_files_friendly</em> - as above, but number is formatted (eg 1,234 vs 1234)</li>
+	<li><em>total_downloads</em> - sum of download counts</li>
+	<li><em>total_downloads_friendly</em> - as above, but number is formatted (eg 1,234 vs 1234)</li>
+	<li><em>total_filesize</em> - sum of file sizes, in bytes</li>
+	<li><em>total_filesize_friendly</em> - as above, but formatted (eg 1.5MB vs 1572864)</li>
+	<li><em>upload_time</em> - time when latest file was uploaded</li>
+	<li><em>upload_date</em> - date when latest file was uploaded</li>
+	<li><em>value</em> - if no file is uploaded, will be Blank Value (see below), otherwise, will be Display Item Format, joined together with Multiple Value Delimiter, then formatted by Display Format</li>
 </ul>';
 $l['threadfields_file_upload_disabled_warning'] = 'It appears that file uploading has been disabled on this server.  XThreads assumes that it is enabled, so if a user tries to upload something, it will fail unless you enable file uploads (URL fetching will still work if enabled).  Please set the <em>file_uploads</em> php.ini value to \'1\'.';
 $l['threadfields_title'] = 'Title';
@@ -84,13 +96,13 @@ $l['threadfields_datatype_bigint'] = 'Big Integer (signed, usually 64-bit)';
 $l['threadfields_datatype_biguint'] = 'Big Integer (unsigned, usually 64-bit)';
 $l['threadfields_datatype_float'] = 'Float (double precision)';
 $l['threadfields_multival_enable'] = 'Allow multiple values for this field';
-$l['threadfields_multival_enable_desc'] = 'Allow the user to specify multiple input values for this field? (eg multiple tags for a single thread)  Note, for textbox inputs, the comma (,) will be used as a delimiter, whereas for textarea, newlines will be considered as a delimiter.';
+$l['threadfields_multival_enable_desc'] = 'Allow the user to specify multiple input values for this field? (eg multiple tags for a single thread)  Note, for textbox inputs, the comma (,) will be used as a delimiter, whereas for textarea, newlines will be considered as a delimiter.<br /><span style="color: red;">Warning for file inputs only: changing a multi-value file input to single-value can cause data loss and (XThreads\') attachment orphaning!</span> (though in general, you probably shouldn\'t change multi-valued inputs to single-value regardless of input type, since it can cause some unexpected results)';
 $l['threadfields_multival'] = 'Multiple Value Delimiter';
 $l['threadfields_multival_desc'] = 'The delimiter used to separate multiple values when displayed.  This value is not parsed (i.e. you can use HTML etc here).';
 $l['threadfields_textmask'] = 'Text Mask Filter';
 $l['threadfields_textmask_desc'] = 'Enter a regular expression which entered text must match (evaluated with <a href="http://php.net/manual/en/function.preg-match.php" target="_blank">preg_match</a>, using <em>s</em> and <em>i</em> flags) for it to be valid.  Captured patterns can be used in Display Format and similar fields through <code>{VALUE$1}</code> etc';
 $l['threadfields_inputformat'] = 'Input Formatter';
-$l['threadfields_inputformat_desc'] = 'Similar to the <em>Display Format</em> option, however this is applied before saving the value to the database (as opposed to formatting on page view).  This means that customisations here will be reflected in the value shown when a user edits the thread (you can use <em>Custom Input HTML</em> to change this behaviour if desired).  Note that this is always applied on newthread, but only applied on edit if the user supplies a value; if the user does not supply a value for newthread, <code>{VALUE}</code> will be null.  Also note that if you\'ve enabled multiple values for this field, this is applied after the multiple values have been joined together.';
+$l['threadfields_inputformat_desc'] = 'Similar to the <em>Display Format</em> option, however this is applied before saving the value to the database (as opposed to formatting on page view).  This means that customisations here will be reflected in the value shown when a user edits the thread (you can use <em>Custom Input HTML</em> to change this behaviour if desired).  In general, you should use <em>Display Format</em> over this - this is aimed at providing advanced functionality.  Note that this is always applied on newthread, but only applied on edit if the user supplies a value; if the user does not supply a value for newthread, <code>{VALUE}</code> will be null.  Also note that if you\'ve enabled multiple values for this field, this is applied after the multiple values have been joined together.';
 $l['threadfields_inputvalidate'] = 'Custom Modify Error';
 $l['threadfields_inputvalidate_desc'] = 'If evaluates to a non-empty value, displays it as an error whenever the user submits a new thread or edits a thread.  Example:
 <code style="display: block; margin-left: 2em;">
@@ -98,7 +110,7 @@ $l['threadfields_inputvalidate_desc'] = 'If evaluates to a non-empty value, disp
 <br />&nbsp;&nbsp;You must enter a value between 1 and 5.
 <br />&lt;/if&gt;
 </code>
-Like the <em>Input Formatter</em> option, this is not evaluated when editing a thread and the user has sent no value, and is evaluated after multiple values are joined together.  <code>{VALUE}</code> is not available for file inputs, instead use <code>{FILENAME}</code> and <code>{FILESIZE}</code>.';
+Like the <em>Input Formatter</em> option, this is not evaluated when editing a thread and the user has sent no value, and is evaluated after multiple values are joined together (except with file inputs).  <code>{VALUE}</code> is not available for file inputs, instead use <code>{FILENAME}</code>, <code>{FILESIZE}</code> and <code>{NUM_FILES}</code>.';
 $l['threadfields_maxlen'] = 'Maximum Text Length';
 $l['threadfields_maxlen_desc'] = 'The maximum valid length for the entered value.  0 means no maximum, however, note that the database engine will probably enforce a maximum length.  You should assume this length does not exceed 255 characters (or 65535 characters for the multiline textbox).';
 $l['threadfields_fieldwidth'] = 'Field Input Width';
@@ -199,6 +211,7 @@ $l['threadfields_formhtml_desc_height_css'] = 'Shortcut for <code>&lt;if {HEIGHT
 $l['threadfields_formhtml_desc_height_prop_rows'] = 'Shortcut for <code>&lt;if {HEIGHT} then&gt; rows=&quot;{HEIGHT}&quot;&lt;/if&gt;</code>';
 $l['threadfields_formhtml_desc_maxlen'] = 'Defined field maximum length';
 $l['threadfields_formhtml_desc_maxlen_prop'] = 'Shortcut for <code>&lt;if {MAXLEN} then&gt; maxlength=&quot;{MAXLEN}&quot;&lt;/if&gt;</code>';
+$l['threadfields_formhtml_desc_multiple'] = 'True if accepting multiple values';
 $l['threadfields_formhtml_desc_multiple_prop'] = 'If accepting multiple values, set to <code> multiple=&quot;multiple&quot;</code>';
 $l['threadfields_formhtml_desc_style'] = 'Custom CSS for the item, including <em>style</em> attribute';
 $l['threadfields_formhtml_desc_stylecss'] = 'Custom CSS for the item, without <em>style</em> attribute';

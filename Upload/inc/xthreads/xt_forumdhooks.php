@@ -96,7 +96,7 @@ function xthreads_forumdisplay() {
 				if($p) {
 					$field = strtolower(substr($mybb->input['sortby'], 4, $p-4));
 					$n = substr($mybb->input['sortby'], $p+1);
-					if(isset($threadfield_cache[$n]) && $threadfield_cache[$n]['inputtype'] == XTHREADS_INPUT_FILE && xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids']) && in_array($field, array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads'))) {
+					if(isset($threadfield_cache[$n]) && xthreads_empty($threadfield_cache[$n]['multival']) && $threadfield_cache[$n]['inputtype'] == XTHREADS_INPUT_FILE && xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids']) && in_array($field, array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads'))) {
 						$xthreads_forum_sort = array(
 							't' => 'xta.',
 							'sortby' => $mybb->input['sortby'],
