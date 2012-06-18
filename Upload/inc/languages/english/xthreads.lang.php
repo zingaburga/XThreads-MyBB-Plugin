@@ -11,6 +11,7 @@ $l['xthreads_xtaerr_error_imgdims'] = 'The dimensions of the image file you atta
 $l['xthreads_xtaerr_admindrop_not_found'] = 'The specified file &quot;{1}&quot; was not found on the server - ensure that the file <em>{2}</em> exists.';
 $l['xthreads_xtaerr_admindrop_file_unwritable'] = 'The specified file &quot;{1}&quot; is not writable.  You will probably need to CHMOD the file to something like 0666 for this function to work properly.';
 $l['xthreads_xtaerr_admindrop_index_error'] = 'Sorry, you cannot move index.html (or the various capitalised variants).  Please rename the file and try again.';
+$l['file_clear'] = 'Clear';
 
 $l['xthreads_xtfurlerr_nofetcher'] = 'No means to fetch remote URL found';
 $l['xthreads_xtfurlerr_invalidurl'] = 'Invalid URL supplied';
