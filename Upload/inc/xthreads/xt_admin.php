@@ -330,7 +330,7 @@ function xthreads_default_threadfields_formhtml($type) {
 	</if>
 		<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="{MAXSIZE}" /></if>
 			<div class="xta_input_file_container"><div class="xta_input_file_wrapper">
-				<input type="file" class="fileupload xta_input_file"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP}{MULTIPLE_PROP} /><input type="button" class="button xta_input_file_clr" value="{$lang->file_clear}" style="display: none;" />
+				<input type="file" class="fileupload xta_input_file"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP}{MULTIPLE_PROP}{ACCEPT_PROP} /><input type="button" class="button xta_input_file_clr" value="{$lang->file_clear}" style="display: none;" />
 			</div></div>
 		<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="0" /></if>
 	<if {URLFETCH} then>
@@ -347,7 +347,7 @@ function xthreads_default_threadfields_formhtml($type) {
 <if !$tplvars[\'xta_js_added\'] and ({ATTACH_ID} or {URLFETCH} or {MULTIPLE}) then>
 	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/xthreads_attach_input.js"></script>
 </if>
-<setvar xta_js_added>1</setvar>', array('KEY','NAME_PROP','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP')
+<setvar xta_js_added>1</setvar>', array('KEY','NAME_PROP','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP','RESTRICT_TYPE','ACCEPT_PROP')
 			);
 		default:
 			return array(

@@ -234,6 +234,8 @@ $l['threadfields_formhtml_desc_attach_update_date'] = 'If there\'s an attachment
 $l['threadfields_formhtml_desc_attach_downloads'] = 'If there\'s an attachment, contains the download count';
 $l['threadfields_formhtml_desc_attach_downloads_friendly'] = 'If there\'s an attachment, contains the download count, formatted';
 $l['threadfields_formhtml_desc_required'] = 'True if field is a required field';
+$l['threadfields_formhtml_desc_restrict_type'] = 'Set to <code>image</code> if only accepting images, blank string otherwise.';
+$l['threadfields_formhtml_desc_accept_prop'] = 'If accepting images only, set to <code> accept=&quot;image/*&quot;</code>';
 $l['threadfields_formhtml_desc_remove_checked'] = 'If the <em>Remove</em> checkbox is ticked, set to <code> checked=&quot;checked&quot;</code>';
 $l['threadfields_formhtml_desc_urlfetch'] = 'True if URL fetching is enabled (see <em>cache/xthreads.php</em>)';
 $l['threadfields_formhtml_desc_checked_upload'] = 'If <em>Upload</em> option button is selected, set to <code> checked=&quot;checked&quot;</code>';
