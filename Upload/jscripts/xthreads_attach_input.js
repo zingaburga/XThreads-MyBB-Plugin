@@ -1,9 +1,12 @@
 function xta_load() {
-	var s, child;
+	var s, child, parnt;
 	if(typeof jQuery != 'undefined') {
 		s = jQuery;
 		child = function(e,s) {
 			return jQuery(e).find(s);
+		};
+		parnt = function(e,s) {
+			return jQuery(e).parents(s);
 		};
 	} else {
 		s = $$;
@@ -11,7 +14,25 @@ function xta_load() {
 			//return Selector.findChildElements(e, s); // -bugged?
 			return Prototype.Selector.select(s, e);
 		};
+		parnt = function(e,s) {
+			r = $(e).up(s);
+			return r ? [r]:r;
+		};
 	}
+	
+	// hack to clear the contents of a file input
+	clear_file = function(e) {
+		n = document.createElement(e.tagName);
+		for(i in e) {
+			try {
+				n[i] = e[i];
+			} catch(x){}
+		}
+		if(n.getAttribute("multiple"))
+			n.onchange = changeFunc(parnt(e, '.xta_input_file_container')[0], n, changeFunc);
+		e.parentNode.replaceChild(n, e);
+		return n;
+	};
 	
 	// always show 'remove' checkboxes
 	s('.xtarm_label').each(function(e){
@@ -46,7 +67,10 @@ function xta_load() {
 					v = (c.value=="file");
 					child(e, '.xta_input_file_row')[0].style.display = (v?"":"none");
 					child(e, '.xta_input_url_row')[0].style.display = (!v?"":"none");
-					if(!v) child(e, '.xta_input_file')[0].value="";
+					if(!v)
+						clear_file(child(e, '.xta_input_file')[0]);
+					else if(!child(e, '.xta_input_url')[0].value.match(/^[a-zA-Z0-9\-]+\:/))
+						child(e, '.xta_input_url')[0].value = "http://";
 				};
 			})(e,c);
 			c.onclick();
@@ -58,15 +82,14 @@ function xta_load() {
 	
 	// 'clear' buttons for files
 	clrFunc = function(e){
-		if(window.opera) return; // this doesn't work in Opera
 		clr = child(e, 'input.xta_input_file_clr')[0];
 		if(!clr) return;
 		clr.style.display = "";
-		clr.onclick = (function(c){
+		clr.onclick = (function(e){
 			return function(){
-				c.value="";
+				clear_file(child(e, 'input.xta_input_file')[0]);
 			};
-		})(child(e, 'input.xta_input_file')[0]);
+		})(e);
 	};
 	s('.xta_input_file_wrapper').each(clrFunc);
 	
@@ -88,12 +111,25 @@ function xta_load() {
 				new_w = document.createElement(input_w.tagName);
 				new_w.setAttribute("class", "xta_input_file_wrapper");
 				new_w.innerHTML = input_w.innerHTML;
-				new_w.onchange = changeFunc(e, child(new_w, 'input.xta_input_file')[0], changeFunc);
+				new_input = child(new_w, 'input.xta_input_file')[0];
+				new_input.onchange = changeFunc(e, new_input, changeFunc);
 				e.appendChild(new_w);
 				clrFunc(new_w);
 			};
 		};
 		input.onchange = changeFunc(e, input, changeFunc);
+	});
+	
+	// re-arrangable multi-attachments
+	// TODO: update this with jQuery version if necessary
+	if(typeof Sortable != 'undefined') s('.xta_file_list').each(function(e) {
+		items = child(e, '.xta_file');
+		if(items.length < 2) return;
+		
+		items.each(function(c) {
+			c.style.cursor = "move";
+		});
+		Sortable.create(e, {tag: items[0].tagName});
 	});
 }
 
