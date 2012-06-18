@@ -666,14 +666,13 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		
 		if($tf['formhtml'])
 			$evalfunc = 'xthreads_evalcache_'.$tf['field'];
-		else $evalfunc = '';
+		else
+			$evalfunc = 'xthreads_input_generate_defhtml_'.$tf['inputtype'];
 		switch($tf['inputtype']) {
 			case XTHREADS_INPUT_TEXTAREA:
-				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_textarea';
 				$vars['VALUE'] =& $defval;
 				break;
 			case XTHREADS_INPUT_SELECT:
-				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_select';
 				if(!xthreads_empty($tf['multival'])) {
 					$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
 				}
@@ -697,11 +696,9 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				}
 				break;
 			case XTHREADS_INPUT_CHECKBOX:
-				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_checkbox';
 				$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
 				// fall through
 			case XTHREADS_INPUT_RADIO:
-				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_radio';
 				$vars['ITEMS'] = '';
 				foreach($vals as $val => &$valdisp) {
 					if((!$tid || $tfd[$k] != $val) && !xthreads_tfvalue_settable($tf, $val)) continue;
@@ -720,7 +717,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				}
 				break;
 			case XTHREADS_INPUT_FILE:
-				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_file';
 				if(!xthreads_empty($tf['multival'])) {
 					$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
 					// lame language hack
@@ -807,7 +803,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				break;
 				
 			default: // text
-				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_textbox';
 				$vars['VALUE'] =& $defval;
 				if(!xthreads_empty($tf['multival']))
 					$defval = str_replace("\n", ', ', $defval);
@@ -821,80 +816,6 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		if(!$tf['hideedit'])
 			$extra_threadfields .= $tfinputrow[$k];
 	}
-}
-
-// default HTML evaluators
-function xthreads_input_generate_defhtml_textbox($field, &$vars) {
-	return '<input type="text" class="textbox"'.$vars['NAME_PROP'].$vars['MAXLEN_PROP'].$vars['WIDTH_PROP_SIZE'].$vars['TABINDEX_PROP'].' value="'.$vars['VALUE'].'" />';
-}
-function xthreads_input_generate_defhtml_textarea($field, &$vars) {
-	return '<textarea'.$vars['NAME_PROP'].$vars['MAXLEN_PROP'].$vars['HEIGHT_PROP_ROWS'].$vars['WIDTH_PROP_COLS'].$vars['TABINDEX_PROP'].'>'.$vars['VALUE'].'</textarea>';
-}
-function xthreads_input_generate_defhtml_select($field, &$vars) {
-	if($field == 'formhtml_item')
-		return '<option value="'.$vars['VALUE'].'"'.$vars['STYLE'].$vars['SELECTED'].'>'.$vars['LABEL'].'</option>';
-	else
-		return '<select style="'.$vars['WIDTH_CSS'].'"'.$vars['NAME_PROP'].$vars['MULTIPLE_PROP'].$vars['HEIGHT_PROP_SIZE'].$vars['TABINDEX_PROP'].'>'.$vars['ITEMS'].'</select>';
-}
-function xthreads_input_generate_defhtml_checkbox($field, &$vars) {
-	if($field == 'formhtml_item')
-		return '<label style="display: block;"><input'.$vars['NAME_PROP'].' type="checkbox" class="checkbox" value="'.$vars['VALUE'].'"'.$vars['CHECKED'].$vars['TABINDEX_PROP'].' />'.$vars['LABEL'].'</label>';
-	else
-		return $vars['ITEMS'];
-}
-function xthreads_input_generate_defhtml_radio($field, &$vars) {
-	if($field == 'formhtml_item')
-		return '<label style="display: block;"><input'.$vars['NAME_PROP'].' type="radio" class="radio" value="'.$vars['VALUE'].'"'.$vars['CHECKED'].$vars['TABINDEX_PROP'].' />'.$vars['LABEL'].'</label>';
-	else
-		return $vars['ITEMS'];
-}
-function xthreads_input_generate_defhtml_file($field, &$vars) {
-	global $lang;
-	$ret = '<input type="file" class="fileupload"'.$vars['NAME_PROP'].$vars['WIDTH_PROP_SIZE'].$vars['TABINDEX_PROP'].' id="xthreads_'.$vars['KEY'].'" />';
-	$jsext = '';
-	if($vars['MAXSIZE'])
-		$ret = '<input type="hidden" name="MAX_FILE_SIZE" value="'.$vars['MAXSIZE'].'" />'.$ret.'<input type="hidden" name="MAX_FILE_SIZE" value="0" />';
-	if($vars['URLFETCH']) {
-		$ret = '<div style="display: none; font-size: x-small;" id="xtasel_'.$vars['KEY'].'"><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_'.$vars['KEY'].'" value="file"'.$vars['CHECKED_UPLOAD'].' id="xtaselopt_file_'.$vars['KEY'].'" />'.$lang->xthreads_attachfile.'</label><label style="margin: 0 0.6em;"><input type="radio" name="xtasel_'.$vars['KEY'].'" value="url"'.$vars['CHECKED_URL'].' id="xtaselopt_url_'.$vars['KEY'].'" />'.$lang->xthreads_attachurl.'</label></div>
-		<div><span id="xtaseltext_file_'.$vars['KEY'].'">'.$lang->xthreads_attachfile.': </span>'.$ret.'</div>
-		<div><span id="xtaseltext_url_'.$vars['KEY'].'">'.$lang->xthreads_attachurl.': </span><input type="text" class="textbox" id="xtaurl_'.$vars['KEY'].'" name="xtaurl_'.$vars['KEY'].'"'.$vars['WIDTH_PROP_SIZE'].' value="'.$vars['VALUE_URL'].'" /></div>';
-		$jsext .= '
-			$("xtasel_'.$vars['KEY'].'").style.display="";
-			$("xtaseltext_file_'.$vars['KEY'].'").style.display=$("xtaseltext_url_'.$vars['KEY'].'").style.display="none";
-			($("xtaselopt_file_'.$vars['KEY'].'").onclick = $("xtaselopt_url_'.$vars['KEY'].'").onclick = function() {
-				var f=$("xtaselopt_file_'.$vars['KEY'].'").checked;
-				$("xthreads_'.$vars['KEY'].'").style.display = (f?"":"none");
-				$("xtaurl_'.$vars['KEY'].'").style.display = (f?"none":"");
-				if(!f) $("xthreads_'.$vars['KEY'].'").value = "";
-			})();';
-	}
-	$ret = '<div id="xtarow_'.$vars['KEY'].'">'.$ret.'</div>';
-	if($vars['ATTACH_ID']) {
-		if($vars['REQUIRED']) {
-			$hidecss = ' style="display: none;"';
-			$rmtext = $lang->xthreads_replaceattach;
-		} else {
-			$hidecss = '';
-			$rmtext = $lang->xthreads_rmattach;
-		}
-		$ret = '<div>
-			<span'.$vars['ATTACH_MD5_TITLE'].'id="xtaname_'.$vars['KEY'].'"><a href="'.$vars['ATTACH_URL'].'" target="_blank">'.$vars['ATTACH_FILENAME'].'</a> ('.$vars['ATTACH_SIZE_FRIENDLY'].')</span>
-			<label id="xtarmlabel_'.$vars['KEY'].'"'.$hidecss.'><input type="checkbox" id="xtarm_'.$vars['KEY'].'" name="xtarm_'.$vars['KEY'].'" value="1"'.$vars['REMOVE_CHECKED'].' />'.$rmtext.'</label>
-			</div>'.$ret;
-		$jsext .= '
-		($("xtarm_'.$vars['KEY'].'").onclick = function() {
-			var c=$("xtarm_'.$vars['KEY'].'").checked;
-			$("xtarow_'.$vars['KEY'].'").style.display = (c?"":"none");
-			$("xtaname_'.$vars['KEY'].'").style.textDecoration = (c?"line-through":"");
-		})();
-		$("xtarmlabel_'.$vars['KEY'].'").style.display="";';
-	}
-	if($jsext)
-		$ret .= '<script type="text/javascript"><!--
-		'.$jsext.'
-		//-->
-		</script>';
-	return $ret;
 }
 
 function xthreads_upload_attachments_global() {

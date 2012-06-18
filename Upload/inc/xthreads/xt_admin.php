@@ -625,6 +625,35 @@ function xthreads_buildtfcache() {
 	
 	// rebuild the forums cache too - there's a dependency because this can affect the filtering etc allows
 	xthreads_buildcache_forums($fp);
+	
+	// build cache of default input HTML
+	foreach(array(
+		XTHREADS_INPUT_TEXT, XTHREADS_INPUT_TEXTAREA, XTHREADS_INPUT_SELECT, XTHREADS_INPUT_RADIO, XTHREADS_INPUT_CHECKBOX, XTHREADS_INPUT_FILE
+	) as $type) {
+		$formhtml = xthreads_default_threadfields_formhtml($type);
+		$formhtml_item = null;
+		switch($type) {
+			case XTHREADS_INPUT_SELECT:
+			case XTHREADS_INPUT_CHECKBOX:
+			case XTHREADS_INPUT_RADIO:
+			case XTHREADS_INPUT_FILE:
+				// item block extraction
+				$formhtml_item = '';
+				$GLOBALS['__xt_formhtml_item'] =& $formhtml_item;
+				$GLOBALS['__xt_formhtml_sanitise_fields'] =& $formhtml[1];
+				$formhtml[0] = preg_replace_callback('~\<\!\[ITEM\[(.*?)\]\]\>~is','xthreads_buildcache_parseitem_formhtml_pr', $formhtml[0], 1);
+				unset($GLOBALS['__xt_formhtml_item'], $GLOBALS['__xt_formhtml_sanitise_fields']);
+				$formhtml[1][] = 'ITEMS';
+		}
+		xthreads_sanitize_eval($formhtml[0], $formhtml[1]);
+		fwrite($fp, '
+		function xthreads_input_generate_defhtml_'.$type.'($field, &$vars) {
+			'.(isset($formhtml_item) ? 'if($field == \'formhtml_item\')
+				return "'.$formhtml_item.'";
+			else
+				':'').'return "'.$formhtml[0].'";
+		}');
+	}
 	fclose($fp);
 }
 function xthreads_buildtfcache_parseitem(&$tf) {
