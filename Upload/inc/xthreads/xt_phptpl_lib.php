@@ -115,8 +115,9 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	// we need to parse {VALUE} tokens here, as they need to be parsed a bit differently, and so that they're checked for safe expressions
 	$do_value_repl = false;
 	$tr = array();
-	foreach($fields as &$f) {
-		$tr['{'.$f.'}'] = '"".$vars[\''.$f.'\'].""';
+	foreach($fields as $f => $r) {
+		isset($r) or $r = '{$vars[\''.$f.'\']}';
+		$tr['{'.$f.'}'] = '"'.$r.'"';
 		
 		if($f == 'RAWVALUE') $do_value_repl = true;
 	}
@@ -248,8 +249,9 @@ function xthreads_sanitize_eval(&$s, $fields=array(), $evalvarname=null) {
 	if(!empty($fields)) {
 		$tr = array();
 		$do_value_repl = false;
-		foreach($fields as &$f) {
-			$tr['{'.$f.'}'] = '{$vars[\''.$f.'\']}';
+		foreach($fields as $f => $r) {
+			isset($r) or $r = '{$vars[\''.$f.'\']}';
+			$tr['{'.$f.'}'] = $r;
 			
 			if($f == 'RAWVALUE') $do_value_repl = true;
 		}

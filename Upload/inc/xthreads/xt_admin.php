@@ -362,6 +362,11 @@ function xthreads_default_threadfields_formhtml($type) {
 	}
 }
 
+// flips an array for the purposes for sending to xthreads_sanitize_eval
+function xthreads_eval_flipfields($a) {
+	return array_combine($a, array_fill(0, count($a), null));
+}
+
 function xthreads_write_xtcachefile() {
 	if($fp = @fopen(MYBB_ROOT.'cache/xthreads.php', 'w')) {
 		/* fwrite($fp, '<?php if(!defined("IN_MYBB")) exit;
@@ -645,7 +650,7 @@ function xthreads_buildtfcache() {
 				unset($GLOBALS['__xt_formhtml_item'], $GLOBALS['__xt_formhtml_sanitise_fields']);
 				$formhtml[1][] = 'ITEMS';
 		}
-		xthreads_sanitize_eval($formhtml[0], $formhtml[1]);
+		xthreads_sanitize_eval($formhtml[0], xthreads_eval_flipfields($formhtml[1]));
 		fwrite($fp, '
 		function xthreads_input_generate_defhtml_'.$type.'($field, &$vars) {
 			'.(isset($formhtml_item) ? 'if($field == \'formhtml_item\')
@@ -809,14 +814,14 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 			if($field == 'blankval' || $field == 'defaultval')
 				xthreads_sanitize_eval($tf[$field]);
 			elseif($field == 'inputformat')
-				xthreads_sanitize_eval($tf[$field], array('VALUE'));
+				xthreads_sanitize_eval($tf[$field], array('VALUE'=>null));
 			elseif($field == 'inputvalidate')
-				xthreads_sanitize_eval($tf[$field], $validate_fields);
+				xthreads_sanitize_eval($tf[$field], xthreads_eval_flipfields($validate_fields));
 			elseif($tf['inputtype'] == XTHREADS_INPUT_FILE && !xthreads_empty($tf['multival']) && ($field == 'unviewableval' || $field == 'dispformat'))
 				// special case for multi file inputs
-				xthreads_sanitize_eval($tf[$field], array('VALUE'));
+				xthreads_sanitize_eval($tf[$field], array('VALUE'=>null));
 			else
-				xthreads_sanitize_eval($tf[$field], $sanitise_fields);
+				xthreads_sanitize_eval($tf[$field], xthreads_eval_flipfields($sanitise_fields));
 		}
 	}
 	$formhtml = xthreads_default_threadfields_formhtml($tf['inputtype']);
@@ -834,12 +839,12 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 				unset($GLOBALS['__xt_formhtml_item'], $GLOBALS['__xt_formhtml_sanitise_fields']);
 				$formhtml[1][] = 'ITEMS';
 		}
-		xthreads_sanitize_eval($tf['formhtml'], $formhtml[1]);
+		xthreads_sanitize_eval($tf['formhtml'], xthreads_eval_flipfields($formhtml[1]));
 	}
 }
 function xthreads_buildcache_parseitem_formhtml_pr($s) {
 	if($GLOBALS['__xt_formhtml_item']) return ''; // multiple instance of replacement - BAD! (shouldn't happen because of limit specified in preg_replace)
-	xthreads_sanitize_eval($s[1], $GLOBALS['__xt_formhtml_sanitise_fields']);
+	xthreads_sanitize_eval($s[1], xthreads_eval_flipfields($GLOBALS['__xt_formhtml_sanitise_fields']));
 	$GLOBALS['__xt_formhtml_item'] = $s[1];
 	return '{ITEMS}';
 }

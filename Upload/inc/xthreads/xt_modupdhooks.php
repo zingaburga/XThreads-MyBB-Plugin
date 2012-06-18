@@ -251,7 +251,7 @@ function xthreads_moderation_custom() {
 				$edits[$n] = null;
 			else {
 				$edits[$n] = $v;
-				xthreads_sanitize_eval($edits[$n], array('VALUE', 'TID'));
+				xthreads_sanitize_eval($edits[$n], array('VALUE'=>null, 'TID'=>null));
 			}
 		}
 		if(empty($edits)) return;
