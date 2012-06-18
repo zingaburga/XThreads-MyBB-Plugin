@@ -732,6 +732,8 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				}
 				$vars['MAXSIZE'] = $tf['filemaxsize'];
 				$vars['URLFETCH'] = (XTHREADS_ALLOW_URL_FETCH?1:'');
+				$vars['RESTRICT_TYPE'] = ($tf['fileimage']?'image':'');
+				$vars['ACCEPT_PROP'] = ($vars['RESTRICT_TYPE']?' accept="'.$vars['RESTRICT_TYPE'].'/*"':'');
 				if(XTHREADS_ALLOW_URL_FETCH) {
 					// TODO: test if this environment can really fetch URLs
 					$vars['VALUE_URL'] = htmlspecialchars_uni($mybb->input['xtaurl_'.$tf['field']]);
