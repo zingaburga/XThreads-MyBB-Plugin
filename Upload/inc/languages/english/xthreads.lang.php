@@ -5,6 +5,7 @@ $l['postdata_threadfield_cant_set'] = 'Sorry, you cannot set that value for &quo
 $l['postdata_threadfield_toolong'] = 'Value for &quot;{1}&quot; may not exceed {2} characters.';
 $l['postdata_threadfield_invalidvalue'] = 'Invalid value supplied for &quot;{1}&quot;.';
 $l['xthreads_threadfield_attacherror'] = 'Error attaching file for &quot;{1}&quot;; <em>{2}</em>';
+$l['xthreads_xtaerr_error_attachnumlimit'] = 'Sorry, you have exceeded the number of files that you can attach to &quot;{1}&quot;.';
 $l['xthreads_xtaerr_error_attachsize'] = 'The file you attached is too large. The maximum file size allowed is {1} kilobytes.';
 $l['xthreads_xtaerr_error_imgdims'] = 'The dimensions of the image file you attached ({1}x{2}) exceeds the dimension requirements.  Please upload a smaller/larger image, in terms of resolution.';
 $l['xthreads_xtaerr_admindrop_not_found'] = 'The specified file &quot;{1}&quot; was not found on the server - ensure that the file <em>{2}</em> exists.';
@@ -24,10 +25,12 @@ $l['xthreads_xtfurlerr_errcode'] = '{1} error ({2}): {3}';
 $l['xthreads_xtfurlerr_badresponse'] = 'Could not fetch specified URL - the server returned <em>{1} {2}</em>';
 
 $l['xthreads_md5hash'] = 'MD5 Hash: {1}';
-$l['xthreads_rmattach'] = 'Remove/Replace';
+$l['xthreads_rmattach'] = 'Remove';
 $l['xthreads_replaceattach'] = 'Replace';
 $l['xthreads_attachfile'] = 'File';
 $l['xthreads_attachurl'] = 'URL';
+$l['xthreads_attachfile_plural'] = 'File(s)';
+$l['xthreads_attachurl_plural'] = 'URL(s)';
 
 $l['xthreads_val_blank'] = '(Not set)';
 $l['xthreads_no_prefix'] = 'No Prefix';

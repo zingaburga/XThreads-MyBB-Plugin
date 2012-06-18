@@ -480,6 +480,54 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 		$s['dims'] =& $s['thumbs']['orig'];
 	}
 }
+function xthreads_sanitize_disp_set_xta_fields($aid, &$tfinfo, $dispfmt, $evalfunc) {
+	global $xta_cache;
+	if(!is_numeric($aid) || !isset($xta_cache[$aid])) {
+		// fallback - prevent templating errors if this file happens to not exist
+		$s = array();
+		xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
+		return $s;
+	}
+	$s = $xta_cache[$aid];
+	$s['downloads_friendly'] = my_number_format($s['downloads']);
+	$s['url'] = xthreads_get_xta_url($s); // this must be placed before filename so that it isn't htmlspecialchar'd!
+	$s['filename'] = htmlspecialchars_uni($s['filename']);
+	$s['uploadmime'] = htmlspecialchars_uni($s['uploadmime']);
+	if(!$s['updatetime']) $s['updatetime'] = $s['uploadtime'];
+	$s['filesize_friendly'] = get_friendly_size($s['filesize']);
+	if(isset($s['md5hash'])) {
+		$s['md5hash'] = bin2hex($s['md5hash']);
+	}
+	$s['icon'] = get_attachment_icon(get_extension($s['filename']));
+	
+	$settings =& $GLOBALS['mybb']->settings;
+	$s['upload_time'] = my_date($settings['timeformat'], $s['uploadtime']);
+	$s['upload_date'] = my_date($settings['dateformat'], $s['uploadtime']);
+	$s['update_time'] = my_date($settings['timeformat'], $s['updatetime']);
+	$s['update_date'] = my_date($settings['dateformat'], $s['updatetime']);
+	$s['modified'] = ($s['updatetime'] != $s['uploadtime'] ? 'modified' :'');
+	if($s['thumbs'])
+		$s['thumbs'] = unserialize($s['thumbs']);
+	if(isset($s['thumbs']['orig']))
+		$s['dims'] =& $s['thumbs']['orig'];
+	if(!empty($s['thumbs'])) foreach($s['thumbs'] as $thumbdim => &$thumb) {
+		if($thumbdim == 'orig')
+			$thumb['url'] =& $s['url'];
+		else
+			$thumb['url'] = xthreads_get_xta_url($s, $thumbdim);
+	}
+	xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
+	
+	$s['value'] = '';
+	$vars = array();
+	if($tfinfo[$dispfmt]) {
+		foreach($s as $k => &$v)
+			if(!is_array($v))
+				$vars[strtoupper($k)] =& $v;
+	}
+	$s['value'] = $evalfunc($dispfmt, $vars);
+	return $s;
+}
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 	$evalfunc = 'xthreads_evalcache_'.$tfinfo['field'];
 	if(!$noextra) {
@@ -505,51 +553,43 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 			xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 			return;
 		}
-		if(!is_numeric($s) || !isset($xta_cache[$s])) {
-			// fallback - prevent templating errors if this file happens to not exist
-			$s = array();
-			xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
-			return;
+		if(xthreads_empty($tfinfo['multival'])) {
+			$s = xthreads_sanitize_disp_set_xta_fields($s, $tfinfo, $dispfmt, $evalfunc);
+			$sx['value'] =& $s['value'];
+		} else {
+			$aids = explode(',', $s);
+			$s = array(
+				'total_downloads' => 0,
+				'total_filesize' => 0,
+				'updatetime' => 0,
+				'uploadtime' => 0,
+				'value' => '',
+				'num_files' => 0,
+			);
+			$sx['items'] = $sx['value'] = array();
+			$comma = '';
+			foreach($aids as $aid) {
+				$xta = xthreads_sanitize_disp_set_xta_fields($aid, $tfinfo, 'dispitemformat', $evalfunc);
+				if(!$xta['aid']) continue;
+				$sx['items'][] = $xta;
+				$sx['value'][] = $xta['value'];
+				$s['total_downloads'] += $xta['downloads'];
+				$s['total_filesize'] += $xta['filesize'];
+				$s['uploadtime'] = max($xta['uploadtime'], $s['uploadtime']);
+				++$s['num_files'];
+				
+				$s['value'] .= $comma.$xta['value'];
+				$comma = $tfinfo['multival'];
+			}
+			$s['total_downloads_friendly'] = my_number_format($s['total_downloads']);
+			$s['total_filesize_friendly'] = get_friendly_size($s['total_filesize']);
+			$s['upload_time'] = my_date($mybb->settings['timeformat'], $s['uploadtime']);
+			$s['upload_date'] = my_date($mybb->settings['dateformat'], $s['uploadtime']);
+			$s['value'] = $evalfunc($dispfmt, array('VALUE' => $s['value']));
+			
+			$sx['num_values'] = $s['num_files'];
+			$sx['num_values_friendly'] = $s['num_files_friendly'] = my_number_format($s['num_files']);
 		}
-		$s = $xta_cache[$s];
-		$s['downloads_friendly'] = my_number_format($s['downloads']);
-		$s['url'] = xthreads_get_xta_url($s); // this must be placed before filename so that it isn't htmlspecialchar'd!
-		$s['filename'] = htmlspecialchars_uni($s['filename']);
-		$s['uploadmime'] = htmlspecialchars_uni($s['uploadmime']);
-		if(!$s['updatetime']) $s['updatetime'] = $s['uploadtime'];
-		$s['filesize_friendly'] = get_friendly_size($s['filesize']);
-		if(isset($s['md5hash'])) {
-			$s['md5hash'] = bin2hex($s['md5hash']);
-		}
-		$s['icon'] = get_attachment_icon(get_extension($s['filename']));
-		
-		$s['upload_time'] = my_date($mybb->settings['timeformat'], $s['uploadtime']);
-		$s['upload_date'] = my_date($mybb->settings['dateformat'], $s['uploadtime']);
-		$s['update_time'] = my_date($mybb->settings['timeformat'], $s['updatetime']);
-		$s['update_date'] = my_date($mybb->settings['dateformat'], $s['updatetime']);
-		$s['modified'] = ($s['updatetime'] != $s['uploadtime'] ? 'modified' :'');
-		if($s['thumbs'])
-			$s['thumbs'] = unserialize($s['thumbs']);
-		if(isset($s['thumbs']['orig']))
-			$s['dims'] =& $s['thumbs']['orig'];
-		if(!empty($s['thumbs'])) foreach($s['thumbs'] as $thumbdim => &$thumb) {
-			if($thumbdim == 'orig')
-				$thumb['url'] =& $s['url'];
-			else
-				$thumb['url'] = xthreads_get_xta_url($s, $thumbdim);
-		}
-		xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
-		
-		$s['value'] = '';
-		$vars = array();
-		if($tfinfo[$dispfmt]) {
-			foreach($s as $k => &$v)
-				if(!is_array($v))
-					$vars[strtoupper($k)] =& $v;
-		}
-		$s['value'] = $evalfunc($dispfmt, $vars);
-		unset($vars);
-		$sx['value'] =& $s;
 	}
 	else {
 		if($s === '' || $s === null) {

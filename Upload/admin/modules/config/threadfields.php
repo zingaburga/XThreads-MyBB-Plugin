@@ -537,8 +537,12 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					$new_tf[$field] = $db->escape_string($mybb->input[$field]);
 			}
 			
-			if($mybb->input['inputtype'] == XTHREADS_INPUT_FILE)
-				$fieldtype = xthreads_db_fielddef('int', null, true).' not null default 0';
+			if($mybb->input['inputtype'] == XTHREADS_INPUT_FILE) {
+				if(xthreads_empty($mybb->input['multival']))
+					$fieldtype = xthreads_db_fielddef('int', null, true).' not null default 0';
+				else
+					$fieldtype = 'varchar(255) not null default ""'; // we'll stick a hard limit of 25 files
+			}
 			elseif($mybb->input['inputtype'] == XTHREADS_INPUT_FILE_URL)
 				$fieldtype = 'varchar(255) not null default ""';
 				//$using_long_varchar = false;
@@ -921,14 +925,14 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	function xt_multival_enable() {
 		var si = parseInt($('inputtype').options[$('inputtype').selectedIndex].value);
 		var checkboxIn = (si == <?php echo XTHREADS_INPUT_CHECKBOX; ?>);
-		var fileIn = (si == <?php echo XTHREADS_INPUT_FILE; ?> || si == <?php echo XTHREADS_INPUT_FILE_URL; ?>);
+		var pureFileIn = (si == <?php echo XTHREADS_INPUT_FILE; ?>);
+		var fileIn = (pureFileIn || si == <?php echo XTHREADS_INPUT_FILE_URL; ?>);
 		e = checkboxIn; // forced
 		
 		var datatypeText = ($('datatype').options[$('datatype').selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>");
 		xt_visi('row_multival_enable', checkboxIn || ((
-			(si != <?php echo XTHREADS_INPUT_RADIO; ?> && !fileIn)
-			&& datatypeText)
-		));
+			si != <?php echo XTHREADS_INPUT_RADIO; ?> && (datatypeText || pureFileIn)
+		)));
 		
 		if(!e) e = ($('multival_enable_yes').checked && $('row_multival_enable').style.display != 'none');
 		xt_visi('row_multival', e);
@@ -947,6 +951,51 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					$('sanitize').selectedIndex = 0;
 				optItem.style.display = sanitizeOptShow;
 			}
+		}
+		
+		dispfmt_obj = $('dispformat');
+		fileVal = "<a href=\"{URL}\">{FILENAME}</a>";
+		nonFileVal = "{VALUE}";
+		if(pureFileIn) {
+			if(e) {
+				if($('dispitemformat').value == nonFileVal) {
+					if(dispfmt_obj.value == nonFileVal)
+						$('dispitemformat').value = fileVal;
+					else {
+						// swap dispformat <-> dispitemformat
+						$('dispitemformat').value = dispfmt_obj.value;
+						dispfmt_obj.value = nonFileVal;
+					}
+				}
+				if(dispfmt_obj.value == fileVal)
+					dispfmt_obj.value = nonFileVal;
+			} else {
+				if(dispfmt_obj.value == nonFileVal) {
+					dispfmt_obj.value = fileVal;
+					if($('dispitemformat').value != nonFileVal) {
+						// maybe swap?
+						var DIFval = $('dispitemformat').value.toUpperCase();
+						if((function(s){
+							for(i in s)
+								if(DIFval.indexOf("{"+s[i]+"}") > -1)
+									return true;
+							return false;
+						})(
+							["DOWNLOADS","DOWNLOADS_FRIENDLY","FILENAME","UPLOADMIME","URL","FILESIZE","FILESIZE_FRIENDLY","MD5HASH","UPLOADTIME","UPLOAD_TIME","UPLOAD_DATE","UPDATETIME","UPDATE_TIME","UPDATE_DATE","ICON","MODIFIED"]
+						)) {
+							dispfmt_obj.value = $('dispitemformat').value;
+							$('dispitemformat').value = nonFileVal;
+						}
+					}
+				}
+				if($('dispitemformat').value == fileVal)
+					$('dispitemformat').value = nonFileVal;
+			}
+		} else {
+			if($('dispitemformat').value == fileVal)
+				$('dispitemformat').value = nonFileVal;
+			if(dispfmt_obj.value == fileVal)
+				dispfmt_obj.value = nonFileVal;
 		}
 	}
 	$('multival_enable_yes').onclick = xt_multival_enable;
@@ -1005,16 +1054,6 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_filemaxsize', pureFileIn);
 		xt_visi('row_filereqimg', pureFileIn);
 		xt_filereqimg();
-		
-		dispfmt_obj = $('dispformat');
-		fileVal = "<a href=\"{URL}\">{FILENAME}</a>";
-		if(pureFileIn) {
-			if(dispfmt_obj.value == "{VALUE}")
-				dispfmt_obj.value = fileVal;
-		} else {
-			if(dispfmt_obj.value == fileVal)
-				dispfmt_obj.value = "{VALUE}";
-		}
 		
 		if(textAreaIn) {
 			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML; ?>")

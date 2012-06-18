@@ -127,10 +127,18 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 	// set things from input
 	foreach($threadfield_cache as $k => &$v) {
 		if($v['editable'] == XTHREADS_EDITABLE_NONE) continue;
+		$singleval = xthreads_empty($v['multival']);
 		
 		if(isset($mybb->input['xthreads_'.$k])) {
 			if($v['inputtype'] == XTHREADS_INPUT_FILE) {
-				$inval = (int)$mybb->input['xthreads_'.$k];
+				// value should be safe as it should've been sanitised in xthreads_upload_attachments, but we'll be pedantic just in case
+				if($singleval)
+					$inval = (int)$mybb->input['xthreads_'.$k];
+				elseif(!is_array($mybb->input['xthreads_'.$k]))
+					$inval = array();
+				else {
+					$inval = array_unique(array_filter(array_map('intval', $mybb->input['xthreads_'.$k])));
+				}
 			}
 			elseif($v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
 				if(is_numeric($mybb->input['xthreads_'.$k]))
@@ -138,7 +146,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				else
 					$inval = trim($mybb->input['xthreads_'.$k]);
 			}
-			elseif($v['multival'] && (
+			elseif(!$singleval && (
 					($input_is_array = is_array($mybb->input['xthreads_'.$k])) || ($v['inputtype'] == XTHREADS_INPUT_TEXT || $v['inputtype'] == XTHREADS_INPUT_TEXTAREA)
 			)) {
 				$inval = $mybb->input['xthreads_'.$k];
@@ -168,12 +176,16 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 			if($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
 				// TODO: perhaps have URL validation here (for type FILE_URL)
 				if($v['inputvalidate']) {
-					$attachedfile =& $GLOBALS['xta_cache'][$inval];
-					if(!empty($attachedfile) && ($error = trim($evalfunc('inputvalidate', array('FILENAME' => $attachedfile['filename'], 'FILESIZE' => $attachedfile['filesize'])))) !== '') {
-						$errors[] = $error;
+					// one may think that it makes more sense to do the input validation when the file is actually attached, however, we do it here to maintain a constant environment of evaluation
+					foreach((is_array($inval) ? $inval:array($inval)) as $aid) {
+						$attachedfile =& $GLOBALS['xta_cache'][$aid];
+						if(!empty($attachedfile) && ($error = trim($evalfunc('inputvalidate', array('FILENAME' => $attachedfile['filename'], 'FILESIZE' => $attachedfile['filesize'], 'NUM_FILES' => count($inval))))) !== '') {
+							$errors[] = $error;
+							break;
+						}
 					}
 				}
-				$data[$k] = $inval;
+				$data[$k] = (is_array($inval) ? implode(',', $inval):$inval);
 			}
 			else {
 				// validate input
@@ -273,7 +285,7 @@ function xthreads_input_posthandler_insert(&$ph) {
 		$evalfunc = 'xthreads_evalcache_'.$k;
 		if(isset($ph->data['xthreads_'.$k])) {
 			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric($ph->data['xthreads_'.$k]))
-				$xtaupdates[] = $ph->data['xthreads_'.$k];
+				$xtaupdates[] = $ph->data['xthreads_'.$k]; // if multiple, it's already comma delimited, so naturally works after imploding :)
 			
 			$updates[$k] = $ph->data['xthreads_'.$k];
 			if($v['inputformat']) {
@@ -602,7 +614,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 			$defval = $data[$k];
 		elseif($tid) // currently set value
 			$defval = $tfd[$k];
-		else {
+		elseif($tf['inputtype'] != XTHREADS_INPUT_FILE) {
 			$defval = eval_str($tf['defaultval']);
 			// we don't want $defval to be an array for textual inputs, so split it later
 			$using_default = true;
@@ -631,6 +643,12 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 						$vals = array('' => '<span style="font-style: italic;">'.$lang->xthreads_val_blank.'</span>') + $vals;
 				} else
 					unset($vals['']);
+			break;
+			case XTHREADS_INPUT_FILE:
+				if(!xthreads_empty($tf['multival']) && !is_array($defval)) {
+					$defval = explode(',', $defval);
+				}
+				
 		}
 		if(!isset($defvals) && ($tf['inputtype'] != XTHREADS_INPUT_FILE && $tf['inputtype'] != XTHREADS_INPUT_FILE_URL))
 			$defval = htmlspecialchars_uni($defval);
@@ -699,8 +717,21 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 				break;
 			case XTHREADS_INPUT_FILE:
 				$evalfunc or $evalfunc = 'xthreads_input_generate_defhtml_file';
+				if(!xthreads_empty($tf['multival'])) {
+					$vars['NAME_PROP'] = ' name="xthreads_'.$tf['field'].'[]"';
+					$vars['MULTIPLE_PROP'] = ' multiple="multiple"';
+					$vars['MULTIPLE'] = 1;
+					
+					// lame language hack
+					$GLOBALS['lang_xthreads_attachfile'] = $lang->xthreads_attachfile_plural;
+					$GLOBALS['lang_xthreads_attachurl'] = $lang->xthreads_attachurl_plural;
+				} else {
+					$vars['MULTIPLE'] = '';
+					$GLOBALS['lang_xthreads_attachfile'] = $lang->xthreads_attachfile;
+					$GLOBALS['lang_xthreads_attachurl'] = $lang->xthreads_attachurl;
+				}
 				$vars['MAXSIZE'] = $tf['filemaxsize'];
-				$vars['URLFETCH'] = (XTHREADS_ALLOW_URL_FETCH?1:0);
+				$vars['URLFETCH'] = (XTHREADS_ALLOW_URL_FETCH?1:'');
 				if(XTHREADS_ALLOW_URL_FETCH) {
 					// TODO: test if this environment can really fetch URLs
 					$vars['VALUE_URL'] = htmlspecialchars_uni($mybb->input['xtaurl_'.$tf['field']]);
@@ -717,49 +748,56 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 						$vars['SELECTED_URL'] = '';
 					}
 				}
-				if($defval) {
-					if(is_numeric($defval)) {
-						global $xta_cache, $db;
-						if(!isset($xta_cache[$defval])) {
-							static $done_xta_cache = false;
-							// need to cache them
-							if(!$done_xta_cache) {
-								$done_xta_cache = true;
-								$qextra = '';
-								if($mybb->input['posthash'])
-									$qextra .= ' OR posthash="'.$db->escape_string($mybb->input['posthash']).'"';
-								if($GLOBALS['thread']['tid'])
-									$qextra .= ' OR tid='.$GLOBALS['thread']['tid'];
-								$query = $db->simple_select('xtattachments', '*', 'aid='.$defval.$qextra);
-								while($xta = $db->fetch_array($query))
-									$xta_cache[$xta['aid']] = $xta;
-								$db->free_result($query);
-							}
+				$vars['ITEMS'] = '';
+				global $xta_cache, $db;
+				if($defval) foreach((is_array($defval) ? $defval:array($defval)) as $aid) {
+					if(!$aid || !is_numeric($aid)) continue;
+					if(!isset($xta_cache[$aid])) {
+						static $done_xta_cache = false;
+						// need to cache them
+						if(!$done_xta_cache) {
+							$done_xta_cache = true;
+							$qextra = '';
+							if($mybb->input['posthash'])
+								$qextra .= ' OR posthash="'.$db->escape_string($mybb->input['posthash']).'"';
+							if($GLOBALS['thread']['tid'])
+								$qextra .= ' OR tid='.$GLOBALS['thread']['tid'];
+							$query = $db->simple_select('xtattachments', '*', 'aid IN('.(is_array($defval) ? implode(',',$defval):$defval).')'.$qextra);
+							while($xta = $db->fetch_array($query))
+								$xta_cache[$xta['aid']] = $xta;
+							$db->free_result($query);
 						}
-						$this_xta =& $xta_cache[$defval];
-						$vars['ATTACH_ID'] = $this_xta['aid'];
-						$vars['ATTACH_FILENAME'] = htmlspecialchars_uni($this_xta['filename']);
-						$vars['ATTACH_FILEEXT'] = htmlspecialchars_uni(get_extension($this_xta['filename']));
-						$vars['ATTACH_SIZE'] = $this_xta['filesize'];
-						$vars['ATTACH_SIZE_FRIENDLY'] = get_friendly_size($this_xta['filesize']);
-						$vars['ATTACH_MIME'] = htmlspecialchars_uni($this_xta['uploadmime']);
-						$vars['ATTACH_DOWNLOADS'] = $this_xta['downloads'];
-						$vars['ATTACH_DOWNLOADS_FRIENDLY'] = my_number_format($this_xta['downloads']);
-						
-						if(!$this_xta['updatetime']) $this_xta['updatetime'] = $this_xta['uploadtime'];
-						$vars['ATTACH_UPLOAD_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['uploadtime']);
-						$vars['ATTACH_UPLOAD_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['uploadtime']);
-						$vars['ATTACH_UDATE_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['updatetime']);
-						$vars['ATTACH_UDATE_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['updatetime']);
-						
-						$vars['ATTACH_URL'] = xthreads_get_xta_url($this_xta);
-						if(isset($this_xta['md5hash'])) {
-							$vars['ATTACH_MD5'] = bin2hex($this_xta['md5hash']);
-							$vars['ATTACH_MD5_TITLE'] = ' title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH_MD5']).'" ';
-						}
+					}
+					$this_xta =& $xta_cache[$aid];
+					$vars['ATTACH_ID'] = $this_xta['aid'];
+					$vars['ATTACH_FILENAME'] = htmlspecialchars_uni($this_xta['filename']);
+					$vars['ATTACH_FILEEXT'] = htmlspecialchars_uni(get_extension($this_xta['filename']));
+					$vars['ATTACH_SIZE'] = $this_xta['filesize'];
+					$vars['ATTACH_SIZE_FRIENDLY'] = get_friendly_size($this_xta['filesize']);
+					$vars['ATTACH_MIME'] = htmlspecialchars_uni($this_xta['uploadmime']);
+					$vars['ATTACH_DOWNLOADS'] = $this_xta['downloads'];
+					$vars['ATTACH_DOWNLOADS_FRIENDLY'] = my_number_format($this_xta['downloads']);
+					
+					if(!$this_xta['updatetime']) $this_xta['updatetime'] = $this_xta['uploadtime'];
+					$vars['ATTACH_UPLOAD_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['uploadtime']);
+					$vars['ATTACH_UPLOAD_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['uploadtime']);
+					$vars['ATTACH_UDATE_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['updatetime']);
+					$vars['ATTACH_UDATE_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['updatetime']);
+					
+					$vars['ATTACH_URL'] = xthreads_get_xta_url($this_xta);
+					if(isset($this_xta['md5hash'])) {
+						$vars['ATTACH_MD5'] = bin2hex($this_xta['md5hash']);
+						$vars['ATTACH_MD5_TITLE'] = ' title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH_MD5']).'" ';
+					}
+					if(is_array($mybb->input['xtarm_'.$tf['field']])) {
+						if($mybb->input['xtarm_'.$tf['field']][$aid])
+							$vars['REMOVE_CHECKED'] = ' checked="checked"';
+					} else {
 						if($mybb->input['xtarm_'.$tf['field']])
 							$vars['REMOVE_CHECKED'] = ' checked="checked"';
 					}
+					
+					$vars['ITEMS'] .= $evalfunc('formhtml_item', $vars);
 				}
 				break;
 				
@@ -944,7 +982,7 @@ function xthreads_upload_attachments() {
 	$attach_fields = array();
 	while($attach = $db->fetch_array($query)) {
 		$xta_cache[$attach['aid']] = $attach;
-		$attach_fields[$attach['field']] = $attach['aid'];
+		$attach_fields[$attach['field']][] = $attach['aid'];
 	}
 	$db->free_result($query);
 	
@@ -953,25 +991,32 @@ function xthreads_upload_attachments() {
 	$errors = array();
 	$xta_remove = $threadfield_updates = array();
 	foreach($threadfield_cache as $k => &$v) {
-		if($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
-			$aid =& $mybb->input['xthreads_'.$k];
-			if($v['inputtype'] != XTHREADS_INPUT_FILE_URL || is_numeric($mybb->input['xthreads_'.$k])) {
-				
-				// now, we're ignoring what the user sends us, totally...
-				if($attach_fields[$k])
-					$aid = $attach_fields[$k];
-				else
-					$aid = 0;
-			}
+		if($v['inputtype'] != XTHREADS_INPUT_FILE && $v['inputtype'] != XTHREADS_INPUT_FILE_URL) continue;
+		
+		$aid =& $mybb->input['xthreads_'.$k];
+		if($v['inputtype'] != XTHREADS_INPUT_FILE_URL || is_numeric($mybb->input['xthreads_'.$k])) {
+			$singleval = xthreads_empty($v['multival']);
 			
-			
-			
-			// handle file upload
-			$ul = null;
-			if(!empty($_FILES['xthreads_'.$k]) && !xthreads_empty($_FILES['xthreads_'.$k]['name'])) {
-				$ul =& $_FILES['xthreads_'.$k];
-				if($mybb->input['xtaurl_'.$k])
-					unset($mybb->input['xtaurl_'.$k]);
+			// now, we're ignoring what the user sends us, totally...
+			if($attach_fields[$k]) {
+				if($singleval)
+					$aid = (int)reset($attach_fields[$k]);
+				else {
+					$aid = array_unique(array_map('intval', $attach_fields[$k]));
+					$aid = array_combine($aid, $aid);
+				}
+			} else
+				$aid = 0;
+		}
+		
+		
+		
+		// handle file upload
+		$ul = null;
+		if($singleval) {
+			if(!empty($_FILES['xthreads_'.$k]) && !xthreads_empty($_FILES['xthreads_'.$k]['name']) && is_string($_FILES['xthreads_'.$k]['name'])) {
+				$ul = $_FILES['xthreads_'.$k];
+				unset($mybb->input['xtaurl_'.$k]);
 			}
 			elseif($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && !xthreads_empty($mybb->input['xtaurl_'.$k])) {
 				// the preg_match is just a basic prelim check - the real URL checking is done later; we need this prelim check to stop it erroring out on the defalt "http://" string
@@ -980,10 +1025,62 @@ function xthreads_upload_attachments() {
 				else
 					unset($mybb->input['xtaurl_'.$k]);
 			}
-			
-			if(isset($ul)) {
-				require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
-				$attachedfile = upload_xtattachment($ul, $v, $mybb->user['uid'], $aid, $GLOBALS['thread']['tid']);
+			!isset($ul) or $ul = array($ul);
+		} else {
+			$ul = array();
+			if(is_array($mybb->input['xtaurl_'.$k])) {
+				$input_urls = $mybb->input['xtaurl_'.$k];
+				$input_key_match = true; // if URL input is an array, we'll match with equivalent file input keys
+			} else {
+				$input_urls = explode("\n", str_replace("\r", '', $mybb->input['xtaurl_'.$k]));
+				$input_key_match = false;
+			}
+			if($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && !empty($input_urls) && is_array($input_urls)) {
+				foreach($input_urls as $url_k => $url_v) {
+					$url_v = trim($url_v);
+					if(preg_match('~^[a-z0-9\\-]+\\://[a-z0-9_\\-@:.]+(?:/.*)?$~', $url_v)) {
+						if(($input_key_match && is_numeric($url_k)) || preg_match('~^aid\d+$~', $url_k))
+							$ul[$url_k] = $url_v;
+						else
+							$ul[] = $url_v;
+					}
+				}
+			}
+			if(!empty($_FILES['xthreads_'.$k]) && is_array($_FILES['xthreads_'.$k])) {
+				foreach($_FILES['xthreads_'.$k]['name'] as $file_k => $filename) {
+					if(!xthreads_empty($filename)) {
+						$file_v = array(); // why does PHP does this and make our life difficult?
+						foreach($_FILES['xthreads_'.$k] as $fvkey => $fvval)
+							$file_v[$fvkey] = $fvval[$file_k];
+						if(($input_key_match && is_numeric($file_k)) || preg_match('~^aid\d+$~', $file_k))
+							$ul[$file_k] = $file_v;
+						else
+							$ul[] = $file_v;
+					}
+				}
+			}
+			unset($mybb->input['xtaurl_'.$k]);
+		}
+		unset($_FILES['xthreads_'.$k]);
+		
+		if(!empty($ul)) {
+			require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
+			$update_aid = (is_array($aid) ? 0 : $aid);
+			foreach($ul as $ul_key => $ul_file) {
+				// hard limit number of files to at least 20
+				if(!$singleval && is_array($aid) && strlen(implode(',', $aid)) >= 245) {
+					if(!$lang->xthreads_xtaerr_error_attachnumlimit) $lang->load('xthreads');
+					$errors[] = $lang->sprintf($lang->xthreads_xtaerr_error_attachnumlimit, htmlspecialchars_uni($v['title']));
+					break;
+				}
+				
+				// allow updating a specific attachment in a multi-field thing
+				$update_aid2 = $update_aid;
+				if(!$update_aid2 && is_array($aid) && substr($ul_key, 0, 3) == 'aid') {
+					$update_aid2 = (int)substr($ul_key, 3);
+					if(!in_array($update_aid2, $aid)) $update_aid2 = 0;
+				}
+				$attachedfile = upload_xtattachment($ul_file, $v, $mybb->user['uid'], $update_aid2, $GLOBALS['thread']['tid']);
 				if($attachedfile['error']) {
 					if(!$lang->xthreads_threadfield_attacherror) $lang->load('xthreads');
 					$errors[] = $lang->sprintf($lang->xthreads_threadfield_attacherror, htmlspecialchars_uni($v['title']), $attachedfile['error']);
@@ -992,32 +1089,49 @@ function xthreads_upload_attachments() {
 					//unset($attachedfile['posthash'], $attachedfile['tid'], $attachedfile['downloads']);
 					
 					$xta_cache[$attachedfile['aid']] = $attachedfile;
-					if($mybb->input['xtaurl_'.$k])
-						unset($mybb->input['xtaurl_'.$k]);
-					if($mybb->input['xtarm_'.$k]) // since successful upload, don't tick remove box
-						unset($mybb->input['xtarm_'.$k]);
+					if($singleval) {
+						unset($mybb->input['xtaurl_'.$k], $mybb->input['xtarm_'.$k]); // since successful upload, don't tick remove box
+					} else
+						unset($mybb->input['xtarm_'.$k][$attachedfile['aid']]);
 					
-					if($attachedfile['aid'] != $aid) { // adding a new attachment
-						$aid = $attachedfile['aid'];
-						$threadfield_updates[$k] = $aid;
+					if($attachedfile['aid'] != $update_aid2) { // adding a new attachment
+						if($singleval) {
+							$aid = $attachedfile['aid'];
+							$threadfield_updates[$k] = $aid;
+						} else {
+							is_array($aid) or $aid = array(); // if no aid already set, it will be 0, so turn into array if necessary
+							$aid[$attachedfile['aid']] = $attachedfile['aid'];
+							$threadfield_updates[$k] = true;
+						}
 					}
 				}
-				unset($_FILES['xthreads_'.$k]);
-			}
-			elseif($mybb->input['xtarm_'.$k] == '1' && $v['editable'] != XTHREADS_EDITABLE_REQ) {
-				// user wants to remove attachment
-				$xta_remove[$k] = $aid;
-				$threadfield_updates[$k] = 0;
 			}
 		}
+		if($singleval) {
+			if(empty($ul) && $mybb->input['xtarm_'.$k] && $v['editable'] != XTHREADS_EDITABLE_REQ) {
+				// user wants to remove attachment
+				$xta_remove[] = $aid;
+				$threadfield_updates[$k] = $aid = 0;
+			}
+		} else {
+			if(!empty($mybb->input['xtarm_'.$k]) && is_array($mybb->input['xtarm_'.$k]))
+				foreach($mybb->input['xtarm_'.$k] as $rm_aid => $rm_confirm) {
+					if(!$rm_confirm) continue;
+					$xta_remove[] = $rm_aid;
+					unset($aid[$rm_aid]);
+					$threadfield_updates[$k] = true;
+				}
+		}
+		// fix placeholder value
+		if($threadfield_updates[$k] === true)
+			$threadfield_updates[$k] = implode(',', $aid);
+		unset($aid);
 	}
 	
 	if(!empty($xta_remove)) {
 		$db->delete_query('xtattachments', 'aid IN ('.implode(',',$xta_remove).')');
-		foreach($xta_remove as $k => $aid) {
+		foreach($xta_remove as $aid) {
 			xthreads_rm_attach_fs($xta_cache[$aid]);
-			$mybb->input['xthreads_'.$k] = 0;
-			//unset($mybb->input['xthreads_'.$k]);
 		}
 	}
 	// if editing post, also commit change to thread field immediately (waiting for user to submit is unreliable)
