@@ -56,6 +56,20 @@ function xta_load() {
 			child(e, '.xta_input_url')[0].tabIndex = ti;
 	});
 	
+	// 'clear' buttons for files
+	clrFunc = function(e){
+		if(window.opera) return; // this doesn't work in Opera
+		clr = child(e, 'input.xta_input_file_clr')[0];
+		if(!clr) return;
+		clr.style.display = "";
+		clr.onclick = (function(c){
+			return function(){
+				c.value="";
+			};
+		})(child(e, 'input.xta_input_file')[0]);
+	};
+	s('.xta_input_file_wrapper').each(clrFunc);
+	
 	// bind thing for multi file input
 	s('.xta_input_file_container').each(function(e){
 		input = child(e, 'input.xta_input_file')[0];
@@ -76,6 +90,7 @@ function xta_load() {
 				new_w.innerHTML = input_w.innerHTML;
 				new_w.onchange = changeFunc(e, child(new_w, 'input.xta_input_file')[0], changeFunc);
 				e.appendChild(new_w);
+				clrFunc(new_w);
 			};
 		};
 		input.onchange = changeFunc(e, input, changeFunc);
