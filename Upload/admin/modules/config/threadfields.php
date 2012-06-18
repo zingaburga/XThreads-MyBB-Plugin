@@ -259,7 +259,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		foreach($props as $field => &$prop) {
 			if($field == 'field') $field = 'newfield';
 			// cause you can't "continue" in a switch statement, lol...
-			if($field == 'forums' || $field == 'editable_gids' || $field == 'viewable_gids' || $field == 'filemaxsize') continue;
+			if($field == 'forums' || $field == 'editable_gids' || $field == 'viewable_gids' || $field == 'filemaxsize' || $field == 'multival') continue;
 			if($prop['datatype'] == 'string')
 				$mybb->input[$field] = trim($mybb->input[$field]);
 			else
