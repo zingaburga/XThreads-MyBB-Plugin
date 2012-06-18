@@ -232,7 +232,6 @@ if(XTHREADS_INSTALLED_VERSION < 1.50) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_force_postlayout`, DROP COLUMN `xthreads_threadsperpage`');
 	
 	$cache->update_forums(); // the forum cache rebuild reads from here
-	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 
 if(XTHREADS_INSTALLED_VERSION < 1.53) {
@@ -270,6 +269,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	)');
 	// we never used this, so may as well get rid of it
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_wol_xtattachment`');
+	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 
 return true;
