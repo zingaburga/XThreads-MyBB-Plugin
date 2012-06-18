@@ -1045,17 +1045,6 @@ function xthreads_upload_attachments() {
 				$input_urls = explode("\n", str_replace("\r", '', $mybb->input['xtaurl_'.$k]));
 				$input_key_match = false;
 			}
-			if($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && !empty($input_urls) && is_array($input_urls)) {
-				foreach($input_urls as $url_k => $url_v) {
-					$url_v = trim($url_v);
-					if(preg_match('~^[a-z0-9\\-]+\\://[a-z0-9_\\-@:.]+(?:/.*)?$~', $url_v)) {
-						if(($input_key_match && is_numeric($url_k)) || preg_match('~^aid\d+$~', $url_k))
-							$ul[$url_k] = $url_v;
-						else
-							$ul[] = $url_v;
-					}
-				}
-			}
 			if(!empty($_FILES['xthreads_'.$k]) && is_array($_FILES['xthreads_'.$k])) {
 				foreach($_FILES['xthreads_'.$k]['name'] as $file_k => $filename) {
 					if(!xthreads_empty($filename)) {
@@ -1066,6 +1055,17 @@ function xthreads_upload_attachments() {
 							$ul[$file_k] = $file_v;
 						else
 							$ul[] = $file_v;
+					}
+				}
+			}
+			if($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && !empty($input_urls) && is_array($input_urls)) {
+				foreach($input_urls as $url_k => $url_v) {
+					$url_v = trim($url_v);
+					if(preg_match('~^[a-z0-9\\-]+\\://[a-z0-9_\\-@:.]+(?:/.*)?$~', $url_v)) {
+						if(($input_key_match && is_numeric($url_k)) || preg_match('~^aid\d+$~', $url_k))
+							isset($ul[$url_k]) or $ul[$url_k] = $url_v;
+						else
+							$ul[] = $url_v;
 					}
 				}
 			}
