@@ -160,7 +160,7 @@ function xthreads_phptpl_is_safe_expression($s)
 	// eg $a = "".strval(1).").".whatever.(".strval(1).")."";
 	
 	// block exit/die, include/require + constants
-	if(preg_match('~(?<![a-z0-9_$])(?:exit|die|eval|include|include_once|require|require_once|__file__|__line__|__function__|__class__|__method__|php_version|php_os|php_sapi|default_include_path|pear_install_dir|pear_extension_dir|php_extension_dir|php_prefix|php_bindir|php_libdir|php_datadir|php_sysconfdir|php_localstatedir|php_config_file_path|php_config_file_scan_dir|php_shlib_suffix|mybb_root)(?![a-z0-9_$])~i', $check)) return false;
+	if(preg_match('~(?<![a-z0-9_$])(?:exit|die|eval|include|include_once|require|require_once|__file__|__dir__|__line__|__function__|__class__|__method__|php_version|php_os|php_sapi|default_include_path|pear_install_dir|pear_extension_dir|php_extension_dir|php_prefix|php_bindir|php_libdir|php_datadir|php_sysconfdir|php_localstatedir|php_config_file_path|php_config_file_scan_dir|php_shlib_suffix|mybb_root)(?![a-z0-9_$])~i', $check)) return false;
 	
 	
 	// check functions (implicitly blocks variable functions and method calls, as well as array index calls and $a{0}() type calls)
