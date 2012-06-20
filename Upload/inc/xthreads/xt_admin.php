@@ -286,11 +286,11 @@ function &xthreads_threadfields_props() {
 }
 
 function xthreads_default_threadfields_formhtml($type) {
-	$common_vars = array('KEY', 'NAME_PROP', 'VALUE', 'TABINDEX', 'TABINDEX_PROP', 'REQUIRED');
+	$common_vars = array('KEY', 'NAME_PROP', 'VALUE', 'TABINDEX', 'TABINDEX_PROP', 'REQUIRED', 'REQUIRED_PROP', 'MULTIPLE', 'MULTIPLE_PROP');
 	switch($type) {
 		case XTHREADS_INPUT_TEXTAREA:
 			return array(
-				'<textarea{NAME_PROP}{MAXLEN_PROP}{HEIGHT_PROP_ROWS}{WIDTH_PROP_COLS}{TABINDEX_PROP}>{VALUE}</textarea>',
+				'<textarea{NAME_PROP}{MAXLEN_PROP}{HEIGHT_PROP_ROWS}{WIDTH_PROP_COLS}{TABINDEX_PROP}{REQUIRED_PROP}>{VALUE}</textarea>',
 				array_merge($common_vars,array('MAXLEN','MAXLEN_PROP','HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS'))
 			);
 			// <textarea name="xthreads_{KEY}"<if {MAXLEN} then> maxlength="{MAXLEN}"</if><if {HEIGHT} then> rows="{HEIGHT}"</if><if {WIDTH} then> cols="{WIDTH}"</if><if {TABSTOP} then> tabindex="__xt_{TABINDEX_SHIFT}"</if>>{VALUE}</textarea>
@@ -299,7 +299,7 @@ function xthreads_default_threadfields_formhtml($type) {
 '<select style="{WIDTH_CSS}"{NAME_PROP}{MULTIPLE_PROP}{HEIGHT_PROP_SIZE}{TABINDEX_PROP}>
 	<![ITEM[<option value="{VALUE}"{STYLE}{SELECTED}>{LABEL}</option>]]>
 </select>',
-				array_merge($common_vars,array('MULTIPLE_PROP','HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','STYLE','STYLECSS','SELECTED','CHECKED','LABEL'))
+				array_merge($common_vars,array('HEIGHT','HEIGHT_PROP_SIZE','HEIGHT_CSS','HEIGHT_PROP_ROWS','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','STYLE','STYLECSS','SELECTED','CHECKED','LABEL'))
 			);
 		case XTHREADS_INPUT_CHECKBOX:
 			return array(
@@ -356,7 +356,7 @@ function xthreads_default_threadfields_formhtml($type) {
 			);
 		default:
 			return array(
-				'<input type="text" class="textbox"{NAME_PROP}{MAXLEN_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP} value="{VALUE}" />',
+				'<input type="text" class="textbox"{NAME_PROP}{MAXLEN_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP}{REQUIRED_PROP} value="{VALUE}" />',
 				array_merge($common_vars,array('MAXLEN','MAXLEN_PROP','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS'))
 			);
 	}
