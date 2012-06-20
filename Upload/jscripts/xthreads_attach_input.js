@@ -1,7 +1,12 @@
 function xta_load() {
-	var s, child, parnt;
+	var s, each, child, parnt;
 	if(typeof jQuery != 'undefined') {
 		s = jQuery;
+		each = function(c, f) {
+			c.each(function(k,v){
+				f(v);
+			});
+		};
 		child = function(e,s) {
 			return jQuery(e).find(s);
 		};
@@ -10,6 +15,11 @@ function xta_load() {
 		};
 	} else {
 		s = $$;
+		each = function(c, f) {
+			c.each(function(v,k){
+				f(v);
+			});
+		};
 		child = function(e,s) {
 			//return Selector.findChildElements(e, s); // -bugged?
 			return Prototype.Selector.select(s, e);
@@ -35,11 +45,11 @@ function xta_load() {
 	};
 	
 	// always show 'remove' checkboxes
-	s('.xtarm_label').each(function(e){
+	each(s('.xtarm_label'), function(e){
 		e.style.display = "";
 	});
 	// bind 'remove' checkboxes
-	s('.xta_file').each(function(e){
+	each(s('.xta_file'), function(e){
 		chk = child(e, '.xtarm')[0];
 		chk.onclick = (function(l,c) {
 			return function(){
@@ -53,14 +63,14 @@ function xta_load() {
 	});
 	
 	// URL fetching option buttons
-	s('.xta_input').each(function(e){
+	each(s('.xta_input'), function(e){
 		opts = child(e, '.xtasel');
 		if(!opts || !opts.length) return;
 		opts[0].style.display = "";
-		child(e, '.xtasel_label').each(function(c){ // hide other labels
+		each(child(e, '.xtasel_label'), function(c){ // hide other labels
 			c.style.display = "none";
 		});
-		child(e, 'input.xtasel_opt').each(function(c){
+		each(child(e, 'input.xtasel_opt'), function(c){
 			c.onclick = (function(e,c){
 				return function(){
 					if(!c.checked) return;
@@ -91,10 +101,10 @@ function xta_load() {
 			};
 		})(e);
 	};
-	s('.xta_input_file_wrapper').each(clrFunc);
+	each(s('.xta_input_file_wrapper'), clrFunc);
 	
 	// bind thing for multi file input
-	s('.xta_input_file_container').each(function(e){
+	each(s('.xta_input_file_container'), function(e){
 		input = child(e, 'input.xta_input_file')[0];
 		if(!input.getAttribute('multiple')) return;
 		
@@ -122,11 +132,11 @@ function xta_load() {
 	
 	// re-arrangable multi-attachments
 	// TODO: update this with jQuery version if necessary
-	if(typeof Sortable != 'undefined') s('.xta_file_list').each(function(e) {
+	if(typeof Sortable != 'undefined') each(s('.xta_file_list'), function(e) {
 		items = child(e, '.xta_file');
 		if(items.length < 2) return;
 		
-		items.each(function(c) {
+		each(items, function(c) {
 			c.style.cursor = "move";
 		});
 		Sortable.create(e, {tag: items[0].tagName});
