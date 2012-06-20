@@ -608,9 +608,10 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 			$vars['HEIGHT_CSS'] = 'height: '.($vars['HEIGHT']/2).'em;';
 			$vars['HEIGHT_PROP_ROWS'] = ' rows="'.$vars['HEIGHT'].'"';
 		}
-		if($vars['MULTIPLE']) {
+		if($vars['MULTIPLE'])
 			$vars['MULTIPLE_PROP'] = ' multiple="multiple"';
-		}
+		if($vars['REQUIRED'])
+			$vars['REQUIRED_PROP'] = ' required="required"';
 		
 		$using_default = false;
 		if(!isset($data)) // no threadfield data set for this thread
