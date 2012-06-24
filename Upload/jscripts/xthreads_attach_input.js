@@ -33,11 +33,13 @@ function xta_load() {
 	// hack to clear the contents of a file input
 	clear_file = function(e) {
 		n = document.createElement(e.tagName);
-		for(i in e) {
-			try {
-				n[i] = e[i];
-			} catch(x){}
+		a = e.attributes;
+		for(i=0; i<a.length; i++) {
+			if(a[i].specified) {
+				n.setAttribute(a[i].nodeName, a[i].nodeValue);
+			}
 		}
+		n.className = e.className; // IE fix
 		if(n.getAttribute("multiple"))
 			n.onchange = changeFunc(parnt(e, '.xta_input_file_container')[0], n, changeFunc);
 		e.parentNode.replaceChild(n, e);
@@ -103,31 +105,31 @@ function xta_load() {
 	};
 	each(s('.xta_input_file_wrapper'), clrFunc);
 	
+	changeFunc = function(e,fileinput, changeFunc){
+		return function(){
+			if(!fileinput.value) return;
+			// check last input - if blank, don't append one
+			inputs = child(e, 'input.xta_input_file');
+			if(!inputs[inputs.length-1].value) return;
+			
+			// append new input
+			input_ws = child(e, '.xta_input_file_wrapper');
+			input_w = input_ws[input_ws.length-1];
+			new_w = document.createElement(input_w.tagName);
+			new_w.setAttribute("class", "xta_input_file_wrapper");
+			new_w.innerHTML = input_w.innerHTML;
+			new_input = child(new_w, 'input.xta_input_file')[0];
+			new_input.onchange = changeFunc(e, new_input, changeFunc);
+			e.appendChild(new_w);
+			clrFunc(new_w);
+		};
+	};
 	// bind thing for multi file input
 	each(s('.xta_input_file_container'), function(e){
-		input = child(e, 'input.xta_input_file')[0];
-		if(!input.getAttribute('multiple')) return;
+		fileinput = child(e, 'input.xta_input_file')[0];
+		if(!fileinput.getAttribute('multiple')) return;
 		
-		changeFunc = function(e,input, changeFunc){
-			return function(){
-				if(!input.value) return;
-				// check last input - if blank, don't append one
-				inputs = child(e, 'input.xta_input_file');
-				if(!inputs[inputs.length-1].value) return;
-				
-				// append new input
-				input_ws = child(e, '.xta_input_file_wrapper');
-				input_w = input_ws[input_ws.length-1];
-				new_w = document.createElement(input_w.tagName);
-				new_w.setAttribute("class", "xta_input_file_wrapper");
-				new_w.innerHTML = input_w.innerHTML;
-				new_input = child(new_w, 'input.xta_input_file')[0];
-				new_input.onchange = changeFunc(e, new_input, changeFunc);
-				e.appendChild(new_w);
-				clrFunc(new_w);
-			};
-		};
-		input.onchange = changeFunc(e, input, changeFunc);
+		fileinput.onchange = changeFunc(e, fileinput, changeFunc);
 	});
 	
 	// re-arrangable multi-attachments
