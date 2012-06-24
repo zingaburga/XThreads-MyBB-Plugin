@@ -1023,7 +1023,7 @@ function xthreads_upload_attachments() {
 					$xta_cache[$attachedfile['aid']] = $attachedfile;
 					if($singleval) {
 						unset($mybb->input['xtaurl_'.$k], $mybb->input['xtarm_'.$k]); // since successful upload, don't tick remove box
-					} else
+					} elseif(is_array($mybb->input['xtarm_'.$k]))
 						unset($mybb->input['xtarm_'.$k][$attachedfile['aid']]);
 					
 					if($attachedfile['aid'] != $update_aid2) { // adding a new attachment
