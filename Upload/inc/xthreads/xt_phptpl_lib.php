@@ -116,7 +116,7 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	$do_value_repl = false;
 	$tr = array();
 	foreach($fields as $f => $r) {
-		isset($r) or $r = '{$vars[\''.$f.'\']}';
+		isset($r) or $r = '".$vars[\''.$f.'\']."';
 		$tr['{'.$f.'}'] = '"'.$r.'"';
 		
 		if($f == 'RAWVALUE') $do_value_repl = true;
