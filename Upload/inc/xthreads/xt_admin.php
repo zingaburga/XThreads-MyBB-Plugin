@@ -314,23 +314,23 @@ function xthreads_default_threadfields_formhtml($type) {
 		case XTHREADS_INPUT_FILE:
 			return array(
 '<table border="0" cellspacing="0" cellpadding="0">
-	<!--[if lt IE 8]><tbody class="xta_file_list"><![endif]-->
-	<![if gte IE 8]><tr><td class="xta_file_list"><![endif]>
+	<!--[if lt IE 7]><tbody class="xta_file_list"><![endif]-->
+	<![if gte IE 7]><tr><td class="xta_file_list"><![endif]>
 <![ITEM[
-	<![if gte IE 8]><div class="xta_file" style="clear: both;"><![endif]>
-	<!--[if lt IE 8]><tr class="xta_file"><![endif]-->
-		<!--[if lt IE 8]><td><![endif]-->
+	<![if gte IE 7]><div class="xta_file" style="clear: both;"><![endif]>
+	<!--[if lt IE 7]><tr class="xta_file"><![endif]-->
+		<!--[if lt IE 7]><td><![endif]-->
 		<div class="xta_file_link"{ATTACH_MD5_TITLE} style="padding-right: 6em;"><input type="hidden" name="xtaorder[]" value="{ATTACH_ID}" /><a href="{ATTACH_URL}" target="_blank">{ATTACH_FILENAME}</a> ({ATTACH_SIZE_FRIENDLY})</div>
-		<!--[if lt IE 8]></td><td><![endif]-->
-		<![if gte IE 8]><span style="float: right; margin-top: -1.5em;"><![endif]>
+		<!--[if lt IE 7]></td><td><![endif]-->
+		<![if gte IE 7]><span style="float: right; margin-top: -1.5em;"><![endif]>
 		<label class="xtarm_label"<if {REQUIRED} and !({MULTIPLE}) then> style="display: none;"</if>><input type="checkbox" class="xtarm" name="xtarm_{KEY}<if {MULTIPLE} then>[{ATTACH_ID}]</if>"<if !({MULTIPLE}) then> data="xtarow_{KEY}"</if> value="1"{REMOVE_CHECKED} /><if {REQUIRED} and !({MULTIPLE}) then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
-		<![if gte IE 8]></span><![endif]>
-		<!--[if lt IE 8]></td><![endif]-->
-	<![if gte IE 8]></div><![endif]>
-	<!--[if lt IE 8]></tr><![endif]-->
+		<![if gte IE 7]></span><![endif]>
+		<!--[if lt IE 7]></td><![endif]-->
+	<![if gte IE 7]></div><![endif]>
+	<!--[if lt IE 7]></tr><![endif]-->
 ]]>
-	<![if gte IE 8]></td></tr><![endif]>
-	<!--[if lt IE 8]></tbody><![endif]-->
+	<![if gte IE 7]></td></tr><![endif]>
+	<!--[if lt IE 7]></tbody><![endif]-->
 </table>
 <div id="xtarow_{KEY}" class="xta_input">
 	<if {URLFETCH} then>
