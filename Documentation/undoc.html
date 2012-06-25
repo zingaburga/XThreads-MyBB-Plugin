@@ -83,7 +83,8 @@
     <li><strong>desc</strong> - displays the description given to the thread field</li>
     <li><strong>num_values</strong> - displays the number of values stored in this thread - will always be <code>1</code> for non-multivalued fields, or <code>0</code> if no value entered</li>
     <li><strong>num_values_friendly</strong> - formatted version of the above</li>
-    <li><strong>value</strong> - reference back to <code>$threadfields['<em>key</em>']</code>, unless the field is a multivalued field, in which case, this is an array of each individual value</li>
+    <li><strong>value</strong> - reference back to <code>$threadfields['<em>key</em>']</code>, unless the field is a multivalued field, in which case, this is an array of each individual value
+      <br />For multivalued file fields: this directly references the <em>value</em> item, whilst <strong>items</strong> stores an array of the full attachment info - in other words, <code>{$GLOBALS['threadfields_x']['<em>key</em>']['value'][0]}</code> is the same as <code>{$GLOBALS['threadfields_x']['<em>key</em>']['items'][0]['value']}</code> for a multivalued file field</li>
    </ul>
    
    <h2>Additional Template Variables</h2>
@@ -115,6 +116,12 @@
       <li>XThreads has the special ability with Listbox inputs to use CSS for items if it is surrounded by a <code>&lt;span&gt;</code> tag with a single <code>style</code> property (like above example; for non-Listbox inputs, HTML is accepted anyway)</li>
       <li>This mapping does not affect the output display, so you may wish to use this in conjunction with the <em>Formatting Map List</em> option</li>
       <li>You can override the label of the <em>(Not Set)</em> item by not supplying a value before the separator, eg <code>{|}Blank</code></li>
+     </ul>
+    </li>
+    <li>Custom input HTML for file fields styling - some 'hidden' helpers to allow you to style it more easily are included: (note that these may change)<ul>
+      <li><em>xta_removed</em> class is added to the <code>.xta_file</code> element (whatever element has the class <em>xta_file</em>) if the <em>Removed</em> checkbox is ticked - the default strike-out styling can be removed by simply deleting the <em>xta_file_link</em> class</li>
+      <li><em>xta_movable</em> class is added to the <code>.xta_file</code> element if the file can be rearranged (two or more files attached to the field uploaded)</li>
+      <li>The <code>.xta_file_list</code> element accepts a JSON list of options in the <em>sortoptions</em> property.  These options get sent to the dragdrop handler for file rearranging - a list of options can be found in <em>jscripts/dragdrop.js</em>.  Example: <code>&lt;div class=&quot;xta_file_list&quot; sortoptions=&quot;{scrollSpeed: 10, scrollSensitivity: 25}&quot;&gt;<em style="color: #A0A0A0;">list of files here</em>&lt;/div&gt;</code></li>
      </ul>
     </li>
    </ul>
