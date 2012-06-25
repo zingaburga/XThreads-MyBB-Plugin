@@ -320,10 +320,10 @@ function xthreads_default_threadfields_formhtml($type) {
 	<![if gte IE 7]><div class="xta_file" style="clear: both;"><![endif]>
 	<!--[if lt IE 7]><tr class="xta_file"><![endif]-->
 		<!--[if lt IE 7]><td><![endif]-->
-		<div class="xta_file_link"{ATTACH_MD5_TITLE} style="padding-right: 6em;"><input type="hidden" name="xtaorder[]" value="{ATTACH_ID}" /><a href="{ATTACH_URL}" target="_blank">{ATTACH_FILENAME}</a> ({ATTACH_SIZE_FRIENDLY})</div>
+		<div class="xta_file_link"{ATTACH_MD5_TITLE} style="padding-right: 6em;"><input type="hidden" name="xtaorder[]" value="{ATTACH[\'aid\']}" /><a href="{ATTACH[\'url\']}" target="_blank">{ATTACH[\'filename\']}</a> ({ATTACH[\'filesize_friendly\']})</div>
 		<!--[if lt IE 7]></td><td><![endif]-->
 		<![if gte IE 7]><span style="float: right; margin-top: -1.5em;"><![endif]>
-		<label class="xtarm_label"<if {REQUIRED} and !({MULTIPLE}) then> style="display: none;"</if>><input type="checkbox" class="xtarm" name="xtarm_{KEY}<if {MULTIPLE} then>[{ATTACH_ID}]</if>"<if !({MULTIPLE}) then> data="xtarow_{KEY}"</if> value="1"{REMOVE_CHECKED} /><if {REQUIRED} and !({MULTIPLE}) then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
+		<label class="xtarm_label"<if {REQUIRED} and !({MULTIPLE}) then> style="display: none;"</if>><input type="checkbox" class="xtarm" name="xtarm_{KEY}<if {MULTIPLE} then>[{ATTACH[\'aid\']}]</if>"<if !({MULTIPLE}) then> data="xtarow_{KEY}"</if> value="1"{REMOVE_CHECKED} /><if {REQUIRED} and !({MULTIPLE}) then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
 		<![if gte IE 7]></span><![endif]>
 		<!--[if lt IE 7]></td><![endif]-->
 	<![if gte IE 7]></div><![endif]>
@@ -361,11 +361,11 @@ function xthreads_default_threadfields_formhtml($type) {
 	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/scriptaculous.js?load=effects,dragdrop"></script>
 	<setvar xta_js_dragdrop_added>1</setvar>
 </if>
-<if !$tplvars[\'xta_js_added\'] and ({ATTACH_ID} or {URLFETCH} or {MULTIPLE}) then>
+<if !$tplvars[\'xta_js_added\'] and ({ATTACH[\'aid\']} or {URLFETCH} or {MULTIPLE}) then>
 	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/xthreads_attach_input.js"></script>
 	<setvar xta_js_added>1</setvar>
 </if>
-', array('KEY','NAME_PROP','ATTACH_ID','ATTACH_MD5','ATTACH_MD5_TITLE','ATTACH_URL','ATTACH_FILENAME','ATTACH_FILEEXT','ATTACH_SIZE_FRIENDLY','ATTACH_SIZE','ATTACH_MIME','ATTACH_UPLOAD_TIME','ATTACH_UPLOAD_DATE','ATTACH_UPDATE_TIME','ATTACH_UPDATE_DATE','ATTACH_DOWNLOADS','ATTACH_DOWNLOADS_FRIENDLY','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP','RESTRICT_TYPE','ACCEPT_PROP')
+', array('KEY','NAME_PROP','ATTACH','ATTACH_MD5_TITLE','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP','RESTRICT_TYPE','ACCEPT_PROP')
 			);
 		default:
 			return array(

@@ -765,28 +765,13 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 							while($xta = $db->fetch_array($query))
 								$xta_cache[$xta['aid']] = $xta;
 							$db->free_result($query);
+							unset($xta);
 						}
 					}
-					$this_xta =& $xta_cache[$aid];
-					$vars['ATTACH_ID'] = $this_xta['aid'];
-					$vars['ATTACH_FILENAME'] = htmlspecialchars_uni($this_xta['filename']);
-					$vars['ATTACH_FILEEXT'] = htmlspecialchars_uni(get_extension($this_xta['filename']));
-					$vars['ATTACH_SIZE'] = $this_xta['filesize'];
-					$vars['ATTACH_SIZE_FRIENDLY'] = get_friendly_size($this_xta['filesize']);
-					$vars['ATTACH_MIME'] = htmlspecialchars_uni($this_xta['uploadmime']);
-					$vars['ATTACH_DOWNLOADS'] = $this_xta['downloads'];
-					$vars['ATTACH_DOWNLOADS_FRIENDLY'] = my_number_format($this_xta['downloads']);
 					
-					if(!$this_xta['updatetime']) $this_xta['updatetime'] = $this_xta['uploadtime'];
-					$vars['ATTACH_UPLOAD_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['uploadtime']);
-					$vars['ATTACH_UPLOAD_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['uploadtime']);
-					$vars['ATTACH_UDATE_TIME'] = my_date($mybb->settings['timeformat'], $this_xta['updatetime']);
-					$vars['ATTACH_UDATE_DATE'] = my_date($mybb->settings['dateformat'], $this_xta['updatetime']);
-					
-					$vars['ATTACH_URL'] = xthreads_get_xta_url($this_xta);
-					if(isset($this_xta['md5hash'])) {
-						$vars['ATTACH_MD5'] = bin2hex($this_xta['md5hash']);
-						$vars['ATTACH_MD5_TITLE'] = ' title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH_MD5']).'" ';
+					$vars['ATTACH'] = xthreads_sanitize_disp_set_xta_fields($aid, $tf);
+					if(isset($vars['ATTACH']['md5hash'])) {
+						$vars['ATTACH_MD5_TITLE'] = ' title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH']['md5hash']).'" ';
 					}
 					if(is_array($mybb->input['xtarm_'.$tf['field']])) {
 						if($mybb->input['xtarm_'.$tf['field']][$aid])

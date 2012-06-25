@@ -480,7 +480,7 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 		$s['dims'] =& $s['thumbs']['orig'];
 	}
 }
-function xthreads_sanitize_disp_set_xta_fields($aid, &$tfinfo, $dispfmt, $evalfunc) {
+function xthreads_sanitize_disp_set_xta_fields($aid, &$tfinfo, $dispfmt='', $evalfunc='') {
 	global $xta_cache;
 	if(!is_numeric($aid) || !isset($xta_cache[$aid])) {
 		// fallback - prevent templating errors if this file happens to not exist
@@ -518,13 +518,15 @@ function xthreads_sanitize_disp_set_xta_fields($aid, &$tfinfo, $dispfmt, $evalfu
 	}
 	xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
 	
-	$s['value'] = '';
-	$vars = array();
-	if($tfinfo[$dispfmt]) {
-		foreach($s as $k => &$v)
-			$vars[strtoupper($k)] =& $v;
+	if($dispfmt) {
+		$s['value'] = '';
+		$vars = array();
+		if($tfinfo[$dispfmt]) {
+			foreach($s as $k => &$v)
+				$vars[strtoupper($k)] =& $v;
+		}
+		$s['value'] = $evalfunc($dispfmt, $vars);
 	}
-	$s['value'] = $evalfunc($dispfmt, $vars);
 	return $s;
 }
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
