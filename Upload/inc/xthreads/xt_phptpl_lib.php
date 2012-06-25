@@ -217,7 +217,7 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 			if(isset($r)) {
 				$tr['{'.$f.'}'] = ($in_string ? $r : '"'.$r.'"');
 			} else {
-				$ptr[] = '~\{('.preg_quote($f, '~').')((?:-\>|\[).+?)?\}~e';
+				$ptr[] = '~\\{('.preg_quote($f, '~').')((?:-\>|\[)[^}]+?)?\\}~e';
 			}
 			if($f == 'RAWVALUE') $do_value_repl = true;
 		}
@@ -245,13 +245,13 @@ function xthreads_sanitize_eval(&$s, $fields=array(), $evalvarname=null) {
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
 	$s = preg_replace(
 		array(
-			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)(((?:-\\>|\\:\\:)[a-zA-Z_][a-zA-Z_0-9]*|\\[\s*(\'|\\\\"|)[ a-zA-Z_ 0-9]+\\4\s*\\])*)\\}~e',
+			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((?:-\>|\[)[^}]+?)?\\}~e',
 			'~\{\\\\\$forumurl\\\\\$\}~i',
 			'~\{\\\\\$forumurl\?\}~i',
 			'~\{\\\\\$threadurl\\\\\$\}~i',
 			'~\{\\\\\$threadurl\?\}~i'
 		), array(
-			'\'{$GLOBALS[\\\'$1\\\']\'.strtr(\'$2\', array(\'\\\\\\\\\\\'\' => \'\\\'\', \'\\\\\\\\\\\\\\\\"\' => \'\\\'\')).\'}\'', // rewrite double-quote to single quotes, cos it's faster
+			'\'{$GLOBALS[\\\'$1\\\']\'._xthreads_phptpl_expr_parse(\'$2\').\'}\'',
 			'{$GLOBALS[\'forumurl\']}',
 			'{$GLOBALS[\'forumurl_q\']}',
 			'{$GLOBALS[\'threadurl\']}',
