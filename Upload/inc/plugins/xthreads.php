@@ -522,8 +522,7 @@ function xthreads_sanitize_disp_set_xta_fields($aid, &$tfinfo, $dispfmt, $evalfu
 	$vars = array();
 	if($tfinfo[$dispfmt]) {
 		foreach($s as $k => &$v)
-			if(!is_array($v))
-				$vars[strtoupper($k)] =& $v;
+			$vars[strtoupper($k)] =& $v;
 	}
 	$s['value'] = $evalfunc($dispfmt, $vars);
 	return $s;

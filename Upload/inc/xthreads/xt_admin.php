@@ -805,7 +805,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 	
 	// sanitise eval'd stuff
 	if($tf['inputtype'] == XTHREADS_INPUT_FILE) {
-		$sanitise_fields = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'ICON');
+		$sanitise_fields = array('DOWNLOADS', 'DOWNLOADS_FRIENDLY', 'FILENAME', 'UPLOADMIME', 'URL', 'FILESIZE', 'FILESIZE_FRIENDLY', 'MD5HASH', 'UPLOAD_TIME', 'UPLOAD_DATE', 'UPDATE_TIME', 'UPDATE_DATE', 'THUMBS', 'DIMS', 'ICON');
 		$validate_fields = array('FILENAME', 'FILESIZE');
 	}
 	else {
