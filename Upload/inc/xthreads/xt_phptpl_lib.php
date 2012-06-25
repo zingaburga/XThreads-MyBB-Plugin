@@ -85,6 +85,8 @@ function xthreads_phptpl_expr_parse_fixstr_complex($match) {
 }
 
 function _xthreads_phptpl_expr_parse($str, $fields=array()) {
+	if(!$str && $str !== '0') return '';
+	
 	// unescapes the slashes added by xthreads_sanitize_eval, plus addslashes() (double quote only) during preg_replace()
 	$str = strtr($str, array('\\$' => '$', '\\\\"' => '"', '\\\\' => '\\'));
 	
@@ -112,17 +114,9 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	else
 		$str = preg_replace_callback($strpreg, 'xthreads_phptpl_expr_parse_fixstr_simple', $str);
 	
-	// we need to parse {VALUE} tokens here, as they need to be parsed a bit differently, and so that they're checked for safe expressions
-	$do_value_repl = false;
-	$tr = array();
-	foreach($fields as $f => $r) {
-		isset($r) or $r = '".$vars[\''.$f.'\']."';
-		$tr['{'.$f.'}'] = '"'.$r.'"';
-		
-		if($f == 'RAWVALUE') $do_value_repl = true;
-	}
-	if($do_value_repl) $str = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '"".$vars[\'$1$\'][$2].""', $str);
-	$str = strtr($str, $tr);
+	if(!empty($fields))
+		// we need to parse {VALUE} tokens here, as they need to be parsed a bit differently, and so that they're checked for safe expressions
+		$str = xthreads_phptpl_parse_fields($str, $fields, false);
 	
 	if(!empty($squotstr))
 		$str = xthreads_our_str_replace($token, $squotstr, $str);
@@ -215,6 +209,29 @@ function xthreads_allow_php() {
 
 
 
+function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
+	if(!empty($fields)) {
+		$tr = $ptr = array();
+		$do_value_repl = false;
+		foreach($fields as $f => $r) {
+			if(isset($r)) {
+				$tr['{'.$f.'}'] = ($in_string ? $r : '"'.$r.'"');
+			} else {
+				$ptr[] = '~\{('.preg_quote($f, '~').')((?:-\>|\[).+?)?\}~e';
+			}
+			if($f == 'RAWVALUE') $do_value_repl = true;
+		}
+		$str_start = ($in_string?'{':'"".');
+		$str_end = ($in_string?'}':'.""');
+		if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', $str_start.'$vars[\'$1$\'][$2]'.$str_end, $s);
+		if(!empty($tr))  $s = strtr($s, $tr);
+		if(!empty($ptr)) $s = preg_replace($ptr, '\''.$str_start.'\\$vars[\\\'$1\\\']\'._xthreads_phptpl_expr_parse(\'$2\').\''.$str_end.'\'', $s);
+		// careful with _xthreads_phptpl_expr_parse() call above - we avoid infinite looping by not supplying $fields
+		// although _xthreads_phptpl_expr_parse should always be called outside string context, the above is safe because the user cannot put in a '}' character at all - that is, achieving something like {$vars['VAL'][0]}".whatever."{$var} should be impossible
+		// an issue with the above, is that it's impossible to do something like {VAR[{VALUE}]} because variables are all auto-global'd... (but even if not, the above isn't guaranteed to work anyway, since the end token '}' might match early, eg {VAR[)
+	}
+	return $s;
+}
 
 
 
@@ -246,17 +263,7 @@ function xthreads_sanitize_eval(&$s, $fields=array(), $evalvarname=null) {
 	xthreads_phptpl_parsetpl($s, $fields, $evalvarname);
 	
 	// replace value tokens at the end
-	if(!empty($fields)) {
-		$tr = array();
-		$do_value_repl = false;
-		foreach($fields as $f => $r) {
-			isset($r) or $r = '{$vars[\''.$f.'\']}';
-			$tr['{'.$f.'}'] = $r;
-			
-			if($f == 'RAWVALUE') $do_value_repl = true;
-		}
-		if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', '{$vars[\'$1$\'][$2]}', $s);
-		$s = strtr($s, $tr);
-	}
+	if(!empty($fields))
+		$s = xthreads_phptpl_parse_fields($s, $fields, true);
 }
 
