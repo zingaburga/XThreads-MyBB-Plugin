@@ -53,14 +53,18 @@ function xta_load() {
 	// bind 'remove' checkboxes
 	each(s('.xta_file'), function(e){
 		chk = child(e, '.xtarm')[0];
-		chk.onclick = (function(l,c) {
+		chk.onclick = (function(e,c) {
 			return function(){
 				v = c.checked;
-				l.style.textDecoration = (v?"line-through":"");
+				if(l = child(e, '.xta_file_link')[0])
+					l.style.textDecoration = (v?"line-through":"");
+				// add xta_removed class to support external styling
+				e.className = e.className.replace(/(\s|^)xta_removed(\s|$)/, ' ');
+				if(v) e.className += " xta_removed";
 				if(lnk = c.getAttribute('data'))
 					document.getElementById(lnk).style.display = (v?"":"none");
 			};
-		})(child(e, '.xta_file_link')[0], chk);
+		})(e, chk);
 		chk.onclick();
 	});
 	
@@ -140,8 +144,14 @@ function xta_load() {
 		
 		each(items, function(c) {
 			c.style.cursor = "move";
+			c.className += " xta_movable"; // for external styling
 		});
-		Sortable.create(e, {tag: items[0].tagName});
+		opts = {};
+		if(o=e.getAttribute("sortoptions")) {
+			opts = eval('('+o+')');
+		}
+		opts.tag = items[0].tagName;
+		Sortable.create(e, opts);
 	});
 }
 
