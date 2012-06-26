@@ -121,7 +121,7 @@
     <li>Custom input HTML for file fields styling - some 'hidden' helpers to allow you to style it more easily are included: (note that these may change)<ul>
       <li><em>xta_removed</em> class is added to the <code>.xta_file</code> element (whatever element has the class <em>xta_file</em>) if the <em>Removed</em> checkbox is ticked - the default strike-out styling can be removed by simply deleting the <em>xta_file_link</em> class</li>
       <li><em>xta_movable</em> class is added to the <code>.xta_file</code> element if the file can be rearranged (two or more files attached to the field uploaded)</li>
-      <li>The <code>.xta_file_list</code> element accepts a JSON list of options in the <em>sortoptions</em> property.  These options get sent to the dragdrop handler for file rearranging - a list of options can be found in <em>jscripts/dragdrop.js</em>.  Example: <code>&lt;div class=&quot;xta_file_list&quot; sortoptions=&quot;{scrollSpeed: 10, scrollSensitivity: 25}&quot;&gt;<em style="color: #A0A0A0;">list of files here</em>&lt;/div&gt;</code></li>
+      <li>The <code>.xta_file_list</code> element accepts a JSON list of options in the <em>data-sortoptions</em> property.  These options get sent to the dragdrop handler for file rearranging - a list of options can be found in <em>jscripts/dragdrop.js</em>.  Example: <code>&lt;div class=&quot;xta_file_list&quot; data-sortoptions=&quot;{scrollSpeed: 10, scrollSensitivity: 25}&quot;&gt;<em style="color: #A0A0A0;">list of files here</em>&lt;/div&gt;</code></li>
      </ul>
     </li>
    </ul>
