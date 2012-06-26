@@ -147,7 +147,7 @@ function xta_load() {
 			c.className += " xta_movable"; // for external styling
 		});
 		opts = {};
-		if(o=e.getAttribute("sortoptions")) {
+		if(o=e.getAttribute("data-sortoptions")) {
 			opts = eval('('+o+')');
 		}
 		opts.tag = items[0].tagName;
