@@ -215,14 +215,14 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 		$do_value_repl = false;
 		foreach($fields as $f => $r) {
 			if(isset($r)) {
-				$tr['{'.$f.'}'] = ($in_string ? $r : '"'.$r.'"');
+				$tr['{'.$f.'}'] = ($in_string ? $r : '("'.$r.'")');
 			} else {
 				$ptr[] = '~\\{('.preg_quote($f, '~').')((?:-\>|\[)[^}]+?)?\\}~e';
 			}
 			if($f == 'RAWVALUE') $do_value_repl = true;
 		}
-		$str_start = ($in_string?'{':'"".');
-		$str_end = ($in_string?'}':'.""');
+		$str_start = ($in_string?'{':'("".');
+		$str_end = ($in_string?'}':'."")');
 		if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', $str_start.'$vars[\'$1$\'][$2]'.$str_end, $s);
 		if(!empty($tr))  $s = strtr($s, $tr);
 		if(!empty($ptr)) $s = preg_replace($ptr, '\''.$str_start.'\\$vars[\\\'$1\\\']\'._xthreads_phptpl_expr_parse(\'$2\').\''.$str_end.'\'', $s);

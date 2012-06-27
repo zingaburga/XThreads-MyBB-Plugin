@@ -323,7 +323,7 @@ function xthreads_default_threadfields_formhtml($type) {
 		<div class="xta_file_link"{ATTACH_MD5_TITLE} style="padding-right: 6em;"><input type="hidden" name="xtaorder[]" value="{ATTACH[\'aid\']}" /><a href="{ATTACH[\'url\']}" target="_blank">{ATTACH[\'filename\']}</a> ({ATTACH[\'filesize_friendly\']})</div>
 		<!--[if lt IE 7]></td><td><![endif]-->
 		<![if gte IE 7]><span style="float: right; margin-top: -1.5em;"><![endif]>
-		<label class="xtarm_label"<if {REQUIRED} and !({MULTIPLE}) then> style="display: none;"</if>><input type="checkbox" class="xtarm" name="xtarm_{KEY}<if {MULTIPLE} then>[{ATTACH[\'aid\']}]</if>"<if !({MULTIPLE}) then> data="xtarow_{KEY}"</if> value="1"{REMOVE_CHECKED} /><if {REQUIRED} and !({MULTIPLE}) then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
+		<label class="xtarm_label"<if {REQUIRED} and !{MULTIPLE} then> style="display: none;"</if>><input type="checkbox" class="xtarm" name="xtarm_{KEY}<if {MULTIPLE} then>[{ATTACH[\'aid\']}]</if>"<if !{MULTIPLE} then> data="xtarow_{KEY}"</if> value="1"{REMOVE_CHECKED} /><if {REQUIRED} and !{MULTIPLE} then>{$lang->xthreads_replaceattach}<else>{$lang->xthreads_rmattach}</if></label>
 		<![if gte IE 7]></span><![endif]>
 		<!--[if lt IE 7]></td><![endif]-->
 	<![if gte IE 7]></div><![endif]>
@@ -334,7 +334,7 @@ function xthreads_default_threadfields_formhtml($type) {
 </table>
 <div id="xtarow_{KEY}" class="xta_input">
 	<if XTHREADS_ALLOW_URL_FETCH then>
-		<if !({MULTIPLE}) then>
+		<if !{MULTIPLE} then>
 			<div class="xtasel" style="display: none; font-size: x-small;"><label style="margin: 0 0.6em;"><input type="radio" class="xtasel_opt" name="xtasel_{KEY}" value="file"{CHECKED_UPLOAD} />{$lang->xthreads_attachfile}</label><label style="margin: 0 0.6em;"><input type="radio" class="xtasel_opt" name="xtasel_{KEY}" value="url"{CHECKED_URL} />{$lang->xthreads_attachurl}</label></div>
 		</if>
 		<table border="0" cellspacing="0" cellpadding="1"><tr class="xta_input_file_row">
