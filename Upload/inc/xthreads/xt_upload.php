@@ -4,7 +4,7 @@
  */
 
 // note, $uid is used purely for flood checking; not verification, identification or anything else
-function &upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $tid=0)
+function &upload_xtattachment($attachment, &$tf, $uid, $update_attachment=0, $tid=0)
 {
 	$attacharray = do_upload_xtattachment($attachment, $tf, $update_attachment, $tid);
 	if($attacharray['error'])
@@ -26,7 +26,7 @@ function &upload_xtattachment(&$attachment, &$tf, $uid, $update_attachment=0, $t
 	return $attacharray;
 }
 
-function do_upload_xtattachment(&$attachment, &$tf, $update_attachment=0, $tid=0, $timestamp=TIME_NOW)
+function do_upload_xtattachment($attachment, &$tf, $update_attachment=0, $tid=0, $timestamp=TIME_NOW)
 {
 	global $db, $mybb, $lang;
 	
