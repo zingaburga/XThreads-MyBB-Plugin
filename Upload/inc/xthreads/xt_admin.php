@@ -179,6 +179,9 @@ function &xthreads_threadfields_props() {
 			'db_size' => 100,
 			'default' => '',
 		),
+		'multival_limit' => array(
+			'default' => 0,
+		),
 		'sanitize' => array(
 			'db_type' => 'smallint',
 			'default' => 0x1A8, //XTHREADS_SANITIZE_HTML | XTHREADS_SANITIZE_PARSER_NOBADW | XTHREADS_SANITIZE_PARSER_MYCODE | XTHREADS_SANITIZE_PARSER_SMILIES | XTHREADS_SANITIZE_PARSER_VIDEOCODE,
@@ -286,7 +289,7 @@ function &xthreads_threadfields_props() {
 }
 
 function xthreads_default_threadfields_formhtml($type) {
-	$common_vars = array('KEY', 'NAME_PROP', 'VALUE', 'TABINDEX', 'TABINDEX_PROP', 'REQUIRED', 'REQUIRED_PROP', 'MULTIPLE', 'MULTIPLE_PROP');
+	$common_vars = array('KEY', 'NAME_PROP', 'VALUE', 'TABINDEX', 'TABINDEX_PROP', 'REQUIRED', 'REQUIRED_PROP', 'MULTIPLE', 'MULTIPLE_PROP', 'MULTIPLE_LIMIT');
 	switch($type) {
 		case XTHREADS_INPUT_TEXTAREA:
 			return array(
@@ -365,7 +368,7 @@ function xthreads_default_threadfields_formhtml($type) {
 	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/xthreads_attach_input.js"></script>
 	<setvar xta_js_added>1</setvar>
 </if>
-', array('KEY','NAME_PROP','ATTACH','ATTACH_MD5_TITLE','REQUIRED','REMOVE_CHECKED','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP','RESTRICT_TYPE','ACCEPT_PROP')
+', array('KEY','NAME_PROP','ATTACH','ATTACH_MD5_TITLE','REQUIRED','REMOVE_CHECKED','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP','MULTIPLE_LIMIT','RESTRICT_TYPE','ACCEPT_PROP')
 			);
 		default:
 			return array(
@@ -681,7 +684,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 	if(!$tf['viewable_gids']) unset($tf['unviewableval']);
 	switch($tf['inputtype']) {
 		case XTHREADS_INPUT_FILE_URL:
-			unset($tf['multival'], $tf['dispitemformat']);
+			unset($tf['multival'], $tf['multival_limit'], $tf['dispitemformat']);
 		case XTHREADS_INPUT_FILE:
 			unset(
 				$tf['editable_values'],
@@ -707,7 +710,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 			unset($tf['vallist']);
 			break;
 		case XTHREADS_INPUT_RADIO:
-			unset($tf['multival']);
+			unset($tf['multival'], $tf['multival_limit']);
 			// fall through
 		case XTHREADS_INPUT_CHECKBOX:
 		case XTHREADS_INPUT_SELECT:
@@ -733,7 +736,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 	}
 	
 	if(xthreads_empty($tf['multival']))
-		unset($tf['dispitemformat']);
+		unset($tf['dispitemformat'], $tf['multival_limit']);
 	else
 		$tf['datatype'] = XTHREADS_DATATYPE_TEXT;
 	
