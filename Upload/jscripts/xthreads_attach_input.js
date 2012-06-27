@@ -61,8 +61,15 @@ function xta_load() {
 				// add xta_removed class to support external styling
 				e.className = e.className.replace(/(\s|^)xta_removed(\s|$)/, ' ');
 				if(v) e.className += " xta_removed";
-				if(lnk = c.getAttribute('data'))
-					document.getElementById(lnk).style.display = (v?"":"none");
+				if(lnk = c.getAttribute('data')) {
+					row = document.getElementById(lnk);
+					row.style.display = (v?"":"none");
+					// also clear data so that it doesn't get submitted
+					if(!v) {
+						if(l = child(row, '.xta_input_file')) clear_file(l[0]);
+						if(l = child(row, '.xta_input_url'))  l[0].value = "http://";
+					}
+				}
 			};
 		})(e, chk);
 		chk.onclick();
