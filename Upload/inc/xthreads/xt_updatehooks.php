@@ -160,7 +160,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				foreach($inval as $valkey => &$val)
 					if(xthreads_empty($val)) unset($inval[$valkey]);
 				if($v['multival_limit'] && count($inval) > $v['multival_limit'])
-					$errors[] = array('threadfield_multival_limit', $v['multival_limit'], htmlspecialchars_uni($v['title']));
+					$errors[] = array('threadfield_multival_limit', array($v['multival_limit'], htmlspecialchars_uni($v['title'])));
 			}
 			else
 				$inval = trim($mybb->input['xthreads_'.$k]);
