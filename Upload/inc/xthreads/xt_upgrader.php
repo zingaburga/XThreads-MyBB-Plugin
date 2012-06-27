@@ -272,8 +272,9 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_wol_xtattachment`');
 	xthreads_buildtfcache(); // will also update XThreads forum cache
 	
+	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 	// migrate templates - surely no-one else is ending their template names with "threadfields_inputrow", right?
-	$db->write_query('UPDATE `'.$db->table_prefix.'templates` SET title=CONCAT(SUBSTRING(title, -21), "post_threadfields_inputrow") WHERE title LIKE "%threadfields_inputrow"');
+	$db->write_query('UPDATE `'.$db->table_prefix.'templates` SET title=CONCAT(SUBSTRING(title, 0, -21), "post_threadfields_inputrow") WHERE title LIKE "%threadfields_inputrow"');
 	// global -> master template conversion
 	$newtpl = xthreads_new_templates(); // WARNING: if templates change, this could get funky
 	function xtu_normalize_template($s) {
@@ -286,7 +287,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	while($tpl = $db->fetch_array($query)) {
 		if(xtu_normalize_template($tpl['template']) == xtu_normalize_template($newtpl[$tpl['title']]))
 			// templates seem to be the same, remove
-			$rmtpl[] = $tpl['name'];
+			$rmtpl[] = $tpl['title'];
 	}
 	if(!empty($rmtpl))
 		$db->delete_query('templates', 'title IN ("'.implode('","', $rmtpl).'") AND sid=-1');
