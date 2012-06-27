@@ -271,6 +271,26 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	// we never used this, so may as well get rid of it
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_wol_xtattachment`');
 	xthreads_buildtfcache(); // will also update XThreads forum cache
+	
+	// migrate templates - surely no-one else is ending their template names with "threadfields_inputrow", right?
+	$db->write_query('UPDATE `'.$db->table_prefix.'templates` SET title=CONCAT(SUBSTRING(title, -21), "post_threadfields_inputrow") WHERE title LIKE "%threadfields_inputrow"');
+	// global -> master template conversion
+	$newtpl = xthreads_new_templates(); // WARNING: if templates change, this could get funky
+	function xtu_normalize_template($s) {
+		return str_replace(' />', '/>', strtr( // remove spaces around tags
+			preg_replace('~\s+~', ' ', trim($s)) // remove multiple spaces
+		, array('> '=>'>', ' <'=>'<')));
+	}
+	$query = $db->simple_select('templates', 'title,template', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","post_threadfields_inputrow") AND sid=-1');
+	$rmtpl = array();
+	while($tpl = $db->fetch_array($query)) {
+		if(xtu_normalize_template($tpl['template']) == xtu_normalize_template($newtpl[$tpl['title']]))
+			// templates seem to be the same, remove
+			$rmtpl[] = $tpl['name'];
+	}
+	if(!empty($rmtpl))
+		$db->delete_query('templates', 'title IN ("'.implode('","', $rmtpl).'") AND sid=-1');
+	xthreads_insert_templates($newtpl, -2);
 }
 
 return true;
