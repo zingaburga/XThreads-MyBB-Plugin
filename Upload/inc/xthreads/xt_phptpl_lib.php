@@ -27,18 +27,15 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 	
 	if($evalvarname) {
 		$find[] = '#\<while\s+(.*?)\s+do\>#sie';
-		$find[] = '#\</while\>#i';
 		$repl[] = '\'"; while(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\') { $'.$evalvarname.'.="\'';
-		$repl[] = '"; } $'.$evalvarname.'.="';
 		
 		$find[] = '#\<foreach\s+(.*?)\s+do\>#sie';
-		$find[] = '#\</foreach\>#i';
 		$repl[] = '\'"; foreach(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\' as $__key => $__value) { $'.$evalvarname.'.="\'';
-		$repl[] = '"; } $'.$evalvarname.'.="';
 		
 		$find[] = '#\<repeat\s+(.*?)\s+do\>#sie';
-		$find[] = '#\</repeat\>#i';
 		$repl[] = '\'"; for($__iter=0; $__iter < \'._xthreads_phptpl_expr_parse(\'$1\', $fields).\'; ++$__iter) { $'.$evalvarname.'.="\'';
+		
+		$find[] = '#\</(while|foreach|repeat)\>#i';
 		$repl[] = '"; } $'.$evalvarname.'.="';
 	}
 	
