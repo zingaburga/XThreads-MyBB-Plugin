@@ -933,14 +933,11 @@ function xthreads_upload_attachments() {
 		if($singleval) {
 			if(!empty($_FILES['xthreads_'.$k]) && !xthreads_empty($_FILES['xthreads_'.$k]['name']) && is_string($_FILES['xthreads_'.$k]['name'])) {
 				$ul = $_FILES['xthreads_'.$k];
-				unset($mybb->input['xtaurl_'.$k]);
 			}
 			elseif($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && !xthreads_empty($mybb->input['xtaurl_'.$k])) {
 				// the preg_match is just a basic prelim check - the real URL checking is done later; we need this prelim check to stop it erroring out on the defalt "http://" string
 				if(preg_match('~^[a-z0-9\\-]+\\://[a-z0-9_\\-@:.]+(?:/.*)?$~', $mybb->input['xtaurl_'.$k]))
 					$ul = $mybb->input['xtaurl_'.$k];
-				else
-					unset($mybb->input['xtaurl_'.$k]);
 			}
 			!isset($ul) or $ul = array($ul);
 		} else {
@@ -976,13 +973,13 @@ function xthreads_upload_attachments() {
 					}
 				}
 			}
-			unset($mybb->input['xtaurl_'.$k]);
 		}
-		unset($_FILES['xthreads_'.$k]);
+		unset($mybb->input['xtaurl_'.$k], $_FILES['xthreads_'.$k]);
 		
 		if(!empty($ul)) {
 			require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
 			$update_aid = (is_array($aid) ? 0 : $aid);
+			$failed_urls = array(); // list of any URLs that failed to fetch
 			foreach($ul as $ul_key => $ul_file) {
 				// hard limit number of files to at least 20
 				if(!$singleval && is_array($aid) && strlen(implode(',', $aid)) >= 245) {
@@ -1001,13 +998,15 @@ function xthreads_upload_attachments() {
 				if($attachedfile['error']) {
 					if(!$lang->xthreads_threadfield_attacherror) $lang->load('xthreads');
 					$errors[] = $lang->sprintf($lang->xthreads_threadfield_attacherror, htmlspecialchars_uni($v['title']), $attachedfile['error']);
+					
+					if(is_string($ul_file)) $failed_urls[] = $ul_file;
 				}
 				else {
 					//unset($attachedfile['posthash'], $attachedfile['tid'], $attachedfile['downloads']);
 					
 					$xta_cache[$attachedfile['aid']] = $attachedfile;
 					if($singleval) {
-						unset($mybb->input['xtaurl_'.$k], $mybb->input['xtarm_'.$k]); // since successful upload, don't tick remove box
+						unset($mybb->input['xtarm_'.$k]); // since successful upload, don't tick remove box
 					} elseif(is_array($mybb->input['xtarm_'.$k]))
 						unset($mybb->input['xtarm_'.$k][$attachedfile['aid']]);
 					
@@ -1022,6 +1021,11 @@ function xthreads_upload_attachments() {
 						}
 					}
 				}
+			}
+			// list failed URLs in textboxes
+			if(!empty($failed_urls)) {
+				$mybb->input['xtaurl_'.$k] = implode("\n", $failed_urls);
+				unset($failed_urls);
 			}
 		}
 		if($singleval) {
