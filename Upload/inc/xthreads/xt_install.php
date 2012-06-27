@@ -226,31 +226,7 @@ function xthreads_install() {
 	xthreads_write_xtcachefile();
 	
 	
-	xthreads_insert_templates(array(
-		'editpost_first' => '<!-- this template allows you to have something different from the editpost template for when editing the first post of a thread; by default, will just display the editpost template -->'."\n".'{$editpost}',
-		'forumdisplay_group_sep' => '<!-- stick your thread group separator template here -->',
-		'forumdisplay_thread_null' => '<!-- stick your null thread template here -->',
-		'showthread_noreplies' => '<!-- template to be used if there are no replies to a thread. For this to work with quick reply properly, you should uncomment and use the following -->
-<!--
-<div id="xthreads_noreplies">
-Put your stuff here
-</div>
--->',
-		'forumdisplay_searchforum_inline' => '<form action="forumdisplay.php" method="get">
-	<span class="smalltext"><strong>{$lang->search_forum}</strong></span>
-	<input type="text" class="textbox" name="search" value="{$searchval}" /> {$gobutton}
-	<input type="hidden" name="fid" value="{$fid}" />
-	<input type="hidden" name="sortby" value="{$sortby}" />
-	<input type="hidden" name="order" value="{$sortordernow}" />
-	<input type="hidden" name="datecut" value="{$datecut}" />
-	{$xthreads_forum_filter_form}
-	</form><br />',
-		'threadfields_inputrow' => '<tr class="xthreads_inputrow">
-<td class="{$altbg}" width="20%"><strong>{$tf[\'title\']}</strong></td>
-<td class="{$altbg}">{$inputfield}<small style="display: block;">{$tf[\'desc\']}</small></td>
-</tr>'
-	));
-	
+	xthreads_insert_templates(xthreads_new_templates(), -2);
 	xthreads_plugins_quickthread_tplmod();
 	
 	// admin permissions - default to all allow
@@ -280,6 +256,32 @@ function xthreads_insert_templates($new_templates, $set=-1) {
 			'version' => $tpl_ver
 		));
 	}
+}
+function xthreads_new_templates() {
+	return array(
+		'editpost_first' => '<!-- this template allows you to have something different from the editpost template for when editing the first post of a thread; by default, will just display the editpost template -->'."\n".'{$editpost}',
+		'forumdisplay_group_sep' => '<!-- stick your thread group separator template here -->',
+		'forumdisplay_thread_null' => '<!-- stick your null thread template here -->',
+		'showthread_noreplies' => '<!-- template to be used if there are no replies to a thread. For this to work with quick reply properly, you should uncomment and use the following -->
+<!--
+<div id="xthreads_noreplies">
+Put your stuff here
+</div>
+-->',
+		'forumdisplay_searchforum_inline' => '<form action="forumdisplay.php" method="get">
+	<span class="smalltext"><strong>{$lang->search_forum}</strong></span>
+	<input type="text" class="textbox" name="search" value="{$searchval}" /> {$gobutton}
+	<input type="hidden" name="fid" value="{$fid}" />
+	<input type="hidden" name="sortby" value="{$sortby}" />
+	<input type="hidden" name="order" value="{$sortordernow}" />
+	<input type="hidden" name="datecut" value="{$datecut}" />
+	{$xthreads_forum_filter_form}
+	</form><br />',
+		'post_threadfields_inputrow' => '<tr class="xthreads_inputrow">
+<td class="{$altbg}" width="20%"><strong>{$tf[\'title\']}</strong></td>
+<td class="{$altbg}">{$inputfield}<small style="display: block;">{$tf[\'desc\']}</small></td>
+</tr>'
+	);
 }
 
 function xthreads_undo_template_edits() {
@@ -442,7 +444,7 @@ function xthreads_uninstall() {
 	@unlink(MYBB_ROOT.'cache/xthreads.php');
 	@unlink(MYBB_ROOT.'cache/xthreads_evalcache.php');
 	
-	$db->delete_query('templates', 'title IN ("editpost_first","forumdisplay_group_sep","forumdisplay_thread_null","showthread_noreplies","forumdisplay_searchforum_inline","threadfields_inputrow")');
+	$db->delete_query('templates', 'title IN ("'.implode('","', array_keys(xthreads_new_templates())).'") AND sid=-2');
 	
 	// revert QuickThread modification
 	if(function_exists('quickthread_uninstall')) {

@@ -308,12 +308,12 @@ function xthreads_global() {
 				if($forum['xthreads_inlinesearch'])
 					$templatelist .= ',forumdisplay_searchforum_inline';
 				if(function_exists('quickthread_run')) // Quick Thread plugin
-					$templatelist .= ',threadfields_inputrow';
+					$templatelist .= ',post_threadfields_inputrow';
 			break;
 			case 'editpost.php':
 				$templatelist .= ',editpost_first';
 			case 'newthread.php':
-				$templatelist .= ',threadfields_inputrow';
+				$templatelist .= ',post_threadfields_inputrow';
 			break;
 		}
 		
