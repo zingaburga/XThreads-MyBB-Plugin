@@ -377,9 +377,16 @@ function xthreads_uninstall() {
 		$db->write_query('DROP TABLE '.$db->table_prefix.'threadfields_data');
 	if($db->table_exists('threadfields'))
 		$db->write_query('DROP TABLE '.$db->table_prefix.'threadfields');
-	if($db->table_exists('xtattachments'))
+	if($db->table_exists('xtattachments')) {
+		// remove attachments first
+		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+		$query = $db->simple_select('xtattachments', 'aid,indir,attachname');
+		while($xta = $db->fetch_array($query)) {
+			xthreads_rm_attach_fs($xta);
+		}
+		$db->free_result($query);
 		$db->write_query('DROP TABLE '.$db->table_prefix.'xtattachments');
-	
+	}
 	// remove any indexes added on the threads table
 	foreach(array(
 		'uid',
