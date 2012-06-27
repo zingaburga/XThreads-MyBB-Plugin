@@ -333,7 +333,7 @@ function xthreads_default_threadfields_formhtml($type) {
 	<!--[if lt IE 7]></tbody><![endif]-->
 </table>
 <div id="xtarow_{KEY}" class="xta_input">
-	<if {URLFETCH} then>
+	<if XTHREADS_ALLOW_URL_FETCH then>
 		<if !({MULTIPLE}) then>
 			<div class="xtasel" style="display: none; font-size: x-small;"><label style="margin: 0 0.6em;"><input type="radio" class="xtasel_opt" name="xtasel_{KEY}" value="file"{CHECKED_UPLOAD} />{$lang->xthreads_attachfile}</label><label style="margin: 0 0.6em;"><input type="radio" class="xtasel_opt" name="xtasel_{KEY}" value="url"{CHECKED_URL} />{$lang->xthreads_attachurl}</label></div>
 		</if>
@@ -346,7 +346,7 @@ function xthreads_default_threadfields_formhtml($type) {
 				<input type="file" class="fileupload xta_input_file"{NAME_PROP}{WIDTH_PROP_SIZE}{TABINDEX_PROP}{MULTIPLE_PROP}{ACCEPT_PROP} /><input type="button" class="button xta_input_file_clr" value="{$lang->file_clear}" style="display: none;" />
 			</div></div>
 		<if {MAXSIZE} then><input type="hidden" name="MAX_FILE_SIZE" value="0" /></if>
-	<if {URLFETCH} then>
+	<if XTHREADS_ALLOW_URL_FETCH then>
 			</td>
 		</tr>
 		<tr class="xta_input_url_row">
@@ -361,11 +361,11 @@ function xthreads_default_threadfields_formhtml($type) {
 	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/scriptaculous.js?load=effects,dragdrop"></script>
 	<setvar xta_js_dragdrop_added>1</setvar>
 </if>
-<if !$tplvars[\'xta_js_added\'] and ({ATTACH[\'aid\']} or {URLFETCH} or {MULTIPLE}) then>
+<if !$tplvars[\'xta_js_added\'] and ({ATTACH[\'aid\']} or XTHREADS_ALLOW_URL_FETCH or {MULTIPLE}) then>
 	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/xthreads_attach_input.js"></script>
 	<setvar xta_js_added>1</setvar>
 </if>
-', array('KEY','NAME_PROP','ATTACH','ATTACH_MD5_TITLE','REQUIRED','REMOVE_CHECKED','URLFETCH','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP','RESTRICT_TYPE','ACCEPT_PROP')
+', array('KEY','NAME_PROP','ATTACH','ATTACH_MD5_TITLE','REQUIRED','REMOVE_CHECKED','CHECKED_UPLOAD','SELECTED_UPLOAD','CHECKED_URL','SELECTED_URL','MAXSIZE','WIDTH','WIDTH_PROP_SIZE','WIDTH_CSS','WIDTH_PROP_COLS','TABINDEX','TABINDEX_PROP','VALUE_URL','MULTIPLE','MULTIPLE_PROP','RESTRICT_TYPE','ACCEPT_PROP')
 			);
 		default:
 			return array(
