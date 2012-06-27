@@ -159,6 +159,8 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 				$inval = array_unique(array_map('trim', $inval));
 				foreach($inval as $valkey => &$val)
 					if(xthreads_empty($val)) unset($inval[$valkey]);
+				if($v['multival_limit'] && count($inval) > $v['multival_limit'])
+					$errors[] = array('threadfield_multival_limit', $v['multival_limit'], htmlspecialchars_uni($v['title']));
 			}
 			else
 				$inval = trim($mybb->input['xthreads_'.$k]);
@@ -593,6 +595,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 			'TABINDEX_PROP' => '',
 			'REQUIRED' => ($tf['editable'] == XTHREADS_EDITABLE_REQ),
 			'MULTIPLE' => (xthreads_empty($tf['multival'])?'':1),
+			'MULTIPLE_LIMIT' => $tf['multival_limit'],
 			'MULTIPLE_PROP' => '',
 		);
 		if($vars['MAXLEN']) $vars['MAXLEN_PROP'] = ' maxlength="'.$vars['MAXLEN'].'"';
@@ -975,16 +978,41 @@ function xthreads_upload_attachments() {
 		}
 		unset($mybb->input['xtaurl_'.$k], $_FILES['xthreads_'.$k]);
 		
+		// remove files from list first (so we can properly measure the correct final number of attachments when uploading)
+		// fix the threadfield_updates array later on
+		if($singleval) {
+			if(empty($ul) && $mybb->input['xtarm_'.$k] && $v['editable'] != XTHREADS_EDITABLE_REQ) {
+				// user wants to remove attachment
+				$xta_remove[$aid] = $aid;
+				$aid = 0;
+			}
+		} elseif(!empty($mybb->input['xtarm_'.$k]) && is_array($mybb->input['xtarm_'.$k])) {
+			foreach($mybb->input['xtarm_'.$k] as $rm_aid => $rm_confirm) {
+				if(!$rm_confirm) continue; // double-check they really do want to remove this
+				$xta_remove[$rm_aid] = $rm_aid;
+				unset($aid[$rm_aid]);
+			}
+		}
+		// upload new stuff
 		if(!empty($ul)) {
 			require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
 			$update_aid = (is_array($aid) ? 0 : $aid);
 			$failed_urls = array(); // list of any URLs that failed to fetch
 			foreach($ul as $ul_key => $ul_file) {
 				// hard limit number of files to at least 20
-				if(!$singleval && is_array($aid) && strlen(implode(',', $aid)) >= 245) {
-					if(!$lang->xthreads_xtaerr_error_attachnumlimit) $lang->load('xthreads');
-					$errors[] = $lang->sprintf($lang->xthreads_xtaerr_error_attachnumlimit, htmlspecialchars_uni($v['title']));
-					break;
+				if(!$singleval && is_array($aid)) {
+					// hard limit
+					if(strlen(implode(',', $aid)) >= 245) {
+						if(!$lang->xthreads_xtaerr_error_attachhardlimit) $lang->load('xthreads');
+						$errors[] = $lang->sprintf($lang->xthreads_xtaerr_error_attachhardlimit, htmlspecialchars_uni($v['title']));
+						break;
+					}
+					// admin defined limit
+					if($v['multival_limit'] && count($aid) >= $v['multival_limit']) {
+						if(!$lang->xthreads_xtaerr_error_attachnumlimit) $lang->load('xthreads');
+						$errors[] = $lang->sprintf($lang->xthreads_xtaerr_error_attachnumlimit, $v['multival_limit'], htmlspecialchars_uni($v['title']));
+						break;
+					}
 				}
 				
 				// allow updating a specific attachment in a multi-field thing
@@ -1006,18 +1034,20 @@ function xthreads_upload_attachments() {
 					$xta_cache[$attachedfile['aid']] = $attachedfile;
 					if($singleval) {
 						unset($mybb->input['xtarm_'.$k]); // since successful upload, don't tick remove box
-					} elseif(is_array($mybb->input['xtarm_'.$k]))
-						unset($mybb->input['xtarm_'.$k][$attachedfile['aid']]);
+						$aid = $attachedfile['aid'];
+					} else {
+						if(is_array($mybb->input['xtarm_'.$k]))
+							unset($mybb->input['xtarm_'.$k][$attachedfile['aid']]);
+						is_array($aid) or $aid = array(); // if no aid already set, it will be 0, so turn into array if necessary
+						$aid[$attachedfile['aid']] = $attachedfile['aid'];
+					}
+					
+					// if we were going to remove this file, don't
+					if(isset($xta_remove[$attachedfile['aid']]))
+						unset($xta_remove[$attachedfile['aid']]);
 					
 					if($attachedfile['aid'] != $update_aid2) { // adding a new attachment
-						if($singleval) {
-							$aid = $attachedfile['aid'];
-							$threadfield_updates[$k] = $aid;
-						} else {
-							is_array($aid) or $aid = array(); // if no aid already set, it will be 0, so turn into array if necessary
-							$aid[$attachedfile['aid']] = $attachedfile['aid'];
-							$threadfield_updates[$k] = true;
-						}
+						$threadfield_updates[$k] = ($singleval ? $aid:true);
 					}
 				}
 			}
@@ -1027,21 +1057,9 @@ function xthreads_upload_attachments() {
 				unset($failed_urls);
 			}
 		}
-		if($singleval) {
-			if(empty($ul) && $mybb->input['xtarm_'.$k] && $v['editable'] != XTHREADS_EDITABLE_REQ) {
-				// user wants to remove attachment
-				$xta_remove[] = $aid;
-				$threadfield_updates[$k] = $aid = 0;
-			}
-		} else {
-			if(!empty($mybb->input['xtarm_'.$k]) && is_array($mybb->input['xtarm_'.$k]))
-				foreach($mybb->input['xtarm_'.$k] as $rm_aid => $rm_confirm) {
-					if(!$rm_confirm) continue;
-					$xta_remove[] = $rm_aid;
-					unset($aid[$rm_aid]);
-					$threadfield_updates[$k] = true;
-				}
-		}
+		// fix threadfield update if removing an item and not already done
+		if(!empty($xta_remove) && !isset($threadfield_updates[$k]))
+			$threadfield_updates[$k] = ($singleval ? 0:true);
 		// fix placeholder value
 		if($threadfield_updates[$k] === true)
 			$threadfield_updates[$k] = implode(',', $aid);

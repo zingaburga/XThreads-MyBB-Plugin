@@ -3,9 +3,11 @@
 $l['postdata_threadfield_required'] = 'Value for &quot;{1}&quot; is required.';
 $l['postdata_threadfield_cant_set'] = 'Sorry, you cannot set that value for &quot;{1}&quot;.';
 $l['postdata_threadfield_toolong'] = 'Value for &quot;{1}&quot; may not exceed {2} characters.';
+$l['postdata_threadfield_multival_limit'] = 'Sorry, you cannot specify more than {1} value(s) for &quot;{1}&quot;.';
 $l['postdata_threadfield_invalidvalue'] = 'Invalid value supplied for &quot;{1}&quot;.';
 $l['xthreads_threadfield_attacherror'] = 'Error attaching file for &quot;{1}&quot;; <em>{2}</em>';
-$l['xthreads_xtaerr_error_attachnumlimit'] = 'Sorry, you have exceeded the number of files that you can attach to &quot;{1}&quot;.';
+$l['xthreads_xtaerr_error_attachhardlimit'] = 'Sorry, you have exceeded the number of files that you can attach to &quot;{1}&quot;.';
+$l['xthreads_xtaerr_error_attachnumlimit'] = 'Sorry, you cannot attach more than {1} files to &quot;{2}&quot;.';
 $l['xthreads_xtaerr_error_attachsize'] = 'The file you attached is too large. The maximum file size allowed is {1}.';
 $l['xthreads_xtaerr_error_imgdims'] = 'The dimensions of the image file you attached ({1}x{2}) exceeds the dimension requirements.  Please upload a smaller/larger image, in terms of resolution.';
 $l['xthreads_xtaerr_admindrop_not_found'] = 'The specified file &quot;{1}&quot; was not found on the server - ensure that the file <em>{2}</em> exists.';

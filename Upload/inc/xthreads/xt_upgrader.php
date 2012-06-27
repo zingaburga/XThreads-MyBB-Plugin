@@ -264,6 +264,7 @@ if(XTHREADS_INSTALLED_VERSION < 1.53) {
 
 if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
+		`multival_limit` '.xthreads_db_fielddef('int', null, true).' not null default 0,
 		`inputformat` text not null,
 		`inputvalidate` text not null
 	)');

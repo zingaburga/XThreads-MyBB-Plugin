@@ -780,6 +780,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$data['multival_enable'] = ($data['multival'] !== '' ? 1:0);
 		make_form_row('multival_enable', 'yes_no_radio');
 		unset($data['multival_enable']);
+		make_form_row('multival_limit', 'text_box');
 		
 		make_form_row('textmask', 'text_box');
 		make_form_row('inputformat', 'text_area', array('style' => 'font-family: monospace'));
@@ -936,6 +937,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		if(!e) e = ($('multival_enable_yes').checked && $('row_multival_enable').style.display != 'none');
 		xt_visi('row_multival', e);
+		xt_visi('row_multival_limit', e);
 		xt_visi('row_dispitemformat', e);
 		datatypeVisible = (!e && !checkboxIn && !fileIn);
 		xt_visi('row_datatype', datatypeVisible);
