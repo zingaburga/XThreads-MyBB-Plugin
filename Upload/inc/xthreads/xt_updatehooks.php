@@ -129,27 +129,28 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 		if($v['editable'] == XTHREADS_EDITABLE_NONE) continue;
 		$singleval = xthreads_empty($v['multival']);
 		
-		if(isset($mybb->input['xthreads_'.$k])) {
+		$input =& $mybb->input['xthreads_'.$k];
+		if(isset($input)) {
 			if($v['inputtype'] == XTHREADS_INPUT_FILE) {
 				// value should be safe as it should've been sanitised in xthreads_upload_attachments, but we'll be pedantic just in case
 				if($singleval)
-					$inval = (int)$mybb->input['xthreads_'.$k];
-				elseif(!is_array($mybb->input['xthreads_'.$k]))
+					$inval = (int)$input;
+				elseif(!is_array($input))
 					$inval = array();
 				else {
-					$inval = array_unique(array_filter(array_map('intval', $mybb->input['xthreads_'.$k])));
+					$inval = array_unique(array_filter(array_map('intval', $input)));
 				}
 			}
 			elseif($v['inputtype'] == XTHREADS_INPUT_FILE_URL) {
-				if(is_numeric($mybb->input['xthreads_'.$k]))
-					$inval = (int)$mybb->input['xthreads_'.$k];
+				if(is_numeric($input))
+					$inval = (int)$input;
 				else
-					$inval = trim($mybb->input['xthreads_'.$k]);
+					$inval = trim($input);
 			}
 			elseif(!$singleval && (
-					($input_is_array = is_array($mybb->input['xthreads_'.$k])) || ($v['inputtype'] == XTHREADS_INPUT_TEXT || $v['inputtype'] == XTHREADS_INPUT_TEXTAREA)
+					($input_is_array = is_array($input)) || ($v['inputtype'] == XTHREADS_INPUT_TEXT || $v['inputtype'] == XTHREADS_INPUT_TEXTAREA)
 			)) {
-				$inval = $mybb->input['xthreads_'.$k];
+				$inval = $input;
 				if(!$input_is_array) {
 					$tr = array("\r" => '');
 					if($v['inputtype'] == XTHREADS_INPUT_TEXT)
@@ -163,7 +164,7 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 					$errors[] = array('threadfield_multival_limit', array($v['multival_limit'], htmlspecialchars_uni($v['title'])));
 			}
 			else
-				$inval = trim($mybb->input['xthreads_'.$k]);
+				$inval = trim($input);
 		}
 		else {
 			$inval = null;
@@ -286,7 +287,7 @@ function xthreads_input_posthandler_insert(&$ph) {
 	foreach($threadfield_cache as $k => &$v) {
 		$evalfunc = 'xthreads_evalcache_'.$k;
 		if(isset($ph->data['xthreads_'.$k])) {
-			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric($ph->data['xthreads_'.$k]))
+			if(($v['inputtype'] == XTHREADS_INPUT_FILE || $v['inputtype'] == XTHREADS_INPUT_FILE_URL) && is_numeric(str_replace(',','',$ph->data['xthreads_'.$k])))
 				$xtaupdates[] = $ph->data['xthreads_'.$k]; // if multiple, it's already comma delimited, so naturally works after imploding :)
 			
 			$updates[$k] = $ph->data['xthreads_'.$k];
