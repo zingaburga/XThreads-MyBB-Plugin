@@ -8,6 +8,10 @@ function xthreads_forumdisplay() {
 	$fid = (int)$mybb->input['fid'];
 	if($fid < 1 || !($forum = get_forum($fid))) return;
 	
+	// replicate some MyBB behaviour
+	if(!isset($mybb->input['sortby']) && !empty($forum['defaultsortby']))
+		$mybb->input['sortby'] = $forum['defaultsortby'];
+	
 	$threadfield_cache = xthreads_gettfcache($fid);
 	$tf_filters = array();
 	$filters_set = array(
@@ -73,9 +77,6 @@ function xthreads_forumdisplay() {
 		}
 		
 		// sorting by thread fields
-		// replicate some MyBB behaviour
-		if(!isset($mybb->input['sortby']) && !empty($forum['defaultsortby']))
-			$mybb->input['sortby'] = $forum['defaultsortby'];
 		if($mybb->input['sortby'] && substr($mybb->input['sortby'], 0, 2) == 'tf') {
 			global $xthreads_forum_sort;
 			if(substr($mybb->input['sortby'], 0, 3) == 'tf_') {
