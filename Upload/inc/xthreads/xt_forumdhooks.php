@@ -529,39 +529,35 @@ function xthreads_forumdisplay_filter() {
 	}
 	
 	// if we have custom filters/inline search, patch the forumdisplay paged URLs + sorter links
-	global $xthreads_forum_filter_args;
+	global $xthreads_forum_filter_args, $page_url_xt;
 	if($xthreads_forum_filter_args) {
 		// if Google SEO multipage is active, force our URL into that
 		if(function_exists('google_seo_url_cache') && $mybb->settings['google_seo_url_multipage'] && $mybb->settings['google_seo_url_forums']) {
 			// force cache load
 			$gsurl = google_seo_url_cache(GOOGLE_SEO_FORUM, $foruminfo['fid']);
-			if(strpos($gsurl, '?') !== false)
-				$gsurl .= $xthreads_forum_filter_args;
-			else
-				$gsurl .= '?'.substr($xthreads_forum_filter_args, 1);
+			$page_url_xt = $xthreads_forum_filter_args;
+			if(strpos($gsurl, '?') === false)
+				$page_url_xt = '?'.substr($page_url_xt, 1);
 			// pollute Google SEO's cache with our param
-			$GLOBALS['google_seo_url_cache'][GOOGLE_SEO_FORUM][$foruminfo['fid']] = $gsurl;
+			$GLOBALS['google_seo_url_cache'][GOOGLE_SEO_FORUM][$foruminfo['fid']] = $gsurl.$page_url_xt;
 		} else {
-			// use standard multipage template hack
-			$filterargs_html = htmlspecialchars_uni($xthreads_forum_filter_args);
-			$GLOBALS['sorturl'] .= $filterargs_html;
-			
-			// inject URL into multipage - template cache hacks
+			// inject URL into multipage using template cache hack
 			global $templates;
 			$tpls = array('multipage_end', 'multipage_nextpage', 'multipage_page', 'multipage_prevpage', 'multipage_start');
-			foreach($tpls as &$t)
+			foreach($tpls as &$t) {
 				if(!isset($templates->cache[$t])) {
 					$templates->cache(implode(',', $tpls));
 					break;
 				}
+				$templates->cache[$t] = str_replace('{$page_url}', '{$page_url}{$GLOBALS[\'page_url_xt\']}', $templates->cache[$t]);
+			}
+			
+			$page_url_xt = htmlspecialchars_uni($xthreads_forum_filter_args);
+			$GLOBALS['sorturl'] .= $page_url_xt;
 			
 			// may need to replace first &amp; with a ?
 			if(($mybb->settings['seourls'] == 'yes' || ($mybb->settings['seourls'] == 'auto' && $_SERVER['SEO_SUPPORT'] == 1)) && $GLOBALS['sortby'] == 'lastpost' && $GLOBALS['sortordernow'] == 'desc' && ($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999)) //  && (strpos(FORUM_URL_PAGED, '{page}') === false) - somewhat unsupported, since MyBB hard codes the page 1 elimination behaviour
-				$filterargs_html = '?'.substr($filterargs_html, 5);
-			
-			foreach($tpls as &$t) {
-				$templates->cache[$t] = str_replace('{$page_url}', '{$page_url}'.$filterargs_html, $templates->cache[$t]);
-			}
+				$page_url_xt = '?'.substr($page_url_xt, 5);
 		}
 		$templates->cache['forumdisplay_threadlist'] = str_replace('<select name="sortby">', '{$xthreads_forum_filter_form}{$xthreads_forum_search_form}<select name="sortby">', $templates->cache['forumdisplay_threadlist']);
 	}
