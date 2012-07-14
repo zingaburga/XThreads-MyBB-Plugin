@@ -763,6 +763,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		make_form_row('filemagic', 'text_box');
 		$data['filereqimg'] = ($data['fileimage'] ? 1:0);
+		if(!function_exists('imagecreate'))
+			$lang->threadfields_filereqimg_desc .= $lang->threadfields_filereqimg_desc_nogd;
 		make_form_row('filereqimg', 'yes_no_radio');
 		unset($data['filereqimg']);
 		$data['fileimage_mindim'] = $data['fileimage_maxdim'] = '';
