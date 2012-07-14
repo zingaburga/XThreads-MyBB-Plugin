@@ -128,7 +128,8 @@ $l['threadfields_filemaxsize_desc'] = 'The maximum allowable file size, in <stro
 $l['threadfields_filemaxsize_desc_2gbwarn'] = '  Note, you are running a 32-bit version of PHP, which may have issues with handling files larger than 2GB in size.  A 64-bit build of PHP does not have this issue.';
 $l['threadfields_filemaxsize_desc_phplimit'] = 'File uploads will be constrained by the following PHP limitations (these <a href="http://www.cyberciti.biz/faq/linux-unix-apache-increase-php-upload-limit/">upload limits can be changed</a> in <a href="http://www.php.net/manual/en/ini.core.php#ini.upload-max-filesize">php.ini</a>):';
 $l['threadfields_filereqimg'] = 'Only Accept Image Files';
-$l['threadfields_filereqimg_desc'] = 'If yes, will require the uploaded (or URL fetched) file for this field to be an image.  If it isn\'t deemed to be a valid image (according to GD) the file will be rejected.  Note that you must enable this option to use features like thumbnail generation.';
+$l['threadfields_filereqimg_desc'] = 'If yes, will require the uploaded (or URL fetched) file for this field to be an image.  If it isn\'t deemed to be a valid image (according to GD) the file will be rejected - only GIF, JPEG and PNG image types are currently supported.  Note that you must enable this option to use features like thumbnail generation.';
+$l['threadfields_filereqimg_desc_nogd'] = '<br /><span style="color: red;">You do not appear to have the PHP GD extension installed and activated, which this feature requires.  Enabling this option may cause problems.</span>';
 $l['threadfields_fileimage_mindim'] = 'Minimum Image Dimensions';
 $l['threadfields_fileimage_mindim_desc'] = 'Smallest acceptable image dimensions, in <em>w</em>x<em>h</em> format, eg <em>60x30</em>.';
 $l['threadfields_fileimage_maxdim'] = 'Maximum Image Dimensions';
