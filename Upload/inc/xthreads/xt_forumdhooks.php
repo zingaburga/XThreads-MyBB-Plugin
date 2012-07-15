@@ -179,11 +179,13 @@ function xthreads_forumdisplay() {
 		xthreads_forumdisplay_filter_input('filtertf_'.$n, $filter, $filters_set[$n]);
 	}
 	foreach($xt_filters as $n => &$filter) {
+		/*
 		// sanitise input here as we may need to grab extra info
 		if(is_array($filter))
 			$filter = array_map('intval', $filter);
 		else
 			$filter = (int)$filter;
+		*/
 		
 		xthreads_forumdisplay_filter_input('filterxt_'.$n, $filter, $filters_set['__xt_'.$n]);
 		
@@ -429,26 +431,24 @@ function xthreads_forumdisplay_filter() {
 		foreach($tf_filters as $field => &$val) {
 			// $threadfield_cache is guaranteed to be set here
 			$val2 = (is_array($val) ? $val : array($val));
-			if($threadfield_cache[$field]['datatype'] == XTHREADS_DATATYPE_TEXT)
-				$filtermode = $threadfield_cache[$field]['allowfilter'];
-			else
-				$filtermode = XTHREADS_FILTER_EXACT;
+			$fieldname = 'tfd.`'.$db->escape_string($field).'`';
+			$filtermode = $threadfield_cache[$field]['allowfilter'];
 			if(!xthreads_empty($threadfield_cache[$field]['multival'])) {
 				// ugly, but no other way to really do this...
 				$qstr = '(';
 				$qor = '';
 				switch($filtermode) {
 					case XTHREADS_FILTER_PREFIX:
-						$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`'));
+						$cfield = xthreads_db_concat_sql(array("\"\n\"", $fieldname));
 						$qlpre = "%\n";
 						$qlpost = '';
 						break;
 					case XTHREADS_FILTER_ANYWHERE:
-						$cfield = 'tfd.`'.$db->escape_string($field).'`';
+						$cfield = $fieldname;
 						$qlpre = $qlpost = '';
 						break;
 					default:
-						$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\""));
+						$cfield = xthreads_db_concat_sql(array("\"\n\"", $fieldname, "\"\n\""));
 						$qlpre = "%\n";
 						$qlpost = "\n%";
 				}
@@ -458,19 +458,22 @@ function xthreads_forumdisplay_filter() {
 				}
 				$qstr .= ')';
 			}
-			else {
-				$qstr = 'tfd.`'.$db->escape_string($field).'` ';
+			elseif($threadfield_cache[$field]['datatype'] == XTHREADS_DATATYPE_TEXT) {
 				if($filtermode == XTHREADS_FILTER_EXACT)
-					$qstr .= 'IN ("'.implode('","', array_map(array($db, 'escape_string'), $val2)).'")';
+					$qstr = $fieldname.' IN ("'.implode('","', array_map(array($db, 'escape_string'), $val2)).'")';
 				else {
-					$qstr2 = '';
+					$qstr = '';
 					$qor = '';
 					foreach($val2 as &$v) {
-						$qstr2 .= $qor.$qstr.'LIKE "'.xthreads_forumdisplay_filter_parselike($v, $filtermode).'"';
+						$qstr .= $qor.$fieldname.' LIKE "'.xthreads_forumdisplay_filter_parselike($v, $filtermode).'"';
 						if(!$qor) $qor = ' OR ';
 					}
-					$qstr = '('.$qstr2.')';
+					$qstr = '('.$qstr.')';
 				}
+			}
+			else {
+				// numeric filtering
+				$qstr = xthreads_forumdisplay_filter_numericq($val2, $fieldname, $threadfield_cache[$field]['datatype']);
 			}
 			$q .= ' AND '.$qstr;
 			$tvisibleonly .= ' AND '.$qstr;
@@ -478,14 +481,10 @@ function xthreads_forumdisplay_filter() {
 	}
 	if(!empty($xt_filters)) {
 		foreach($xt_filters as $field => &$val) {
-			if(is_array($val) && count($val) > 1) {
-				$qstr = '`'.$db->escape_string($field).'` IN ('.implode(',', array_map('intval', $val)).')';
-			}
-			else {
-				$qstr = '`'.$db->escape_string($field).'` = '.(int)$val;
-			}
+			$fieldname = '`'.$db->escape_string($field).'`';
+			$qstr = xthreads_forumdisplay_filter_numericq(is_array($val)?$val:array($val), $fieldname, XTHREADS_DATATYPE_UINT);
 			$q .= ' AND t.'.$qstr;
-			$tvisibleonly .= ' AND t.'.$qstr;
+			$tvisibleonly .= ' AND '.str_replace($fieldname, 't.'.$fieldname, $qstr);
 			$visibleonly .= ' AND '.$qstr;
 		}
 	}
@@ -593,6 +592,51 @@ function xthreads_forumdisplay_filter_parselike($s, $mode) {
 			return strtr($db->escape_string_like($s), array('*'=>'%', '?'=>'_'));
 	}
 	return ''; // wtf fallback
+}
+function xthreads_forumdisplay_filter_numericq($val, $fieldname, $datatype) {
+	$sanitize_func = ($datatype == XTHREADS_DATATYPE_FLOAT ? 'floatval':'intval');
+	$qstr = '';
+	$qor = '';
+	$using_complex = false;
+	foreach($val as $v) {
+		// supported patterns: > >= < <= <> (between)
+		if(($p = strpos($v, '-')) || ($p = strpos($v, '_'))) { // note, excluding 0th position here is intentional
+			// between syntax
+			$qstr .= $qor.$fieldname.($v[$p]=='_'?' NOT':'').' BETWEEN '.$sanitize_func($v).' AND '.$sanitize_func(trim(substr($v, $p+1)));
+			$using_complex = true;
+		} elseif(strpos($v, ',')) {
+			$not = '';
+			if($v[0] == '~') {
+				$v = substr($v, 1);
+				$not = ' NOT';
+			}
+			$qstr .= $fieldname.$not.' IN ('.implode(',', array_map($sanitize_func, explode(',', $v))).')';
+			$using_complex = true;
+		} elseif(in_array($v[0], array('<','>','='))) {
+			if(in_array($v[1], array('<','>','='))) {
+				$op = $v[0].$v[1];
+				$v = substr($v, 2);
+					if($op == '>>') $op = '>';
+				elseif($op == '<<') $op = '<';
+				elseif($op == '><') $op = '<>';
+				elseif($op == '=<') $op = '<=';
+				elseif($op == '=>') $op = '>=';
+				elseif($op == '==') $op = '=';
+			} else {
+				$op = $v[0];
+				$v = substr($v, 1);
+			}
+			$qstr .= $qor.$fieldname.' '.$op.' '.$sanitize_func($v);
+			$using_complex = true;
+		} else
+			$qstr .= $qor.$fieldname.' = '.$sanitize_func($v);
+		if(!$qor) $qor = ' OR ';
+	}
+	if($using_complex)
+		return '('.$qstr.')';
+	else
+		// optimisation if only simple terms
+		return $fieldname.' IN ('.implode(',', array_map($sanitize_func, $val)).')';
 }
 
 function xthreads_forumdisplay_thread() {
