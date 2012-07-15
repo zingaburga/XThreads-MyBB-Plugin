@@ -78,15 +78,22 @@ $l['threadfields_hideedit'] = 'Hide Input Field';
 $l['threadfields_hideedit_desc'] = 'If yes, will not display the input field on newthread/editpost pages through the <code>{$extra_threadfields}</code> variable.  This is useful if you want to place it in a different location.  You can access the HTML for this field by using <code>{$tfinputrow[\'<em>key</em>\']}</code>, which includes all the table markup (see <em>post_threadfields_inputrow</em> template).  Or, you can use <code>{$tfinput[\'<em>key</em>\']}</code> which gives the input field HTML without table markup (it\'s equivalent to the <code>{$inputfield}</code> variable in the <em>post_threadfields_inputrow</em> template).';
 $l['threadfields_allowfilter'] = 'Filtering Mode';
 $l['threadfields_allowfilter_desc'] = 'Allows users to filter threads using this thread field in forumdisplay.  The URL is based on the <code>filtertf_<em>key</em></code> variable.  For example, if set to <em>Exact match</em>, <code>forumdisplay.php?fid=2&amp;filtertf_status=Resolved</code> will only show threads with the thread field &quot;status&quot; having a value of &quot;Resolved&quot;.
-<br />Note that
+<br />Note that:
 <ul>
 	<li>Multiple filters (amongst different thread fields) act as an AND - that is, only threads that meet both specified requirements will be shown.</li>
 	<li>Multiple values can be specified for one thread field - this will act as an OR operation.  Using the above example, <code>forumdisplay.php?fid=2&amp;filtertf_status[]=Resolved&amp;filtertf_status[]=Rejected&amp;filtertf_cat=Technical</code> will display threads with the thread field &quot;cat&quot; equalling &quot;Technical&quot; <em>and</em> &quot;status&quot; being either &quot;Resolved&quot; <em>or</em> &quot;Rejected&quot;.</li>
 	<li>This setting does not affect templates, so you may need to make appropriate template changes for this option to be useful.</li>
 	<li>Setting this to <em>Contains</em> or <em>Wildcard</em>, or, if this field allows multiple values (or checkbox input), filtering can be rather slow and increase server load by a fair bit.</li>
-	<li>If the data type for this field is numeric (integer/float), all options other than <em>Disabled</em> act like <em>Exact match</em></li>
 	<li>Matching is usually case insensitive (this depends on your database setup), so &quot;derp&quot; exactly matches &quot;DeRP&quot;, at least, in typical MySQL setups</li>
 	<li>For <em>Wildcard</em> filtering, <code>?</code> refers to any single character, whilst <code>*</code> refers to any sequence of characters (including the 0-character sequence); be aware that these two characters may need URL encoding</li>
+	<li>If the data type for this field is numeric (integer/float), all options other than <em>Disabled</em> act like <em>Exact match</em>.  However, filters accept some extended operands:<ul>
+		<li><code>&gt;</code> - greater-than operator, example use: <code>&gt;5</code> will only display threads where the value of this field is greater than 5</li>
+		<li><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>&lt;&gt;</code> - less-than, less-than-or-equal, greater-than-or-equal, not-equal-to operators</li>
+		<li><code>-</code> - between operator, example use: <code>2-5</code> will only display threads where the value of this field is between 2 and 5 inclusive</li>
+		<li><code>_</code> - exclusion operator, example use: <code>2_5</code> will only display threads where the value of this field is NOT between 2 and 5 inclusive</li>
+		<li><code>,</code> - list delimeter, example use: <code>1,2,5</code> will only display threads where the value of this field is either 1, 2 or 5</li>
+		<li><code>~</code> - exclusion list indicator, example use: <code>~3,4</code> will only display threads where the value of this field is neither 3 nor 4</li>
+	</ul>Remember that some of these characters may need URL encoding.  Example: <code>forumdisplay.php?fid=2&amp;filtertf_price=%3C%3D100&amp;filtertf_speed[]=1-4&amp;filtertf_speed[]=8</code> will display threads with <em>price</em> less-than-or-equal to 100, AND <em>speed</em> either between 1 and 4 (inclusive) or equals 8</li>
 </ul>';
 $l['threadfields_blankval'] = 'Blank Replacement Value';
 $l['threadfields_blankval_desc'] = 'You can specify a custom value to be displayed if the user leaves this field blank (does not enter anything).  This field is not sanitised, so you can enter HTML etc here.  Some variables will work like <code>{$fid}</code>, as well as <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=464">conditionals</a>.  Note, for file inputs, this is stored in <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\'][\'value\']}</code>';
