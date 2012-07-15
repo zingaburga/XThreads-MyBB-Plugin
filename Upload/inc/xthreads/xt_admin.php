@@ -188,7 +188,9 @@ function &xthreads_threadfields_props() {
 			'inputtype' => '', // custom
 		),
 		'allowfilter' => array(
-			'default' => false,
+			'db_type' => 'tinyint',
+			'default' => XTHREADS_FILTER_NONE,
+			'inputtype' => 'select_box',
 		),
 		
 		'desc' => array(

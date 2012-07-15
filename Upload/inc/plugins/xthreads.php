@@ -97,6 +97,12 @@ define('XTHREADS_DATATYPE_BIGINT', 3);
 define('XTHREADS_DATATYPE_BIGUINT', 4);
 define('XTHREADS_DATATYPE_FLOAT', 5);
 
+define('XTHREADS_FILTER_NONE', 0);
+define('XTHREADS_FILTER_EXACT', 1);
+define('XTHREADS_FILTER_PREFIX', 2);
+define('XTHREADS_FILTER_ANYWHERE', 3);
+define('XTHREADS_FILTER_WILDCARD', 4);
+
 
 if(defined('IN_ADMINCP')) {
 	require MYBB_ROOT.'inc/xthreads/xt_admin.php';

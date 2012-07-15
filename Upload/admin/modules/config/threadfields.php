@@ -592,7 +592,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$alterfield_base = 'CHANGE `'.$db->escape_string($mybb->input['field']).'` `'.$new_tf['field'].'` ';
 				$alterations['field'] = $alterfield_base.$fieldtype;
 				
-				if($new_tf['allowfilter'] != $oldfield['allowfilter']) {
+				if((bool)$new_tf['allowfilter'] != (bool)$oldfield['allowfilter']) {
 					if($new_tf['allowfilter'])
 						$alterations['addkey'] = 'ADD KEY `'.$new_tf['field'].'` (`'.$new_tf['field'].'`)';
 					else
@@ -894,7 +894,13 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		global $form_container;
 		$form_container = new FormContainer($lang->threadfields_cat_misc);
 		
-		make_form_row('allowfilter', 'yes_no_radio');
+		make_form_row('allowfilter', 'select_box', array(
+			XTHREADS_FILTER_NONE => $lang->threadfields_filter_none,
+			XTHREADS_FILTER_EXACT => $lang->threadfields_filter_exact,
+			XTHREADS_FILTER_PREFIX => $lang->threadfields_filter_prefix,
+			XTHREADS_FILTER_ANYWHERE => $lang->threadfields_filter_anywhere,
+			XTHREADS_FILTER_WILDCARD => $lang->threadfields_filter_wildcard,
+		));
 		make_form_row('datatype', 'select_box', array(
 			XTHREADS_DATATYPE_TEXT => $lang->threadfields_datatype_text,
 			XTHREADS_DATATYPE_INT => $lang->threadfields_datatype_int,
