@@ -428,31 +428,49 @@ function xthreads_forumdisplay_filter() {
 	if(!empty($tf_filters)) {
 		foreach($tf_filters as $field => &$val) {
 			// $threadfield_cache is guaranteed to be set here
-			if(is_array($val) && count($val) > 1) {
-				if(!xthreads_empty($threadfield_cache[$field]['multival'])) {
-					// ugly, but no other way to really do this...
-					$qstr = '(';
-					$qor = '';
-					$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\""));
-					foreach($val as &$v) {
-						$qstr .= $qor.$cfield.' LIKE "%'."\n".$db->escape_string_like($v)."\n".'%"';
-						if(!$qor) $qor = ' OR ';
-					}
-					$qstr .= ')';
-					
+			$val2 = (is_array($val) ? $val : array($val));
+			if($threadfield_cache[$field]['datatype'] == XTHREADS_DATATYPE_TEXT)
+				$filtermode = $threadfield_cache[$field]['allowfilter'];
+			else
+				$filtermode = XTHREADS_FILTER_EXACT;
+			if(!xthreads_empty($threadfield_cache[$field]['multival'])) {
+				// ugly, but no other way to really do this...
+				$qstr = '(';
+				$qor = '';
+				switch($filtermode) {
+					case XTHREADS_FILTER_PREFIX:
+						$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`'));
+						$qlpre = "%\n";
+						$qlpost = '';
+						break;
+					case XTHREADS_FILTER_ANYWHERE:
+						$cfield = 'tfd.`'.$db->escape_string($field).'`';
+						$qlpre = $qlpost = '';
+						break;
+					default:
+						$cfield = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\""));
+						$qlpre = "%\n";
+						$qlpost = "\n%";
 				}
-				else
-					$qstr = 'tfd.`'.$db->escape_string($field).'` IN ("'.implode('","', array_map(array($db, 'escape_string'), $val)).'")';
+				foreach($val2 as &$v) {
+					$qstr .= $qor.$cfield.' LIKE "'.$qlpre.xthreads_forumdisplay_filter_parselike($v, $filtermode).$qlpost.'"';
+					if(!$qor) $qor = ' OR ';
+				}
+				$qstr .= ')';
 			}
 			else {
-				if(is_array($val)) // single element
-					$val2 = reset($val);
-				else
-					$val2 =& $val;
-				if(!xthreads_empty($threadfield_cache[$field]['multival']))
-					$qstr = xthreads_db_concat_sql(array("\"\n\"", 'tfd.`'.$db->escape_string($field).'`', "\"\n\"")).' LIKE "%'."\n".$db->escape_string_like($val2)."\n".'%"';
-				else
-					$qstr = 'tfd.`'.$db->escape_string($field).'` = "'.$db->escape_string($val2).'"';
+				$qstr = 'tfd.`'.$db->escape_string($field).'` ';
+				if($filtermode == XTHREADS_FILTER_EXACT)
+					$qstr .= 'IN ("'.implode('","', array_map(array($db, 'escape_string'), $val2)).'")';
+				else {
+					$qstr2 = '';
+					$qor = '';
+					foreach($val2 as &$v) {
+						$qstr2 .= $qor.$qstr.'LIKE "'.xthreads_forumdisplay_filter_parselike($v, $filtermode).'"';
+						if(!$qor) $qor = ' OR ';
+					}
+					$qstr = '('.$qstr2.')';
+				}
 			}
 			$q .= ' AND '.$qstr;
 			$tvisibleonly .= ' AND '.$qstr;
@@ -561,6 +579,20 @@ function xthreads_forumdisplay_filter() {
 		}
 		$templates->cache['forumdisplay_threadlist'] = str_replace('<select name="sortby">', '{$xthreads_forum_filter_form}{$xthreads_forum_search_form}<select name="sortby">', $templates->cache['forumdisplay_threadlist']);
 	}
+}
+function xthreads_forumdisplay_filter_parselike($s, $mode) {
+	global $db;
+	switch($mode) {
+		case XTHREADS_FILTER_EXACT:
+			return $db->escape_string_like($s);
+		case XTHREADS_FILTER_PREFIX:
+			return $db->escape_string_like($s).'%';
+		case XTHREADS_FILTER_ANYWHERE:
+			return '%'.$db->escape_string_like($s).'%';
+		case XTHREADS_FILTER_WILDCARD:
+			return strtr($db->escape_string_like($s), array('*'=>'%', '?'=>'_'));
+	}
+	return ''; // wtf fallback
 }
 
 function xthreads_forumdisplay_thread() {

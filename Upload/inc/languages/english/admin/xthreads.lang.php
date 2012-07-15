@@ -76,8 +76,18 @@ $l['threadfields_tabstop'] = 'Capture Tab Key';
 $l['threadfields_tabstop_desc'] = 'If Yes, this field will intercept and respond to the user pressing the Tab key, when cycling through form elements.  Tab index will depend on the order specified above; it will always be placed between the subject and message field\'s tab index.  Note that setting this to No won\'t stop this field from responding to the Tab key - it simply won\'t set a <code>tabindex</code> property for this field.';
 $l['threadfields_hideedit'] = 'Hide Input Field';
 $l['threadfields_hideedit_desc'] = 'If yes, will not display the input field on newthread/editpost pages through the <code>{$extra_threadfields}</code> variable.  This is useful if you want to place it in a different location.  You can access the HTML for this field by using <code>{$tfinputrow[\'<em>key</em>\']}</code>, which includes all the table markup (see <em>post_threadfields_inputrow</em> template).  Or, you can use <code>{$tfinput[\'<em>key</em>\']}</code> which gives the input field HTML without table markup (it\'s equivalent to the <code>{$inputfield}</code> variable in the <em>post_threadfields_inputrow</em> template).';
-$l['threadfields_allowfilter'] = 'Allow Filtering';
-$l['threadfields_allowfilter_desc'] = 'Allows users to filter threads using this thread field in forumdisplay.  This does not affect templates, so you need to make appropriate changes to make this option useful.  The URL is based on the <code>filtertf_<em>key</em></code> variable.  For example, <code>forumdisplay.php?fid=2&amp;filtertf_status=Resolved</code> will only show threads with the thread field &quot;status&quot; having a value of &quot;Resolved&quot;.  Note, multiple filters are allowed, and you can also specify an array of values for a single field, for example <code>forumdisplay.php?fid=2&amp;filtertf_status[]=Resolved&amp;filtertf_status[]=Rejected&amp;filtertf_cat=Technical</code> will display threads with the thread field &quot;cat&quot; equalling &quot;Technical&quot; <em>and</em> &quot;status&quot; being either &quot;Resolved&quot; <em>or</em> &quot;Rejected&quot;.  Also note, if this field allows multiple values (or checkbox input), filtering can be rather slow and increase server load by a fair bit.';
+$l['threadfields_allowfilter'] = 'Filtering Mode';
+$l['threadfields_allowfilter_desc'] = 'Allows users to filter threads using this thread field in forumdisplay.  The URL is based on the <code>filtertf_<em>key</em></code> variable.  For example, if set to <em>Exact match</em>, <code>forumdisplay.php?fid=2&amp;filtertf_status=Resolved</code> will only show threads with the thread field &quot;status&quot; having a value of &quot;Resolved&quot;.
+<br />Note that
+<ul>
+	<li>Multiple filters (amongst different thread fields) act as an AND - that is, only threads that meet both specified requirements will be shown.</li>
+	<li>Multiple values can be specified for one thread field - this will act as an OR operation.  Using the above example, <code>forumdisplay.php?fid=2&amp;filtertf_status[]=Resolved&amp;filtertf_status[]=Rejected&amp;filtertf_cat=Technical</code> will display threads with the thread field &quot;cat&quot; equalling &quot;Technical&quot; <em>and</em> &quot;status&quot; being either &quot;Resolved&quot; <em>or</em> &quot;Rejected&quot;.</li>
+	<li>This setting does not affect templates, so you may need to make appropriate template changes for this option to be useful.</li>
+	<li>Setting this to <em>Contains</em> or <em>Wildcard</em>, or, if this field allows multiple values (or checkbox input), filtering can be rather slow and increase server load by a fair bit.</li>
+	<li>If the data type for this field is numeric (integer/float), all options other than <em>Disabled</em> act like <em>Exact match</em></li>
+	<li>Matching is usually case insensitive (this depends on your database setup), so &quot;derp&quot; exactly matches &quot;DeRP&quot;, at least, in typical MySQL setups</li>
+	<li>For <em>Wildcard</em> filtering, <code>?</code> refers to any single character, whilst <code>*</code> refers to any sequence of characters (including the 0-character sequence); be aware that these two characters may need URL encoding</li>
+</ul>';
 $l['threadfields_blankval'] = 'Blank Replacement Value';
 $l['threadfields_blankval_desc'] = 'You can specify a custom value to be displayed if the user leaves this field blank (does not enter anything).  This field is not sanitised, so you can enter HTML etc here.  Some variables will work like <code>{$fid}</code>, as well as <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=464">conditionals</a>.  Note, for file inputs, this is stored in <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\'][\'value\']}</code>';
 $l['threadfields_defaultval'] = 'Default Value';
@@ -199,6 +209,11 @@ $l['threadfields_textmask_css_desc'] = 'Value appropriate for placing as a CSS v
 $l['threadfields_textmask_color'] = 'Color Value';
 $l['threadfields_textmask_color_desc'] = 'Color name (eg <code>red</code>) or hexadecimal representation (eg <code>#FF0000</code>)';
 $l['threadfields_textmask_custom'] = 'Custom (regex)';
+$l['threadfields_filter_none'] = 'Disabled';
+$l['threadfields_filter_exact'] = 'Exact match';
+$l['threadfields_filter_prefix'] = 'Beginning with';
+$l['threadfields_filter_anywhere'] = 'Contains';
+$l['threadfields_filter_wildcard'] = 'Wildcard (* and ?) match';
 $l['threadfields_formhtml_desc_key'] = 'The <em>Key</em> for this field';
 $l['threadfields_formhtml_desc_name_prop'] = 'The <em>name</em> property for this field.  Shortcut for <code> name=&quot;xthreads_{KEY}&quot;</code>';
 $l['threadfields_formhtml_desc_value'] = 'Current value of this field, or, if a select, option or checkbox input, value for current item';
