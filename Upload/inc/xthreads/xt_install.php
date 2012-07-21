@@ -232,7 +232,8 @@ function xthreads_install() {
 	// admin permissions - default to all allow
 	$query = $db->simple_select('adminoptions', 'uid,permissions');
 	while($adminopt = $db->fetch_array($query)) {
-		$perms = unserialize($adminopt['permissions']);
+		$perms = @unserialize($adminopt['permissions']);
+		if(empty($perms)) continue; // inherited or just messed up
 		$perms['config']['threadfields'] = 1;
 		$db->update_query('adminoptions', array('permissions' => $db->escape_string(serialize($perms))), 'uid='.$adminopt['uid']);
 	}
@@ -367,7 +368,8 @@ function xthreads_uninstall() {
 	
 	$query = $db->simple_select('adminoptions', 'uid,permissions');
 	while($adminopt = $db->fetch_array($query)) {
-		$perms = unserialize($adminopt['permissions']);
+		$perms = @unserialize($adminopt['permissions']);
+		if(empty($perms)) continue; // inherited or just messed up
 		unset($perms['config']['threadfields']);
 		$db->update_query('adminoptions', array('permissions' => $db->escape_string(serialize($perms))), 'uid='.$adminopt['uid']);
 	}
