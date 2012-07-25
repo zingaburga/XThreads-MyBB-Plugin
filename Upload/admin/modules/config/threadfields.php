@@ -453,9 +453,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$mybb->input['fileimage'] .= '|'.$mybb->input['fileimage_maxdim'];
 		}
 		if($mybb->input['fileimgthumbs']) {
-			// verify format
-			if(!preg_match('~^[0-9]+x[0-9]+(\\|[0-9]+x[0-9]+)*$~', $mybb->input['fileimgthumbs']))
-				$errors[] = $lang->error_invalid_thumb_dims;
+			// TODO: verify format
+			//if(!preg_match('~^[0-9]+x[0-9]+(\\|[0-9]+x[0-9]+)*$~', $mybb->input['fileimgthumbs']))
+			//	$errors[] = $lang->error_invalid_thumb_dims;
 		}
 		
 		if($update) {

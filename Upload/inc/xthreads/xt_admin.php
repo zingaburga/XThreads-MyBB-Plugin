@@ -609,7 +609,7 @@ function xthreads_buildtfcache() {
 	global $db, $cache;
 	
 	$cd = array();
-	$evalcache = '';
+	$evalcache = $thumbcache = '';
 	$query = $db->simple_select('threadfields', '*', '', array('order_by' => 'disporder', 'order_dir' => 'asc'));
 	while($tf = $db->fetch_array($query)) {
 		xthreads_buildtfcache_parseitem($tf);
@@ -634,8 +634,24 @@ function xthreads_buildtfcache() {
 			} else
 				$tf[$field] = false;
 		}
+		if(isset($tf['fileimgthumbs'])) {
+			foreach($tf['fileimgthumbs'] as $name => &$evalstr) {
+				if(!$evalstr) continue;
+				$thumbcache .= '
+				case \''.$name.'\':
+					'.$evalstr.';
+					return;';
+				$evalstr = true;
+			}
+		}
 		$evalcache .= '
 			} return \'\';
+		}';
+		if($thumbcache)
+			$thumbcache = '
+		function xthreads_imgthumb_'.$tf['field'].'($name, &$img) {
+			switch(strtolower($name)) {'.$thumbcache.'
+			}
 		}';
 		
 		$cd[$tf['field']] = $tf;
@@ -643,9 +659,10 @@ function xthreads_buildtfcache() {
 	$db->free_result($query);
 	$cache->update('threadfields', $cd);
 	
+	
 	$fp = fopen(MYBB_ROOT.'cache/xthreads_evalcache.php', 'w');
 	fwrite($fp, '<?php /* this file caches preparsed versions of display formats - please do not modify this file */
-'.$evalcache);
+'.$evalcache.$thumbcache);
 	
 	// rebuild the forums cache too - there's a dependency because this can affect the filtering etc allows
 	xthreads_buildcache_forums($fp);
@@ -773,7 +790,35 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 		$tf['viewable_gids'] = array_unique(explode(',', $tf['viewable_gids']));
 	}
 	if($tf['fileimgthumbs']) {
-		$tf['fileimgthumbs'] = array_unique(explode('|', str_replace(',','|',$tf['fileimgthumbs'])));
+		$thumbarray = array_unique(explode('|', $tf['fileimgthumbs']));
+		$tf['fileimgthumbs'] = array();
+		foreach($thumbarray as &$thumb) {
+			if(preg_match('~^([a-zA-Z0-9_]+)\=~', $thumb, $m)) {
+				$chain = substr($thumb, strlen($m[0]));
+				// add additionally allowed funcs
+				require_once MYBB_ROOT.'inc/xthreads/xt_image.php';
+				$extra_funcs = array('newXTImg');
+				foreach(get_class_methods('XTImageTransform') as $meth)
+					if($meth[0] != '_')
+						// this is ugly, but should be good enough
+						// problem is that it's difficult to see the source object for method calls, so just allow any object
+						$extra_funcs[] = '->'.$meth;
+				
+				// TODO: put in extra functions
+				$tf['fileimgthumbs'][strtolower($m[1])] = '$img->'.$chain;
+				/*$tf['fileimgthumbs'][strtolower($m[1])] = xthreads_phptpl_expr_parse('$img->'.$chain, array(
+					'WIDTH' => '$img->WIDTH',
+					'OWIDTH' => '$img->OWIDTH',
+					'HEIGHT' => '$img->HEIGHT',
+					'OHEIGHT' => '$img->OHEIGHT',
+					'TYPE' => '$img->TYPE',
+					'FILENAME' => '$img->FILENAME',
+				));*/
+			}
+			elseif(preg_match('~^\d+x\d+$~', $thumb)) {
+				$tf['fileimgthumbs'][$thumb] = false;
+			}
+		}
 	}
 	if(!xthreads_empty($tf['filemagic'])) {
 		$tf['filemagic'] = array_map('urldecode', array_unique(explode('|', $tf['filemagic'])));

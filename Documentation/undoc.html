@@ -76,6 +76,66 @@
     <li>Finally, the value goes into the <em>Display Format</em>, for display</li>
    </ol>
    
+   <h2>Image Filtering Chains</h2>
+   <p>XThreads allows you to define image filtering/processing chains, which specify how thumbnails are created.  What's described below is applicable only to file type thread fields, which only accept images.</p>
+   <p>Each filter is like a function and thus must have brackets after the name even if no parameters are passed.  Separate filters using <code>-&gt;</code> - example <code>resize(100,100)-&gt;brightness(50)-&gt;grayscale()</code>  PHP expressions are supported in arguments (subject to the same limitations as conditionals)</p>
+   <h3>Image Filters</h3>
+   <ul>
+	<li><code>downscale(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Scale down image so that its width and height are less than or equal to <em>width</em> and <em>height</em>.  If the image is already smaller, no scaling is performed</li>
+	<li><code>upscale(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Scale up image so that its width and height are greater than or equal to <em>width</em> and <em>height</em>.  If the image is already larger, no scaling is performed</li>
+	<li><code>scale(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Alias for <code>scale_max</code></li>
+	<li><code>scale_max(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Scale image so that it just fits within the bounds of <em>width</em> and <em>height</em>.  For example, <code>scale_max(120,120)</code> will scale a 90x45 image to 120x60, or a 800x600 image to 120x90</li>
+	<li><code>scale_min(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Scale image so that the bounds of <em>width</em> and <em>height</em> just fits within the image.  For example, <code>scale_min(120,120)</code> will scale a 90x45 image to 240x120, or a 800x600 image to 160x120</li>
+	<li><code>resize(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Resize image to <em>width</em>x<em>height</em> without maintaining aspect ratio</li>
+	<li><code>crop(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Alias for <code>crop_cm</code></li>
+	<li><code>crop_lt(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from left-top corner (offset by specified x/y coordinates, if given) to <em>width</em>x<em>height</em>.  Negative values for any arguments are offset by the current width/height of the image, so a <em>width</em> of -10 means 'crop 10 pixels off the right'.</li>
+	<li><code>crop_ct(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>])</code><br />Crop image anchored from center-top side.</li>
+	<li><code>crop_rt(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from right-top corner</li>
+	<li><code>crop_lm(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>])</code><br />Crop image anchored from left-middle side</li>
+	<li><code>crop_cm(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>)</code><br />Crop image anchored from the centre</li>
+	<li><code>crop_rm(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>])</code><br />Crop image anchored from right-middle side</li>
+	<li><code>crop_lb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from left-bottom corner</li>
+	<li><code>crop_cb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>])</code><br />Crop image anchored from center-bottom side.</li>
+	<li><code>crop_rb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from right-bottom corner</li>
+	<li><code>negate()</code><br />Invert image colours</li>
+	<li><code>grayscale()</code><br />Desaturate image</li>
+	<li><code>brightness(<span style="color: gray;">(int)</span> <em>value</em>)</code><br />Increase brightness by <em>value</em> (-255 to +255, 0 = no change)</li>
+	<li><code>contrast(<span style="color: gray;">(int)</span> <em>value</em>)</code><br /><u>De</u>crease contrast by <em>value</em> (-100 to +100, 0 = no change)</li>
+	<li><code>colorize(<span style="color: gray;">(int)</span> <em>red</em>, <span style="color: gray;">(int)</span> <em>green</em>, <span style="color: gray;">(int)</span> <em>blue</em>, <span style="color: gray;">(int)</span> <em>alpha</em>)</code><br />Increase each pixel's RGBA colour components by specified values (-255 to +255, 0 = no change).  <em>alpha</em> parameter ignored on PHP &lt; 5.2.5</li>
+	<li><code>edgedetect()</code><br />Highlight edges</li>
+	<li><code>emboss()</code><br /><a href="https://en.wikipedia.org/wiki/Image_embossing">Embosses</a> the image</li>
+	<li><code>gaussian_blur()</code><br />Apply <a href="https://en.wikipedia.org/wiki/Gaussian_blur">gaussian blur</a> to image</li>
+	<li><code>selective_blur()</code><br />Blur the image</li>
+	<li><code>mean_removal()</code><br />Sharpen the image using mean removal</li>
+	<li><code>smooth(<span style="color: gray;">(float)</span> <em>strength</em>)</code><br />Smooth the image, with specified <em>strength</em></li>
+	<li><code>pixelate(<span style="color: gray;">(float)</span> <em>blocksize</em>[, <span style="color: gray;">(bool)</span> <em>advancedmode</em>])</code><br />Pixelate image with specified <em>blocksize</em>.  Requires PHP 5.3 or later</li>
+	<li><code>jpeg([<span style="color: gray;">(colour)</span> <em>transparent</em>[, <span style="color: gray;">(int)</span> <em>quality</em>]])</code><br />Indicate to save the image as a JPEG.  Transparent colours will be saved as <em>transparent</em>.  <em>quality</em> indicates the quality/size tradeoff when saving (0 = smallest file, lowest quality, 100 = largest file, best quality, default = 75)</li>
+	<li><code>png([<span style="color: gray;">(int)</span> <em>compression</em>])</code><br />Indicate to save the image as a PNG.  <em>compression</em> specifies how much compression to apply, where 0 = no compression, 9 = maximum compression, 6 = usually default level</li>
+	<li><code>load(<span style="color: gray;">(string)</span> <em>filename</em>)</code><br />Discards current image and loads image specified by <em>filename</em>, affecting all image variables described below - note that this must be an absolute path</li>
+	<li><code>blank(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(colour)</span> <em>background</em>])</code><br />Discards current image and creates a blank canvas of specified <em>width</em> and <em>height</em>, filled with <em>background</em>; affects all images variables described below</li>
+   </ul>
+   <h3>Image Variables</h3>
+   <ul>
+	<li><code>{WIDTH}</code>: Current width of the image</li>
+	<li><code>{HEIGHT}</code>: Current height of the image</li>
+	<li><code>{OWIDTH}</code>: Original width of the image (from last <code>load</code> or <code>blank</code> call)</li>
+	<li><code>{OHEIGHT}</code>: Original height of the image</li>
+	<li><code>{TYPE}</code>: String representing type of image; can be <code>'PNG'</code>, <code>'JPEG'</code>, <code>'GIF'</code>, <code>'WBMP'</code> or <code>'XBM'</code></li>
+	<li><code>{FILENAME}</code>: Filename of original image</li>
+   </ul>
+   <h3>Notes</h3>
+   <ul>
+	<li>By default, thumbnails are saved in PNG format unless it was a JPEG, in which case it still saves in JPEG format.</li>
+	<li>The 'simple' thumbnail generation is almost identical to a <code>downscale</code> call, for example, specifying thumbnail generation to be <em>160x120</em> is almost equalent to specifying <code>160x120=downscale(160,120)</code></li>
+	<li>Using <span style="color: #FF0080;">hawt pink (#FF0080)</span> as an example, colours can be specified using:
+		<ul>
+		<li>HTML-esque string: <code>'<span style="color: #FF0000;">RR</span><span style="color: #00FF00;">GG</span><span style="color: #0000FF;">BB</span><span style="color: #808080;">AA</span>'</code> eg <code>'FF0080'</code></li>
+		<li>Integer: <code>0x<span style="color: #808080;">AA</span><span style="color: #0000FF;">BB</span><span style="color: #00FF00;">GG</span><span style="color: #FF0000;">RR</span></code> eg <code>0x8000FF</code></li>
+		<li>Array: <code>array(<span style="color: #FF0000;">RR</span>, <span style="color: #00FF00;">GG</span>, <span style="color: #0000FF;">BB</span>, <span style="color: #808080;">AA</span>)</code> eg <code>array(255, 0, 128)</code></li>
+		</ul>
+	The alpha component (AA) defaults to 0 (no transparency) if not supplied.
+   </ul>
+      
    <h2>Additional Custom Thread Field Variables</h2>
    <p>In addition to the <code>{$GLOBALS['threadfields']['<em>key</em>']}</code> variable (which displays the value of the thread field), there are other values which can be displayed via the additional variable, <code>{$GLOBALS['threadfields<strong style="color: brown;">_x</strong>']['<em>key</em>']['<span class="token1">valuename</span>']}</code> variable, where <span class="token1">valuename</span> can be one of the following:</p>
    <ul>
