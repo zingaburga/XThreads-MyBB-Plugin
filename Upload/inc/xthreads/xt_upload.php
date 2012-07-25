@@ -293,7 +293,7 @@ function do_upload_xtattachment($attachment, &$tf, $update_attachment=0, $tid=0,
 	
 	if(!empty($img_dimensions) && !empty($tf['fileimgthumbs'])) {
 		// generate thumbnails
-		$attacharray['thumbs'] = xthreads_build_thumbnail($tf['fileimgthumbs'], $attacharray['aid'], $new_file, $path, $month_dir, $img_dimensions);
+		$attacharray['thumbs'] = xthreads_build_thumbnail($tf['fileimgthumbs'], $attacharray['aid'], $tf['field'], $new_file, $path, $month_dir, $img_dimensions);
 		$attacharray['thumbs']['orig'] = $origdimarray;
 		$attacharray['thumbs'] = serialize($attacharray['thumbs']);
 	}
@@ -337,38 +337,54 @@ function xthreads_validate_attachment(&$attachment, &$tf) {
 	return false; // no error
 }
 
-function &xthreads_build_thumbnail($thumbdims, $aid, $filename, $path, $month_dir, $img_dimensions=null) {
+function &xthreads_build_thumbnail($thumbdims, $aid, $fieldname, $filename, $path, $month_dir, $img_dimensions=null) {
 	if(empty($img_dimensions)) {
 		//$img_dimensions = @getimagesize($path.$month_dir.$filename);
 		$img_dimensions = @getimagesize($filename);
 	}
 	$update_thumbs = array('orig' => array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2]));
 	if(is_array($img_dimensions)) {
-		foreach($thumbdims as &$dims) {
-			$p = strpos($dims, 'x');
-			if(!$p) continue;
-			$w = (int)substr($dims, 0, $p);
-			$h = (int)substr($dims, $p+1);
-			
-			$destname = basename(substr($filename, 0, -6).$w.'x'.$h.'.thumb');
-			
-			if($img_dimensions[0] > $w || $img_dimensions[1] > $h) {
-				// TODO: think about using own function to apply image convolution
-				require_once MYBB_ROOT.'inc/functions_image.php';
-				$thumbnail = generate_thumbnail($filename, $path.$month_dir, $destname, $h, $w);
-				// if it fails, there's nothing much we can do... so twiddle thumbs is the solution
-				if($thumbnail['code'] == 1) {
-					$newdims = scale_image($img_dimensions[0], $img_dimensions[1], $w, $h);
-					$update_thumbs[$dims] = array('w' => $newdims['width'], 'h' => $newdims['height'], 'type' => $img_dimensions[2], 'file' => $month_dir.$destname);
-				}
-				else {
+		$filterfunc = 'xthreads_imgthumb_'.$fieldname;
+		foreach($thumbdims as $dims => $complex) {
+			$destname = basename(substr($filename, 0, -6).$dims.'.thumb');
+			if($complex) {
+				require_once MYBB_ROOT.'inc/xthreads/xt_image.php';
+				$img = new XTImageTransform;
+				if($img->load($filename)) {
+					// run filter chain
+					$filterfunc($dims, $img);
+					// write out file & save
+					$img->_enableWrite = true;
+					$img->write($path.$month_dir.'/'.$destname);
+					$update_thumbs[$dims] = array('w' => $img->WIDTH, 'h' => $img->HEIGHT, 'type' => $img->typeGD, 'file' => $month_dir.$destname);
+				} else {
+					// failed
 					$update_thumbs[$dims] = array('w' => 0, 'h' => 0, 'type' => 0, 'file' => '');
 				}
-			}
-			else { // image is small (hopefully), just copy it over
-				// TODO: maybe use hardlink instead?
-				@copy($filename, $path.$month_dir.$destname);
-				$update_thumbs[$dims] = array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2], 'file' => $month_dir.$destname);
+			} else {
+				$p = strpos($dims, 'x');
+				if(!$p) continue;
+				$w = (int)substr($dims, 0, $p);
+				$h = (int)substr($dims, $p+1);
+				
+				if($img_dimensions[0] > $w || $img_dimensions[1] > $h) {
+					// TODO: think about using own function to apply image convolution
+					require_once MYBB_ROOT.'inc/functions_image.php';
+					$thumbnail = generate_thumbnail($filename, $path.$month_dir, $destname, $h, $w);
+					// if it fails, there's nothing much we can do... so twiddle thumbs is the solution
+					if($thumbnail['code'] == 1) {
+						$newdims = scale_image($img_dimensions[0], $img_dimensions[1], $w, $h);
+						$update_thumbs[$dims] = array('w' => $newdims['width'], 'h' => $newdims['height'], 'type' => $img_dimensions[2], 'file' => $month_dir.$destname);
+					}
+					else {
+						$update_thumbs[$dims] = array('w' => 0, 'h' => 0, 'type' => 0, 'file' => '');
+					}
+				}
+				else { // image is small (hopefully), just copy it over
+					// TODO: maybe use hardlink instead?
+					@copy($filename, $path.$month_dir.$destname);
+					$update_thumbs[$dims] = array('w' => $img_dimensions[0], 'h' => $img_dimensions[1], 'type' => $img_dimensions[2], 'file' => $month_dir.$destname);
+				}
 			}
 		}
 	}

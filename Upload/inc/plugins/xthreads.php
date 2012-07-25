@@ -478,7 +478,7 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 	if(!empty($tfinfo['fileimgthumbs'])) {
 		if(!isset($s['thumbs']))
 			$s['thumbs'] = array();
-		foreach($tfinfo['fileimgthumbs'] as &$$th)
+		foreach($tfinfo['fileimgthumbs'] as $th => $complex)
 			if(!isset($s['thumbs'][$th]))
 				$s['thumbs'][$th] = array('w' => 0, 'h' => 0, 'url' => '');
 		if(!isset($s['thumbs']['orig']))
