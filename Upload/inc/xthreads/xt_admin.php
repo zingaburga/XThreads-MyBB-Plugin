@@ -619,19 +619,20 @@ function xthreads_buildtfcache() {
 		foreach(array('inputformat', 'inputvalidate', 'unviewableval', 'dispformat', 'dispitemformat', 'blankval', 'formhtml', 'formhtml_item') as $field) {
 			if(isset($tf[$field])) {
 				if($field == 'formhtml' || $field == 'formhtml_item' || $field == 'inputvalidate')
-					$tf[$field] = $used = ($tf[$field] !== '');
+					$cacheEval = $used = ($tf[$field] !== '');
 				elseif($field == 'inputformat')
-					$tf[$field] = $used = ($tf[$field] !== '{$vars[\'VALUE\']}');
+					$cacheEval = $used = ($tf[$field] !== '{$vars[\'VALUE\']}');
 				else {
-					$tf[$field] = (bool)preg_match('~\$vars[^a-z0-9_]~i', $tf[$field]); // whether to evaluate vars
-					$used = ($tf[$field] !== '');
+					$cacheEval = ($tf[$field] !== '');
+					$used = (bool)preg_match('~\$vars[^a-z0-9_]~i', $tf[$field]); // whether to evaluate vars
 				}
 				// ^ above preg_match is a simple optimisation - not the best, but simple and usually effective
-				if($used) {
+				if($cacheEval) {
 					// slight optimisation - reduces amount of code if will return empty string
 					$evalcache .= '
 				case \''.$field.'\': return "'.$tf[$field].'";';
 				}
+				$tf[$field] = $used;
 			} else
 				$tf[$field] = false;
 		}
