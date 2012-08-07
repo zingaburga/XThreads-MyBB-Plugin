@@ -287,7 +287,7 @@ function xthreads_wol_patch_init(&$ua) {
 					$hook = '
 						function query($string, $hide_errors=0, $write_query=0) {
 							static $done=false;
-							if(!$done && !$write_query && substr(trim($string), 0, 73) == "SELECT t.fid, t.tid, t.subject, t.visible, p.displaystyle AS threadprefix") {
+							if(!$done && !$write_query && (substr(trim($string), 0, 73) == "SELECT t.fid, t.tid, t.subject, t.visible, p.displaystyle AS threadprefix" || substr(trim($string), 0, 80) == "SELECT t.uid, t.fid, t.tid, t.subject, t.visible, p.displaystyle AS threadprefix")) {
 								$done = true;
 								$this->xthreads_db_wol_hook = true;
 							}
