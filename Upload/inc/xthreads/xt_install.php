@@ -32,7 +32,7 @@ function xthreads_info() {
 	if(is_object($plugins)) {
 		$info = $plugins->run_hooks('xthreads_info_needs_moar_pimpin', $info);
 	}
-	if($mybb->input['action']) // not main plugins page
+	if($mybb->input['action'] || !is_object($GLOBALS['table'])) // not main plugins page
 		return $info;
 	
 	static $done = false;
