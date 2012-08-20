@@ -68,7 +68,7 @@ function xthreads_forumdisplay() {
 				$use_default_filter = false;
 				// ignore blank inputs
 				if($tf['ignoreblankfilter'] && (
-					(is_array($mybb->input['filtertf_'.$n]) && (empty($tf_filters[$n]) || $tf_filters[$n] == array(''))) ||
+					(is_array($tf_filters[$n]) && (empty($tf_filters[$n]) || array_unique($tf_filters[$n]) == array(''))) ||
 					($tf_filters[$n] === '')
 				)) {
 					unset($tf_filters[$n]);
