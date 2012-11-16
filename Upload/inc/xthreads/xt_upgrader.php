@@ -268,7 +268,9 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 		`inputformat` text not null,
 		`inputvalidate` text not null
 	)');
-	$db->update('threadfields', array('inputformat' => '{VALUE}'));
+	$db->update_query('threadfields', array('inputformat' => '{VALUE}'));
+	// fix email masks
+	$db->update_query('threadfields', array('textmask' => $db->escape_string('^([^ "(),:;<>@\\[\\\\\\]]+)@([a-z0-9_.\\-]+)$')), 'textmask="'.$db->escape_string('^([a-z0-9_.\\-]+)@([a-z0-9_.\\-]+)$').'"');
 	// we never used this, so may as well get rid of it
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_wol_xtattachment`');
 	xthreads_buildtfcache(); // will also update XThreads forum cache
