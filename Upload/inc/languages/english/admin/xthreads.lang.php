@@ -213,6 +213,8 @@ $l['threadfields_textmask_httpurl'] = 'URL (HTTP/S)';
 $l['threadfields_textmask_httpurl_desc'] = 'Any http:// or https:// style URL.  URI scheme can be displayed through <code style="color: red;">{VALUE$1}</code>, URI host through <code style="color: #008000;">{VALUE$2}</code> and URI path, with preceeding forward slash, through <code style="color: blue;">{VALUE$3}</code>.  Example: <code><span style="color: red;">http</span>://<span style="color: #008000;">example.com</span><span style="color: blue;">/path</span></code>';
 $l['threadfields_textmask_email'] = 'Email address';
 $l['threadfields_textmask_email_desc'] = 'Username can be displayed via <code style="color: red;">{VALUE$1}</code>, host through <code style="color: #008000;">{VALUE$2}</code>.  Example: <code><span style="color: red;">someone</span>@<span style="color: #008000;">example.com</span></code>';
+$l['threadfields_textmask_emailr'] = 'Email address (restricted)';
+$l['threadfields_textmask_emailr_desc'] = 'Username can be displayed via <code style="color: red;">{VALUE$1}</code>, host through <code style="color: #008000;">{VALUE$2}</code>.  Example: <code><span style="color: red;">someone</span>@<span style="color: #008000;">example.com</span></code>';
 $l['threadfields_textmask_css'] = 'CSS Value';
 $l['threadfields_textmask_css_desc'] = 'Value appropriate for placing as a CSS value, for example <code>style=&quot;font-family: {VALUE};&quot;</code>.  Note brackets and quotes are not allowed, so values such as <code>url(...)</code> are not allowed.';
 $l['threadfields_textmask_color'] = 'Color Value';
