@@ -241,6 +241,8 @@ class XTImageTransform {
 	
 	function copy($from, $dest_x=0, $dest_y=0) {
 		if(!isset($this->_img) || !is_a($from, get_class($this)) || !isset($from->_img)) return;
+		if($dest_x < 0) $dest_x = $this->WIDTH - $from->WIDTH + $dest_x;
+		if($dest_y < 0) $dest_y = $this->HEIGHT - $from->HEIGHT + $dest_y;
 		imagealphablending($this->_img, true);
 		@imagecopy($this->_img, $from->_img, $dest_x, $dest_y, 0, 0, $from->WIDTH, $from->HEIGHT);
 		imagealphablending($this->_img, false);
@@ -252,6 +254,8 @@ class XTImageTransform {
 		$im = $this->_surface($to->WIDTH, $to->HEIGHT);
 		@imagecopy($im, $to->_img, 0,0,0,0, $to->WIDTH,$to->HEIGHT);
 		
+		if($dest_x < 0) $dest_x = $to->WIDTH - $this->WIDTH + $dest_x;
+		if($dest_y < 0) $dest_y = $to->HEIGHT - $this->HEIGHT + $dest_y;
 		imagealphablending($im, true);
 		@imagecopy($im, $this->_img, $dest_x, $dest_y, 0, 0, $this->WIDTH, $this->HEIGHT);
 		imagealphablending($im, false);
