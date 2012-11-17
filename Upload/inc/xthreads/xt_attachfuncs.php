@@ -47,7 +47,7 @@ function xthreads_attach_hash(&$odd=false) {
 		unset($config);
 	}
 	$key = $secret;
-	if(XTHREADS_EXPIRE_ATTACH_LINK) {
+	if(defined('XTHREADS_EXPIRE_ATTACH_LINK') && XTHREADS_EXPIRE_ATTACH_LINK) {
 		$time = floor(time() / XTHREADS_EXPIRE_ATTACH_LINK);
 		if($odd !== false) {
 			if($time % 2 != $odd) --$time;
@@ -55,7 +55,7 @@ function xthreads_attach_hash(&$odd=false) {
 			$odd = $time % 2;
 		$key .= '|'.$time;
 	}
-	if(XTHREADS_ATTACH_LINK_IPMASK)
+	if(defined('XTHREADS_ATTACH_LINK_IPMASK') && XTHREADS_ATTACH_LINK_IPMASK)
 		$key .= '|'.(xthreads_get_ip() & (0xFFFFFFFF << (32-XTHREADS_ATTACH_LINK_IPMASK))); // because PHP doesn't like ~(0xffffffff >> x)
 	return crc32(md5(gzdeflate($key)));
 }
@@ -63,7 +63,7 @@ function xthreads_attach_hash(&$odd=false) {
 function xthreads_attach_encode_hash($hash) {
 	$odd = false;
 	$hash ^= xthreads_attach_hash($odd);
-	if(XTHREADS_EXPIRE_ATTACH_LINK)
+	if(defined('XTHREADS_EXPIRE_ATTACH_LINK') && XTHREADS_EXPIRE_ATTACH_LINK)
 		return ($hash & ~0x1) | $odd;
 	return $hash;
 }
