@@ -636,10 +636,11 @@ function xthreads_buildtfcache() {
 			} else
 				$tf[$field] = false;
 		}
+		$thumblist = '';
 		if(isset($tf['fileimgthumbs'])) {
 			foreach($tf['fileimgthumbs'] as $name => &$evalstr) {
 				if(!$evalstr) continue;
-				$thumbcache .= '
+				$thumblist .= '
 				case \''.$name.'\':
 					'.$evalstr.';
 					return;';
@@ -649,10 +650,10 @@ function xthreads_buildtfcache() {
 		$evalcache .= '
 			} return \'\';
 		}';
-		if($thumbcache)
-			$thumbcache = '
+		if($thumblist)
+			$thumbcache .= '
 		function xthreads_imgthumb_'.$tf['field'].'($name, &$img) {
-			switch(strtolower($name)) {'.$thumbcache.'
+			switch(strtolower($name)) {'.$thumblist.'
 			}
 		}';
 		
