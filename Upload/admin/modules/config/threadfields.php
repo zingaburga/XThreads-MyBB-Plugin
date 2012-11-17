@@ -526,6 +526,14 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				break;
 			}
 		}
+		if(!xthreads_empty($test_tf['fileimgthumbs'])) foreach($test_tf['fileimgthumbs'] as $thumb => $chain) {
+			if($chain) {
+				if(!xthreads_check_evalstr('".$img->'.$chain.'."')) {
+					$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->threadfields_fileimgthumbs);
+					break;
+				}
+			}
+		}
 
 		if(!$errors)
 		{
