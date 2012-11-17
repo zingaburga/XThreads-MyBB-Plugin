@@ -194,9 +194,11 @@ class XTImageTransform {
 	}
 	
 	/** misc filters **/
-	/*private*/ function _filter($filt, $a1=null, $a2=null, $a3=null, $a4=null) {
+	/*private*/ function _filter($filt) {
 		if(!isset($this->_img)) return;
-		imagefilter($this->_img, $filt, $a1, $a2, $a3, $a4);
+		$args = func_get_args();
+		array_unshift($args, $this->_img);
+		call_user_func_array('imagefilter', $args);
 		return $this;
 	}
 	function negate() {
@@ -237,20 +239,26 @@ class XTImageTransform {
 		return $this->_filter(IMG_FILTER_PIXELATE, $s, $adv);
 	}
 	
-	function copy($from, $dest_x=0, $dest_y=0, $trans=100) {
+	function copy($from, $dest_x=0, $dest_y=0) {
 		if(!isset($this->_img) || !is_a($from, get_class($this)) || !isset($from->_img)) return;
-		imagecopymerge($this->_img, $from->_img, $dest_x, $dest_y, 0, 0, $from->WIDTH, $from->HEIGHT, $trans);
+		imagealphablending($this->_img, true);
+		@imagecopy($this->_img, $from->_img, $dest_x, $dest_y, 0, 0, $from->WIDTH, $from->HEIGHT);
+		imagealphablending($this->_img, false);
 		return $this;
 	}
-	function copy_onto($to, $dest_x=0, $dest_y=0, $trans=100) {
+	function copy_onto($to, $dest_x=0, $dest_y=0) {
 		if(!isset($this->_img) || !is_a($to, get_class($this)) || !isset($to->_img)) return;
 		// we need to make a copy because we don't want to overwrite the $to image given
 		$im = $this->_surface($to->WIDTH, $to->HEIGHT);
 		@imagecopy($im, $to->_img, 0,0,0,0, $to->WIDTH,$to->HEIGHT);
 		
-		imagecopymerge($im, $this->_img, $dest_x, $dest_y, 0, 0, $this->WIDTH, $this->HEIGHT, $trans);
+		imagealphablending($im, true);
+		@imagecopy($im, $this->_img, $dest_x, $dest_y, 0, 0, $this->WIDTH, $this->HEIGHT);
+		imagealphablending($im, false);
 		imagedestroy($this->_img);
 		$this->_img = $im;
+		$this->WIDTH = $to->WIDTH;
+		$this->HEIGHT = $to->HEIGHT;
 		return $this;
 	}
 	
@@ -309,9 +317,16 @@ class XTImageTransform {
 	function write($fn) {
 		if(!isset($this->_img)) return;
 		if(!$this->_enableWrite) return;
-		if($this->TYPE == 'JPEG')
-			imagejpeg($this->_img, $fn, $this->_jpeg_quality);
-		else
+		if($this->TYPE == 'JPEG') {
+			// for some reason, GD always turns a transparent background to black regardless of the actual colour there (:O)
+			// fix by copying onto non transparent background
+			$im = $this->_surface($this->WIDTH, $this->HEIGHT, array($this->_transColor[0], $this->_transColor[1], $this->_transColor[2], 0));
+			imagealphablending($im, true); // blend into background
+			imagesavealpha($im, false);
+			@imagecopy($im, $this->_img, 0,0,0,0, $this->WIDTH,$this->HEIGHT);
+			imagejpeg($im, $fn, $this->_jpeg_quality);
+			imagedestroy($im);
+		} else
 			imagepng($this->_img, $fn, $this->_png_level); // PNG_ALL_FILTERS
 	}
 	
