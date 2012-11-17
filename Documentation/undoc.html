@@ -97,8 +97,8 @@
 	<li><code>crop_lb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from left-bottom corner</li>
 	<li><code>crop_cb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>])</code><br />Crop image anchored from center-bottom side.</li>
 	<li><code>crop_rb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from right-bottom corner</li>
-	<li><code>copy(<span style="color: gray;">(image)</span> <em>from</em>[, <span style="color: gray;">(int)</span> <em>x</em>[, <span style="color: gray;">(int)</span> <em>y</em>[, <span style="color: gray;">(int)</span> <em>blend</em>]]])</code><br />Copy image <em>from</em> onto current image, where the top-left corner of <em>from</em> is placed at the specified <em>x</em>/<em>y</em> coordinates of the current image.  <em>blend</em>, if specified, will control the transparency of <em>from</em> when copied, where 100 (default) means a straight copy, 0 essentially does nothing, and 50 will perform a 50% blend.</li>
-	<li><code>copy_onto(<span style="color: gray;">(image)</span> <em>to</em>[, <span style="color: gray;">(int)</span> <em>x</em>[, <span style="color: gray;">(int)</span> <em>y</em>[, <span style="color: gray;">(int)</span> <em>blend</em>]]])</code><br />Similar to <code>copy</code>, except uses the <em>to</em> image as a base where the current image is copied onto.</li>
+	<li><code>copy(<span style="color: gray;">(image)</span> <em>from</em>[, <span style="color: gray;">(int)</span> <em>x</em>[, <span style="color: gray;">(int)</span> <em>y</em>]])</code><br />Copy image <em>from</em> onto current image, where the top-left corner of <em>from</em> is placed at the specified <em>x</em>/<em>y</em> coordinates of the current image.</li>
+	<li><code>copy_onto(<span style="color: gray;">(image)</span> <em>to</em>[, <span style="color: gray;">(int)</span> <em>x</em>[, <span style="color: gray;">(int)</span> <em>y</em>]])</code><br />Similar to <code>copy</code>, except uses the <em>to</em> image as a base where the current image is copied onto.</li>
 	<li><code>negate()</code><br />Invert image colours</li>
 	<li><code>grayscale()</code><br />Desaturate image</li>
 	<li><code>brightness(<span style="color: gray;">(int)</span> <em>value</em>)</code><br />Increase brightness by <em>value</em> (-255 to +255, 0 = no change)</li>
@@ -142,8 +142,8 @@
    <ul>
 	<li>Make a fixed 100x100 image, preserving aspect ratio and cropping if necessary
 	<br /><code>scale_min(100,100)-&gt;crop(100,100)</code></li>
-	<li>Scale down to 200x200 (or smaller) and add a watermark in the top-left corner (loaded from forum_root/images/logo.gif)
-	<br /><code>scale_max(200,200)-&gt;copy(newXTImg()-&gt;loadimage('images/logo.gif')-&gt;scale(50,50),2,2,75)</code></li>
+	<li>Scale down to 200x200 (or smaller) and add a watermark in the top-left corner (loaded from forum_root/images/logo.gif) - the watermark will be slightly transparent when blended (if PHP 5.2.5 or newer)
+	<br /><code>scale_max(200,200)-&gt;copy(newXTImg()-&gt;loadimage('images/logo.gif')-&gt;scale(50,50)-&gt;colorize(0,0,0,48),2,2)</code></li>
 	<li>Scale down to 200x200 (or smaller) and put a 2 pixel red border around the image
 	<br /><code>scale_max(200,200)-&gt;copy_onto(newXTImg()-&gt;blank({WIDTH}+4, {HEIGHT}+4, '#FF0000'),2,2)</code></li>
    </ul>
