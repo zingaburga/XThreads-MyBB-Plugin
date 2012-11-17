@@ -86,7 +86,7 @@ function xthreads_duplicate_threadfield_data($tid_old, $tid_new) {
 		
 		$oldfpref = basename(substr($oldname, 0, -6));
 		$newfpref = basename(substr($newname, 0, -6));
-		if($thumbs = @glob($oldpath.$oldfpref.'*x*.thumb')) {
+		if($thumbs = @glob($oldpath.$oldfpref.'*.thumb')) {
 			foreach($thumbs as &$thumb) {
 				$thumb = basename($thumb);
 				xthreads_hardlink_file($oldpath.$thumb, $newpath.str_replace($oldfpref, $newfpref, $thumb));

@@ -1134,7 +1134,7 @@ function xthreads_rm_attach_fs(&$xta) {
 	$path = dirname($name).'/';
 	$success = true;
 	// remove thumbnails
-	if($thumbs = @glob(substr($name, 0, -6).'*x*.thumb')) {
+	if($thumbs = @glob(substr($name, 0, -6).'*.thumb')) {
 		foreach($thumbs as &$thumb) {
 			$success = $success && @unlink($path.basename($thumb));
 		}
