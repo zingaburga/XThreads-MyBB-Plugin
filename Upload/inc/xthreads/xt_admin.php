@@ -1650,6 +1650,7 @@ function xthreads_admin_rebuildthumbs() {
 			@set_time_limit(1800);
 			require_once MYBB_ROOT.'inc/xthreads/xt_upload.php';
 			require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
+			include_once MYBB_ROOT.'cache/xthreads_evalcache.php'; // for thumbnail code
 			$xtadir = $mybb->settings['uploadspath'].'/xthreads_ul/';
 			if($xtadir{0} != '/') $xtadir = '../'.$xtadir; // TODO: perhaps check for absolute Windows paths as well?  but then, who uses Windows on a production server? :>
 			$query = $db->simple_select('xtattachments', '*', $where, array('order_by' => 'aid', 'limit' => $perpage, 'limit_start' => ($page-1)*$perpage));
@@ -1657,12 +1658,12 @@ function xthreads_admin_rebuildthumbs() {
 				// remove thumbs, then rebuild
 				$name = xthreads_get_attach_path($xta);
 				// unfortunately, we still need $xtadir
-				if($thumbs = @glob(substr($name, 0, -6).'*x*.thumb'))
+				if($thumbs = @glob(substr($name, 0, -6).'*.thumb'))
 					foreach($thumbs as &$thumb) {
 						@unlink($xtadir.$xta['indir'].basename($thumb));
 					}
 				
-				$thumb = xthreads_build_thumbnail($thumbfields[$xta['field']], $xta['aid'], $name, $xtadir, $xta['indir']);
+				$thumb = xthreads_build_thumbnail($thumbfields[$xta['field']], $xta['aid'], $xta['field'], $name, $xtadir, $xta['indir']);
 				// TODO: perhaps check for errors? but then, what to do?
 			}
 			$db->free_result($query);
