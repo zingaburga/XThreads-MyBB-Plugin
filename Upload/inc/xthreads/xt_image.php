@@ -16,7 +16,7 @@ class XTImageTransform {
 	
 	/*private*/ var $_enableWrite=false; // security mechanism
 	
-	function load($img) {
+	function loadimage($img) { // not called 'load' to reduce probability of unintentionally allowing a '->load()' call
 		// force path to be within the forum root
 		if(strpos($img, '../')) return false;
 		return $this->_load(MYBB_ROOT.'/'.$img);
