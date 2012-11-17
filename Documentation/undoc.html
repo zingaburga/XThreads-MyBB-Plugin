@@ -113,7 +113,7 @@
 	<li><code>pixelate(<span style="color: gray;">(float)</span> <em>blocksize</em>[, <span style="color: gray;">(bool)</span> <em>advancedmode</em>])</code><br />Pixelate image with specified <em>blocksize</em>.  Requires PHP 5.3 or later</li>
 	<li><code>jpeg([<span style="color: gray;">(colour)</span> <em>transparent</em>[, <span style="color: gray;">(int)</span> <em>quality</em>]])</code><br />Indicate to save the image as a JPEG.  Transparent colours will be saved as <em>transparent</em>.  <em>quality</em> indicates the quality/size tradeoff when saving (0 = smallest file, lowest quality, 100 = largest file, best quality, default = 75).  If you change the file type using this, note that XThreads may not send the correct MIME type for the thumbnail (although most browsers should automatically detect this and not be affected).</li>
 	<li><code>png([<span style="color: gray;">(int)</span> <em>compression</em>])</code><br />Indicate to save the image as a PNG.  <em>compression</em> specifies how much compression to apply, where 0 = no compression, 9 = maximum compression, 6 = usually default level.  If you change the file type using this, note that XThreads may not send the correct MIME type for the thumbnail (although most browsers should automatically detect this and not be affected).</li>
-	<li><code>load(<span style="color: gray;">(string)</span> <em>filename</em>)</code><br />Discards current image and loads image specified by <em>filename</em>, affecting all image variables described below - note that the forum root directory will be prepended to the filename and '..' is not allowed in the path</li>
+	<li><code>loadimage(<span style="color: gray;">(string)</span> <em>filename</em>)</code><br />Discards current image and loads image specified by <em>filename</em>, affecting all image variables described below - note that the forum root directory will be prepended to the filename and '..' is not allowed in the path</li>
 	<li><code>blank(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(colour)</span> <em>background</em>])</code><br />Discards current image and creates a blank canvas of specified <em>width</em> and <em>height</em>, filled with <em>background</em>; affects all images variables described below</li>
    </ul>
    <h3>Image Variables</h3>
@@ -136,14 +136,14 @@
 		<li>Array: <code>array(<span style="color: #FF0000;">RR</span>, <span style="color: #00FF00;">GG</span>, <span style="color: #0000FF;">BB</span>, <span style="color: #808080;">AA</span>)</code> eg <code>array(255, 0, 128)</code></li>
 		</ul>
 	The alpha component (AA) defaults to 0 (no transparency) if not supplied.</li>
-	<li>The function <code>newXTImg()</code> can be used to create a new image.  You should always call <code>blank()</code> or <code>load()</code> after creating a new image to specify exactly what to create</li>
+	<li>The function <code>newXTImg()</code> can be used to create a new image.  You should always call <code>blank()</code> or <code>loadimage()</code> after creating a new image to specify exactly what to create</li>
    </ul>
    <h3>Examples</h3>
    <ul>
 	<li>Make a fixed 100x100 image, preserving aspect ratio and cropping if necessary
 	<br /><code>scale_min(100,100)-&gt;crop(100,100)</code></li>
 	<li>Scale down to 200x200 (or smaller) and add a watermark in the top-left corner (loaded from forum_root/images/logo.gif)
-	<br /><code>scale_max(200,200)-&gt;copy(newXTImg()-&gt;load('images/logo.gif')-&gt;scale(50,50),2,2,75)</code></li>
+	<br /><code>scale_max(200,200)-&gt;copy(newXTImg()-&gt;loadimage('images/logo.gif')-&gt;scale(50,50),2,2,75)</code></li>
 	<li>Scale down to 200x200 (or smaller) and put a 2 pixel red border around the image
 	<br /><code>scale_max(200,200)-&gt;copy_onto(newXTImg()-&gt;blank({WIDTH}+4, {HEIGHT}+4, '#FF0000'),2,2)</code></li>
    </ul>
