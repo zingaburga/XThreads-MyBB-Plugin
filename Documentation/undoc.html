@@ -97,6 +97,8 @@
 	<li><code>crop_lb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from left-bottom corner</li>
 	<li><code>crop_cb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>])</code><br />Crop image anchored from center-bottom side.</li>
 	<li><code>crop_rb(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(int)</span> <em>x-offset</em>[, <span style="color: gray;">(int)</span> <em>y-offset</em>]])</code><br />Crop image anchored from right-bottom corner</li>
+	<li><code>copy(<span style="color: gray;">(image)</span> <em>from</em>[, <span style="color: gray;">(int)</span> <em>x</em>[, <span style="color: gray;">(int)</span> <em>y</em>[, <span style="color: gray;">(int)</span> <em>blend</em>]]])</code><br />Copy image <em>from</em> onto current image, where the top-left corner of <em>from</em> is placed at the specified <em>x</em>/<em>y</em> coordinates of the current image.  <em>blend</em>, if specified, will control the transparency of <em>from</em> when copied, where 100 (default) means a straight copy, 0 essentially does nothing, and 50 will perform a 50% blend.</li>
+	<li><code>copy_onto(<span style="color: gray;">(image)</span> <em>to</em>[, <span style="color: gray;">(int)</span> <em>x</em>[, <span style="color: gray;">(int)</span> <em>y</em>[, <span style="color: gray;">(int)</span> <em>blend</em>]]])</code><br />Similar to <code>copy</code>, except uses the <em>to</em> image as a base where the current image is copied onto.</li>
 	<li><code>negate()</code><br />Invert image colours</li>
 	<li><code>grayscale()</code><br />Desaturate image</li>
 	<li><code>brightness(<span style="color: gray;">(int)</span> <em>value</em>)</code><br />Increase brightness by <em>value</em> (-255 to +255, 0 = no change)</li>
@@ -111,7 +113,7 @@
 	<li><code>pixelate(<span style="color: gray;">(float)</span> <em>blocksize</em>[, <span style="color: gray;">(bool)</span> <em>advancedmode</em>])</code><br />Pixelate image with specified <em>blocksize</em>.  Requires PHP 5.3 or later</li>
 	<li><code>jpeg([<span style="color: gray;">(colour)</span> <em>transparent</em>[, <span style="color: gray;">(int)</span> <em>quality</em>]])</code><br />Indicate to save the image as a JPEG.  Transparent colours will be saved as <em>transparent</em>.  <em>quality</em> indicates the quality/size tradeoff when saving (0 = smallest file, lowest quality, 100 = largest file, best quality, default = 75).  If you change the file type using this, note that XThreads may not send the correct MIME type for the thumbnail (although most browsers should automatically detect this and not be affected).</li>
 	<li><code>png([<span style="color: gray;">(int)</span> <em>compression</em>])</code><br />Indicate to save the image as a PNG.  <em>compression</em> specifies how much compression to apply, where 0 = no compression, 9 = maximum compression, 6 = usually default level.  If you change the file type using this, note that XThreads may not send the correct MIME type for the thumbnail (although most browsers should automatically detect this and not be affected).</li>
-	<li><code>load(<span style="color: gray;">(string)</span> <em>filename</em>)</code><br />Discards current image and loads image specified by <em>filename</em>, affecting all image variables described below - note that this must be an absolute path</li>
+	<li><code>load(<span style="color: gray;">(string)</span> <em>filename</em>)</code><br />Discards current image and loads image specified by <em>filename</em>, affecting all image variables described below - note that the forum root directory will be prepended to the filename and '..' is not allowed in the path</li>
 	<li><code>blank(<span style="color: gray;">(int)</span> <em>width</em>, <span style="color: gray;">(int)</span> <em>height</em>[, <span style="color: gray;">(colour)</span> <em>background</em>])</code><br />Discards current image and creates a blank canvas of specified <em>width</em> and <em>height</em>, filled with <em>background</em>; affects all images variables described below</li>
    </ul>
    <h3>Image Variables</h3>
@@ -133,7 +135,17 @@
 		<li>Integer: <code>0x<span style="color: #808080;">AA</span><span style="color: #0000FF;">BB</span><span style="color: #00FF00;">GG</span><span style="color: #FF0000;">RR</span></code> eg <code>0x8000FF</code></li>
 		<li>Array: <code>array(<span style="color: #FF0000;">RR</span>, <span style="color: #00FF00;">GG</span>, <span style="color: #0000FF;">BB</span>, <span style="color: #808080;">AA</span>)</code> eg <code>array(255, 0, 128)</code></li>
 		</ul>
-	The alpha component (AA) defaults to 0 (no transparency) if not supplied.
+	The alpha component (AA) defaults to 0 (no transparency) if not supplied.</li>
+	<li>The function <code>newXTImg()</code> can be used to create a new image.  You should always call <code>blank()</code> or <code>load()</code> after creating a new image to specify exactly what to create</li>
+   </ul>
+   <h3>Examples</h3>
+   <ul>
+	<li>Make a fixed 100x100 image, preserving aspect ratio and cropping if necessary
+	<br /><code>scale_min(100,100)-&gt;crop(100,100)</code></li>
+	<li>Scale down to 200x200 (or smaller) and add a watermark in the top-left corner (loaded from forum_root/images/logo.gif)
+	<br /><code>scale_max(200,200)-&gt;copy(newXTImg()-&gt;load('images/logo.gif')-&gt;scale(50,50),2,2,75)</code></li>
+	<li>Scale down to 200x200 (or smaller) and put a 2 pixel red border around the image
+	<br /><code>scale_max(200,200)-&gt;copy_onto(newXTImg()-&gt;blank({WIDTH}+4, {HEIGHT}+4, '#FF0000'),2,2)</code></li>
    </ul>
       
    <h2>Additional Custom Thread Field Variables</h2>

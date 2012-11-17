@@ -350,7 +350,7 @@ function &xthreads_build_thumbnail($thumbdims, $aid, $fieldname, $filename, $pat
 			if($complex) {
 				require_once MYBB_ROOT.'inc/xthreads/xt_image.php';
 				$img = new XTImageTransform;
-				if($img->load($filename)) {
+				if($img->_load($filename)) {
 					// run filter chain
 					$filterfunc($dims, $img);
 					// write out file & save
