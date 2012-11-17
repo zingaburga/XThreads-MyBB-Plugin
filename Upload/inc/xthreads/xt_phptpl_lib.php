@@ -170,7 +170,11 @@ function &xthreads_phptpl_get_allowed_funcs()
 	if(!isset($allowed_funcs)) {
 		$allowed_funcs = array_flip(explode("\n", str_replace("\r", '', @file_get_contents(MYBB_ROOT.'inc/xthreads/phptpl_allowed_funcs.txt'))));
 	}
-	return $allowed_funcs;
+	// hack to allow us to dynamically add more allowable functions (for image thumbnail processing)
+	if(!empty($GLOBALS['phptpl_additional_functions']))
+		return array_merge($allowed_funcs, array_flip($GLOBALS['phptpl_additional_functions']));
+	else
+		return $allowed_funcs;
 }
 
 function xthreads_phptpl_evalphp($str, $end, $fields=array())

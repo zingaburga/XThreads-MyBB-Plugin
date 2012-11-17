@@ -799,6 +799,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 				$chain = substr($thumb, strlen($m[0]));
 				// add additionally allowed funcs
 				require_once MYBB_ROOT.'inc/xthreads/xt_image.php';
+				$extra_funcs =& $GLOBALS['phptpl_additional_functions'];
 				$extra_funcs = array('newXTImg');
 				foreach(get_class_methods('XTImageTransform') as $meth)
 					if($meth[0] != '_')
@@ -807,15 +808,18 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 						$extra_funcs[] = '->'.$meth;
 				
 				// TODO: put in extra functions
-				$tf['fileimgthumbs'][strtolower($m[1])] = '$img->'.$chain;
-				/*$tf['fileimgthumbs'][strtolower($m[1])] = xthreads_phptpl_expr_parse('$img->'.$chain, array(
+				$fitk =& $tf['fileimgthumbs'][strtolower($m[1])];
+				//$fitk = '$img->'.$chain;
+				$fitk = xthreads_phptpl_expr_parse('->'.$chain, array(
 					'WIDTH' => '$img->WIDTH',
 					'OWIDTH' => '$img->OWIDTH',
 					'HEIGHT' => '$img->HEIGHT',
 					'OHEIGHT' => '$img->OHEIGHT',
 					'TYPE' => '$img->TYPE',
 					'FILENAME' => '$img->FILENAME',
-				));*/
+				));
+				if($fitk) $fitk = '$img'.$fitk; // prevents transform to $GLOBALS['img']
+				unset($GLOBALS['phptpl_additional_functions']);
 			}
 			elseif(preg_match('~^\d+x\d+$~', $thumb)) {
 				$tf['fileimgthumbs'][$thumb] = false;
