@@ -17,8 +17,14 @@ class XTImageTransform {
 	/*private*/ var $_enableWrite=false; // security mechanism
 	
 	function load($img) {
+		// force path to be within the forum root
+		if(strpos($img, '../')) return false;
+		return $this->_load(MYBB_ROOT.'/'.$img);
+	}
+	function _load($img) {
 		if(!function_exists('imagecreate'))
 			return false;
+		
 		$dims = getimagesize($img);
 		if(empty($dims)) return false;
 		$this->OWIDTH = $this->WIDTH = $dims[0];
@@ -229,6 +235,23 @@ class XTImageTransform {
 	// requires PHP >= 5.3
 	function pixelate($s, $adv=false) {
 		return $this->_filter(IMG_FILTER_PIXELATE, $s, $adv);
+	}
+	
+	function copy($from, $dest_x=0, $dest_y=0, $trans=100) {
+		if(!isset($this->_img) || !is_a($from, get_class($this)) || !isset($from->_img)) return;
+		imagecopymerge($this->_img, $from->_img, $dest_x, $dest_y, 0, 0, $from->WIDTH, $from->HEIGHT, $trans);
+		return $this;
+	}
+	function copy_onto($to, $dest_x=0, $dest_y=0, $trans=100) {
+		if(!isset($this->_img) || !is_a($to, get_class($this)) || !isset($to->_img)) return;
+		// we need to make a copy because we don't want to overwrite the $to image given
+		$im = $this->_surface($to->WIDTH, $to->HEIGHT);
+		@imagecopy($im, $to->_img, 0,0,0,0, $to->WIDTH,$to->HEIGHT);
+		
+		imagecopymerge($im, $this->_img, $dest_x, $dest_y, 0, 0, $this->WIDTH, $this->HEIGHT, $trans);
+		imagedestroy($this->_img);
+		$this->_img = $im;
+		return $this;
 	}
 	
 	/*private static*/ function _color($v) {

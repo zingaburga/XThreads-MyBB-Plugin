@@ -818,7 +818,7 @@ function xthreads_buildtfcache_parseitem(&$tf) {
 					'TYPE' => '$img->TYPE',
 					'FILENAME' => '$img->FILENAME',
 				));
-				if($fitk) $fitk = '$img'.$fitk; // prevents transform to $GLOBALS['img']
+				if($fitk && $fitk != 'false') $fitk = '$img'.$fitk; // prevents transform to $GLOBALS['img']
 				unset($GLOBALS['phptpl_additional_functions']);
 			}
 			elseif(preg_match('~^\d+x\d+$~', $thumb)) {
