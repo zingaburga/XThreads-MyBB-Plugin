@@ -322,6 +322,16 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			$mybb->input['editable_gids'] = '';
 		}
 		
+		$mybb->input['hidefield'] = 0;
+		foreach(array(
+			'input' => XTHREADS_HIDE_INPUT,
+			'thread' => XTHREADS_HIDE_THREAD,
+			//'forum_sort' => XTHREADS_HIDE_FORUM_SORT,
+		) as $k => $v) {
+			if($mybb->input['hidefield_'.$k])
+				$mybb->input['hidefield'] |= $v;
+		}
+		
 		if(!xthreads_empty($mybb->input['editable_values'])) {
 			$ev = array();
 			$evs = str_replace("{\n}", "\r", str_replace("\r", '', $mybb->input['editable_values']));
@@ -452,11 +462,11 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			if($mybb->input['fileimage_maxdim'])
 				$mybb->input['fileimage'] .= '|'.$mybb->input['fileimage_maxdim'];
 		}
-		if($mybb->input['fileimgthumbs']) {
+		//if($mybb->input['fileimgthumbs']) {
 			// TODO: verify format
 			//if(!preg_match('~^[0-9]+x[0-9]+(\\|[0-9]+x[0-9]+)*$~', $mybb->input['fileimgthumbs']))
 			//	$errors[] = $lang->error_invalid_thumb_dims;
-		}
+		//}
 		
 		if($update) {
 			// check that sent field name is valid
@@ -696,6 +706,18 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			$data['forums'] = array_map('intval',array_map('trim',explode(',', $data['forums'])));
 		$form_container->output_row($lang->threadfields_forums, $lang->threadfields_forums_desc, $form->generate_forum_select('forums[]', $data['forums'], array('multiple' => true, 'size' => 5)), 'forums');
 		
+		$hidefield_boxes = '';
+		foreach(array(
+			'input' => XTHREADS_HIDE_INPUT,
+			'thread' => XTHREADS_HIDE_THREAD,
+			//'forum_sort' => XTHREADS_HIDE_FORUM_SORT,
+		) as $k => $v) {
+			$l = 'threadfields_hidefield_'.$k;
+			$ld = 'threadfields_hidefield_'.$k.'_desc';
+			$hidefield_boxes .= /*($hidefield_boxes?'<br />':'') .*/ $form->generate_check_box('hidefield_'.$k, '1', $lang->$l, array('checked' => (bool)($data['hidefield'] & $v))) . '<div style="margin-left: 2.25em;" class="description">'.$lang->$ld.'</div>';
+		}
+		$form_container->output_row($lang->threadfields_hidefield, $lang->threadfields_hidefield_desc, $hidefield_boxes, 'hidefield');
+		
 		$inputtypes = array(
 			XTHREADS_INPUT_TEXT => $lang->threadfields_inputtype_text,
 			XTHREADS_INPUT_TEXTAREA => $lang->threadfields_inputtype_textarea,
@@ -724,6 +746,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		if(!ini_get('file_uploads'))
 			$lang->threadfields_file_name_info .= '<div style="color: red; font-style: italic;">'.$lang->threadfields_file_upload_disabled_warning.'</div>';
 		make_form_row('inputtype', 'select_box', $inputtypes, '<div id="inputtype_file_explain" style="font-size: 0.95em; margin-top: 1em;">'.$lang->threadfields_file_name_info.'</div>');
+		
+		make_form_row('disporder', 'text_box');
 		
 		$form_container->end();
 		unset($GLOBALS['form_container']);
@@ -824,10 +848,8 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		make_form_row('fieldwidth', 'text_box');
 		make_form_row('fieldheight', 'text_box');
 		
-		make_form_row('disporder', 'text_box');
 		make_form_row('tabstop', 'yes_no_radio');
 		
-		make_form_row('hideedit', 'yes_no_radio');
 		$data['use_formhtml'] = ($data['formhtml'] !== '' ? 1:0);
 		make_form_row('use_formhtml', 'yes_no_radio');
 		unset($data['use_formhtml']);

@@ -802,7 +802,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		$altbg = alt_trow();
 		$inputfield =& $tfinput[$k];
 		eval('$tfinputrow[$k] = "'.$GLOBALS['templates']->get('post_threadfields_inputrow').'";');
-		if(!$tf['hideedit'])
+		if(!($tf['hidefield'] & XTHREADS_HIDE_INPUT))
 			$extra_threadfields .= $tfinputrow[$k];
 	}
 }

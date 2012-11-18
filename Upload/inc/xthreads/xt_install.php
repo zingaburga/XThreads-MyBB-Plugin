@@ -269,6 +269,8 @@ function xthreads_new_templates() {
 Put your stuff here
 </div>
 -->',
+		'showthread_threadfield_row' => '<tr><td class="{$bgcolor}" width="15%"><strong>{$title}</strong></td><td class="{$bgcolor}">{$value}</td></tr>',
+		'showthread_threadfields' => '{$threadfields_display_rows}',
 		'forumdisplay_searchforum_inline' => '<form action="forumdisplay.php" method="get">
 	<span class="smalltext"><strong>{$lang->search_forum}</strong></span>
 	<input type="text" class="textbox" name="search" value="{$searchval}" /> {$gobutton}
@@ -290,6 +292,7 @@ function xthreads_undo_template_edits() {
 	find_replace_templatesets('editpost', '#\\{\\$extra_threadfields\\}#', '', 0);
 	find_replace_templatesets('newthread', '#\\{\\$extra_threadfields\\}#', '', 0);
 	find_replace_templatesets('showthread', '#\\{\\$first_post\\}#', '', 0);
+	find_replace_templatesets('showthread', '#\\{\\$threadfields_display\\}#', '', 0);
 	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$nullthreads\\}#', '', 0);
 	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$sort_by_prefix\\}#', '', 0);
 	find_replace_templatesets('forumdisplay_threadlist', "#\n?".preg_replace("#[\t\r\n]+#", '\\s*', preg_quote(XTHREADS_INSTALL_TPLADD_EXTRASORT))."#", '', 0);
@@ -331,6 +334,7 @@ function xthreads_activate() {
 		find_replace_templatesets('editpost', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
 		find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
 		find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
+		find_replace_templatesets('showthread', '#\\{\\$classic_header\\}#', '{$threadfields_display}{$classic_header}');
 		find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
 		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
 		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);

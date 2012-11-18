@@ -213,7 +213,12 @@
    <h3>Modified Templates</h3>
    <ul>
     <li><strong>editpost</strong> and <strong>newthread</strong> - adds <code>{$extra_threadfields}</code> to the template, which just displays any added thread fields</li>
-    <li><strong>showthread</strong> - inserts <code>{$first_post}</code> before <code>{$posts}</code>; in XThreads, it's possible to customise the first post differently from other posts</li>
+    <li><strong>showthread</strong>
+     <ul>
+      <li>insert <code>{$first_post}</code> before <code>{$posts}</code>; in XThreads, it's possible to customise the first post differently from other posts</li>
+      <li>insert <code>{$threadfields_display}</code> before <code>{$classic_header}</code> - this is for displaying thread fields on show thread (note: displays on every page)</li>
+     </ul>
+    </li>
     <li><strong>forumdisplay_threadlist</strong>
      <ul>
       <li>insert <code>{$nullthreads}</code> after <code>{$threads}</code>; this is just for display &quot;null threads&quot; if thread grouping is used</li>
@@ -230,6 +235,7 @@
     <li><strong>showthread_noreplies</strong> - displayed in the <code>{$posts}</code> variable for <em>showthread</em> only if the thread has no replies; see the comment in the template for more information</li>
     <li><strong>forumdisplay_searchforum_inline</strong> - inline forum searching - you don't need to bother with this unless you want to...</li>
     <li><strong>post_threadfields_inputrow</strong> - how extra fields are displayed in newthread/editpost (of first post) - don't need to worry about this one either</li>
+    <li><strong>showthread_threadfields</strong> and <strong>showthread_threadfield_row</strong> - how extra fields are displayed in showthread; the latter is for each thread field, whereas the former is just a wrapper around all thread fields</li>
    </ul>
    <p>Although not an added template, you can create <em>postbit_first*</em> templates to override the various <em>postbit*</em> templates for the first post of a thread.</p>
    

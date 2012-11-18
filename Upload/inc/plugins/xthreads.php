@@ -82,6 +82,10 @@ define('XTHREADS_EDITABLE_MOD', 2);   // editable by mods
 define('XTHREADS_EDITABLE_ADMIN', 3); // editable by admins only
 define('XTHREADS_EDITABLE_NONE', 4);  // not editable
 
+define('XTHREADS_HIDE_INPUT', 0x1);
+define('XTHREADS_HIDE_THREAD', 0x2);
+define('XTHREADS_HIDE_FORUM_SORT', 0x4);
+
 define('XTHREADS_INPUT_TEXT', 0);
 define('XTHREADS_INPUT_TEXTAREA', 1);
 define('XTHREADS_INPUT_SELECT', 2);
@@ -320,6 +324,8 @@ function xthreads_global() {
 				$templatelist .= ',editpost_first';
 			case 'newthread.php':
 				$templatelist .= ',post_threadfields_inputrow';
+			case 'showthread.php':
+				$templatelist .= ',showthread_threadfields,showthread_threadfield_row';
 			break;
 		}
 		
