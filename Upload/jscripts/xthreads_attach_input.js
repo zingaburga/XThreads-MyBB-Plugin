@@ -21,8 +21,10 @@ function xta_load() {
 			});
 		};
 		child = function(e,s) {
-			//return Selector.findChildElements(e, s); // -bugged?
-			return Prototype.Selector.select(s, e);
+			if(typeof Prototype.Selector != 'undefined') // MyBB 1.6.x
+				return Prototype.Selector.select(s, e);
+			else // MyBB 1.4.x
+				return Selector.findChildElements(e, [s]);
 		};
 		parnt = function(e,s) {
 			r = $(e).up(s);

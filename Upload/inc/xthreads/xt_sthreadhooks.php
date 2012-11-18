@@ -11,7 +11,7 @@ function xthreads_showthread() {
 	// generate stuff to show on showthread
 	// $threadfield_cache should always be set here
 	$threadfields_display = $threadfields_display_rows = '';
-	foreach($threadfields as $k => &$val) {
+	if(!empty($threadfields)) foreach($threadfields as $k => &$val) {
 		$tf =& $threadfield_cache[$k];
 		if($tf['hidefield'] & XTHREADS_HIDE_THREAD) continue;
 		if($tf['inputtype'] == XTHREADS_INPUT_FILE)
