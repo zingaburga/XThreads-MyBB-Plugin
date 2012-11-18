@@ -75,9 +75,9 @@ $l['threadfields_disporder_desc'] = 'The order in which this field is displayed 
 $l['threadfields_tabstop'] = 'Capture Tab Key';
 $l['threadfields_tabstop_desc'] = 'If Yes, this field will intercept and respond to the user pressing the Tab key, when cycling through form elements.  Tab index will depend on the order specified above; it will always be placed between the subject and message field\'s tab index.  Note that setting this to No won\'t stop this field from responding to the Tab key - it simply won\'t set a <code>tabindex</code> property for this field.';
 $l['threadfields_hidefield'] = 'Hide Thread Field';
-$l['threadfields_hidefield_input'] = 'New/edit thread (input)';
+$l['threadfields_hidefield_input'] = 'Hide input field on New/edit thread';
 $l['threadfields_hidefield_input_desc'] = 'Hides the input field on newthread/editpost pages through the <code>{$extra_threadfields}</code> variable.  This is useful if you want to place it in a different location.  You can access the HTML for this field by using <code>{$tfinputrow[\'<em>key</em>\']}</code>, which includes all the table markup (see <em>post_threadfields_inputrow</em> template).  Or, you can use <code>{$tfinput[\'<em>key</em>\']}</code> which gives the input field HTML without table markup (it\'s equivalent to the <code>{$inputfield}</code> variable in the <em>post_threadfields_inputrow</em> template).';
-$l['threadfields_hidefield_thread'] = 'Show thread';
+$l['threadfields_hidefield_thread'] = 'Hide on Show thread';
 $l['threadfields_hidefield_thread_desc'] = 'Hides the value of this field from the thread display page (via the <code>{$threadfields_display}</code> variable in the <em>showthread_threadfields</em> template).  You can display the variable via the <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\']}</code> variable (file fields are slightly different, see below if this is a file field).';
 $l['threadfields_hidefield_forum_sort'] = 'Forum display sorter list';
 $l['threadfields_hidefield_forum_sort_desc'] = 'Hide this thread field from the \'Sort by\' combo box in forum display';
@@ -218,9 +218,9 @@ $l['threadfields_textmask_url_desc'] = 'Typical URI.  URI scheme can be displaye
 $l['threadfields_textmask_httpurl'] = 'URL (HTTP/S)';
 $l['threadfields_textmask_httpurl_desc'] = 'Any http:// or https:// style URL.  URI scheme can be displayed through <code style="color: red;">{VALUE$1}</code>, URI host through <code style="color: #008000;">{VALUE$2}</code> and URI path, with preceeding forward slash, through <code style="color: blue;">{VALUE$3}</code>.  Example: <code><span style="color: red;">http</span>://<span style="color: #008000;">example.com</span><span style="color: blue;">/path</span></code>';
 $l['threadfields_textmask_email'] = 'Email address';
-$l['threadfields_textmask_email_desc'] = 'Username can be displayed via <code style="color: red;">{VALUE$1}</code>, host through <code style="color: #008000;">{VALUE$2}</code>.  Example: <code><span style="color: red;">someone</span>@<span style="color: #008000;">example.com</span></code>';
+$l['threadfields_textmask_email_desc'] = 'Any valid email address (does allow some invalid structures).  Username can be displayed via <code style="color: red;">{VALUE$1}</code>, host through <code style="color: #008000;">{VALUE$2}</code>.  Example: <code><span style="color: red;">someone</span>@<span style="color: #008000;">example.com</span></code>';
 $l['threadfields_textmask_emailr'] = 'Email address (restricted)';
-$l['threadfields_textmask_emailr_desc'] = 'Username can be displayed via <code style="color: red;">{VALUE$1}</code>, host through <code style="color: #008000;">{VALUE$2}</code>.  Example: <code><span style="color: red;">someone</span>@<span style="color: #008000;">example.com</span></code>';
+$l['threadfields_textmask_emailr_desc'] = 'An email address not containing certain rarely used &quot;restricted&quot; (but still valid) characters.  Excluding these characters may make this field a little easier to handle.  Username can be displayed via <code style="color: red;">{VALUE$1}</code>, host through <code style="color: #008000;">{VALUE$2}</code>.  Example: <code><span style="color: red;">someone</span>@<span style="color: #008000;">example.com</span></code>';
 $l['threadfields_textmask_css'] = 'CSS Value';
 $l['threadfields_textmask_css_desc'] = 'Value appropriate for placing as a CSS value, for example <code>style=&quot;font-family: {VALUE};&quot;</code>.  Note brackets and quotes are not allowed, so values such as <code>url(...)</code> are not allowed.';
 $l['threadfields_textmask_color'] = 'Color Value';
