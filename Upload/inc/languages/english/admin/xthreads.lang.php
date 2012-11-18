@@ -71,11 +71,17 @@ $l['threadfields_sanitize_desc'] = 'How the value is parsed when displayed, eg a
 $l['threadfields_sanitize_parser'] = 'MyBB Parser Options';
 $l['threadfields_sanitize_parser_desc'] = 'These options only apply if you have selected to parse this field with the MyBB parser.';
 $l['threadfields_disporder'] = 'Display Order';
-$l['threadfields_disporder_desc'] = 'The order in which this field is displayed on newthread/editpost.';
+$l['threadfields_disporder_desc'] = 'The order in which this field is displayed amongst other thread fields.';
 $l['threadfields_tabstop'] = 'Capture Tab Key';
 $l['threadfields_tabstop_desc'] = 'If Yes, this field will intercept and respond to the user pressing the Tab key, when cycling through form elements.  Tab index will depend on the order specified above; it will always be placed between the subject and message field\'s tab index.  Note that setting this to No won\'t stop this field from responding to the Tab key - it simply won\'t set a <code>tabindex</code> property for this field.';
-$l['threadfields_hideedit'] = 'Hide Input Field';
-$l['threadfields_hideedit_desc'] = 'If yes, will not display the input field on newthread/editpost pages through the <code>{$extra_threadfields}</code> variable.  This is useful if you want to place it in a different location.  You can access the HTML for this field by using <code>{$tfinputrow[\'<em>key</em>\']}</code>, which includes all the table markup (see <em>post_threadfields_inputrow</em> template).  Or, you can use <code>{$tfinput[\'<em>key</em>\']}</code> which gives the input field HTML without table markup (it\'s equivalent to the <code>{$inputfield}</code> variable in the <em>post_threadfields_inputrow</em> template).';
+$l['threadfields_hidefield'] = 'Hide Thread Field';
+$l['threadfields_hidefield_input'] = 'New/edit thread (input)';
+$l['threadfields_hidefield_input_desc'] = 'Hides the input field on newthread/editpost pages through the <code>{$extra_threadfields}</code> variable.  This is useful if you want to place it in a different location.  You can access the HTML for this field by using <code>{$tfinputrow[\'<em>key</em>\']}</code>, which includes all the table markup (see <em>post_threadfields_inputrow</em> template).  Or, you can use <code>{$tfinput[\'<em>key</em>\']}</code> which gives the input field HTML without table markup (it\'s equivalent to the <code>{$inputfield}</code> variable in the <em>post_threadfields_inputrow</em> template).';
+$l['threadfields_hidefield_thread'] = 'Show thread';
+$l['threadfields_hidefield_thread_desc'] = 'Hides the value of this field from the thread display page (via the <code>{$threadfields_display}</code> variable in the <em>showthread_threadfields</em> template).  You can display the variable via the <code>{$GLOBALS[\'threadfields\'][\'<em>key</em>\']}</code> variable (file fields are slightly different, see below if this is a file field).';
+$l['threadfields_hidefield_forum_sort'] = 'Forum display sorter list';
+$l['threadfields_hidefield_forum_sort_desc'] = 'Hide this thread field from the \'Sort by\' combo box in forum display';
+$l['threadfields_hidefield_desc'] = 'Hide this thread field in certain places.  This is mainly useful if you wish to customise the display of the thread field through template editing - usually the field can still be displayed through a template variable.';
 $l['threadfields_allowfilter'] = 'Filtering Mode';
 $l['threadfields_allowfilter_desc'] = 'Allows users to filter threads using this thread field in forumdisplay.  The URL is based on the <code>filtertf_<em>key</em></code> variable.  For example, if set to <em>Exact match</em>, <code>forumdisplay.php?fid=2&amp;filtertf_status=Resolved</code> will only show threads with the thread field &quot;status&quot; having a value of &quot;Resolved&quot;.
 <br />Note that:

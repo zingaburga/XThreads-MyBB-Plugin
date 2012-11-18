@@ -266,14 +266,22 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` ADD COLUMN (
 		`multival_limit` '.xthreads_db_fielddef('int', null, true).' not null default 0,
 		`inputformat` text not null,
-		`inputvalidate` text not null
+		`inputvalidate` text not null,
+		`hidefield` '.xthreads_db_fielddef('int', null, false).' not null default 0
 	)');
 	$db->update_query('threadfields', array('inputformat' => '{VALUE}'));
+	// hideedit -> hidefield transition
+	$db->update_query('threadfields', array('hidefield' => XTHREADS_HIDE_THREAD));
+	$db->update_query('threadfields', array('hidefield' => XTHREADS_HIDE_INPUT|XTHREADS_HIDE_THREAD), 'hideedit != 0');
+	$db->write_query('ALTER TABLE `'.$db->table_prefix.'threadfields` DROP COLUMN `hideedit`');	
 	// fix email masks
 	$db->update_query('threadfields', array('textmask' => $db->escape_string('^([^ "(),:;<>@\\[\\\\\\]]+)@([a-z0-9_.\\-]+)$')), 'textmask="'.$db->escape_string('^([a-z0-9_.\\-]+)@([a-z0-9_.\\-]+)$').'"');
 	// we never used this, so may as well get rid of it
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_wol_xtattachment`');
 	xthreads_buildtfcache(); // will also update XThreads forum cache
+	
+	if(XTHREADS_MODIFY_TEMPLATES)
+		find_replace_templatesets('showthread', '#\\{\\$classic_header\\}#', '{$threadfields_display}{$classic_header}');
 	
 	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 	// migrate templates - surely no-one else is ending their template names with "threadfields_inputrow", right?

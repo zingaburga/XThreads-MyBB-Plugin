@@ -209,8 +209,8 @@ function &xthreads_threadfields_props() {
 		'tabstop' => array(
 			'default' => true,
 		),
-		'hideedit' => array(
-			'default' => false,
+		'hidefield' => array(
+			'default' => 0,
 		),
 		'formhtml' => array(
 			'db_type' => 'text',

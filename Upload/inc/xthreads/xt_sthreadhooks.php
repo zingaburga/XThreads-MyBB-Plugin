@@ -4,9 +4,26 @@ if(!defined('IN_MYBB'))
 
 
 function xthreads_showthread() {
-	global $thread, $threadfields;
+	global $thread, $threadfields, $threadfields_display, $threadfields_display_rows, $templates, $theme, $threadfield_cache;
 	// just do an extra query to grab the threadfields
 	xthreads_get_threadfields($thread['tid'], $threadfields, false, $thread);
+	
+	// generate stuff to show on showthread
+	// $threadfield_cache should always be set here
+	$threadfields_display = $threadfields_display_rows = '';
+	foreach($threadfields as $k => &$val) {
+		$tf =& $threadfield_cache[$k];
+		if($tf['hidefield'] & XTHREADS_HIDE_THREAD) continue;
+		if($tf['inputtype'] == XTHREADS_INPUT_FILE)
+			$value =& $val['value'];
+		else
+			$value =& $val;
+		$title = htmlspecialchars_uni($tf['title']);
+		$bgcolor = alt_trow();
+		eval('$threadfields_display_rows .= "'.$templates->get('showthread_threadfield_row').'";');
+	} unset($value);
+	if($threadfields_display_rows)
+		eval('$threadfields_display = "'.$templates->get('showthread_threadfields').'";');
 	
 	/*
 	global $mybb;
