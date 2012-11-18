@@ -150,15 +150,18 @@ function xthreads_phptpl_is_safe_expression($s)
 	// blocking hanging quotes will actually also block an exploit
 	// eg $a = "".strval(1).").".whatever.(".strval(1).")."";
 	
-	// block exit/die, include/require + constants
-	if(preg_match('~(?<![a-z0-9_$])(?:exit|die|eval|include|include_once|require|require_once|__file__|__dir__|__line__|__function__|__class__|__method__|php_version|php_os|php_sapi|default_include_path|pear_install_dir|pear_extension_dir|php_extension_dir|php_prefix|php_bindir|php_libdir|php_datadir|php_sysconfdir|php_localstatedir|php_config_file_path|php_config_file_scan_dir|php_shlib_suffix|mybb_root)(?![a-z0-9_$])~i', $check)) return false;
+	// block new, exit/die, include/require + constants
+	if(preg_match('~(?<![a-z0-9_$])(?:new|exit|die|eval|include|include_once|require|require_once|__file__|__dir__|__line__|__function__|__class__|__method__|php_version|php_os|php_sapi|default_include_path|pear_install_dir|pear_extension_dir|php_extension_dir|php_prefix|php_bindir|php_libdir|php_datadir|php_sysconfdir|php_localstatedir|php_config_file_path|php_config_file_scan_dir|php_shlib_suffix|mybb_root)(?![a-z0-9_$])~i', $check)) return false;
 	
 	
-	// check functions (implicitly blocks variable functions and method calls, as well as array index calls and $a{0}() type calls)
-	preg_match_all('~((\$|-\>|\:\:)?[a-zA-Z0-9_]+[\]}]?)\(~', $check, $matches);
+	// block all array index calls and $a{0}() type calls
+	if(preg_match('~[\]}]\s*\(~', $check)) return false; // note that this expression may block "{[statement]} ([statement])" type structures; this shouldn't be an issue with template conditionals, but I guess a workaround, if it does eventually be an issue, is to insert something like a "0+" before the bracket to trick the parser
+	
+	// check functions (implicitly blocks variable functions)
+	preg_match_all('~((\$|-\>\s*|[\\\\a-zA-Z0-9_]+\s*\:\:\s*)?[\\\\a-zA-Z0-9_]+)\s*\(~', $check, $matches);
 	$allowed_funcs = xthreads_phptpl_get_allowed_funcs();
 	foreach($matches[1] as &$func) {
-		if(!isset($allowed_funcs[$func])) return false;
+		if(!isset($allowed_funcs[strtr($func, array(' '=>'',"\n"=>'',"\r"=>'',"\t"=>''))])) return false;
 	}
 	
 	return true;
