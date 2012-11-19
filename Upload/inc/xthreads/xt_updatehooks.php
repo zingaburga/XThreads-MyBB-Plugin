@@ -772,7 +772,7 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 						}
 					}
 					
-					$vars['ATTACH'] = xthreads_sanitize_disp_set_xta_fields($aid, $tf);
+					xthreads_sanitize_disp_set_xta_fields($vars['ATTACH'], $aid, $tf);
 					if(isset($vars['ATTACH']['md5hash'])) {
 						$vars['ATTACH_MD5_TITLE'] = ' title="'.$lang->sprintf($lang->xthreads_md5hash, $vars['ATTACH']['md5hash']).'" ';
 					}
