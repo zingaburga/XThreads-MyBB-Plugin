@@ -3,7 +3,7 @@ if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
 
-define('XTHREADS_VERSION', 1.60);
+define('XTHREADS_VERSION', 1.61);
 @include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines/settings
 if(!defined('IN_ADMINCP')) {
 	@include_once MYBB_ROOT.'cache/xthreads_evalcache.php'; // if missing, we'll regenerate only in the AdminCP; weird heuristic, but one would imagine that a visit there is likely if the evalcache stuffs up
@@ -492,13 +492,14 @@ function xthreads_sanitize_disp_set_blankthumbs(&$s, &$tfinfo) {
 		$s['dims'] =& $s['thumbs']['orig'];
 	}
 }
-function xthreads_sanitize_disp_set_xta_fields($aid, &$tfinfo, $dispfmt='', $evalfunc='') {
+// compatibility with XThreads < 1.60: we need to have the &$s variable here (rather than return $s) because we need to allow usage of {$threadfields[key]..} usage which was allowed
+function xthreads_sanitize_disp_set_xta_fields(&$s, $aid, &$tfinfo, $dispfmt='', $evalfunc='') {
 	global $xta_cache;
 	if(!is_numeric($aid) || !isset($xta_cache[$aid])) {
 		// fallback - prevent templating errors if this file happens to not exist
 		$s = array();
 		xthreads_sanitize_disp_set_blankthumbs($s, $tfinfo);
-		return $s;
+		//return $s;
 	}
 	$s = $xta_cache[$aid];
 	$s['downloads_friendly'] = my_number_format($s['downloads']);
@@ -539,7 +540,7 @@ function xthreads_sanitize_disp_set_xta_fields($aid, &$tfinfo, $dispfmt='', $eva
 		}
 		$s['value'] = $evalfunc($dispfmt, $vars);
 	}
-	return $s;
+	//return $s;
 }
 function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 	$evalfunc = 'xthreads_evalcache_'.$tfinfo['field'];
@@ -567,7 +568,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 			return;
 		}
 		if(xthreads_empty($tfinfo['multival'])) {
-			$s = xthreads_sanitize_disp_set_xta_fields($s, $tfinfo, $dispfmt, $evalfunc);
+			xthreads_sanitize_disp_set_xta_fields($s, $s, $tfinfo, $dispfmt, $evalfunc);
 			$sx['value'] =& $s['value'];
 		} else {
 			$aids = explode(',', $s);
@@ -582,9 +583,9 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 			$sx['items'] = $sx['value'] = array();
 			$comma = '';
 			foreach($aids as $aid) {
-				$xta = xthreads_sanitize_disp_set_xta_fields($aid, $tfinfo, 'dispitemformat', $evalfunc);
+				$xta =& $sx['items'][];
+				xthreads_sanitize_disp_set_xta_fields($xta, $aid, $tfinfo, 'dispitemformat', $evalfunc);
 				if(!$xta['aid']) continue;
-				$sx['items'][] = $xta;
 				$sx['value'][] = $xta['value'];
 				$s['total_downloads'] += $xta['downloads'];
 				$s['total_filesize'] += $xta['filesize'];
