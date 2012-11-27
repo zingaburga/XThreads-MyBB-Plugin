@@ -133,7 +133,7 @@ if(!defined('IN_MYBB'))
 	 * Parse info from HTTP header
 	 * @return array of info retrieved, or null if nothing retrieved
 	 */
-	/*private*/ static function _processHttpHeader_parse(&$header) {
+	/*protected*/ static function _processHttpHeader_parse(&$header) {
 		$header = trim($header);
 		$p = strpos($header, ':');
 		if(!$p) {
@@ -205,6 +205,8 @@ class XTUrlFetcher_Curl extends XTUrlFetcher {
 	 * Internal cURL resource handle
 	 */
 	/*private*/ var $_ch;
+	/*private*/ var $_redirectUrl;
+	/*private*/ var $_headers;
 	
 	/*const*/ var $name = 'cURL';
 	
@@ -228,15 +230,6 @@ class XTUrlFetcher_Curl extends XTUrlFetcher {
 			curl_setopt($this->_ch, CURLOPT_USERAGENT, $this->user_agent);
 		if(isset($this->referer))
 			curl_setopt($this->_ch, CURLOPT_REFERER, $this->referrer);
-		
-		if($this->follow_redir) {
-			if(defined('CURLOPT_AUTOREFERER'))
-				curl_setopt($this->_ch, CURLOPT_AUTOREFERER, true);
-			// PHP safe mode may restrict the following
-			@curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
-			curl_setopt($this->_ch, CURLOPT_MAXREDIRS, $this->follow_redir);
-		}
-		// TODO: 
 		curl_setopt($this->_ch, CURLOPT_ENCODING, '');
 		
 		if(isset($this->meta_function)) {
@@ -250,7 +243,26 @@ class XTUrlFetcher_Curl extends XTUrlFetcher {
 		} else
 			curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
 		
-		$success = curl_exec($this->_ch);
+		// because cURL's auto redirection won't work for us (seems to be incompatible with a header function), we have to emulate it
+		for($i=0; $i<$this->follow_redir; ++$i) {
+			$this->_redirectUrl = false;
+			$this->_headers = array();
+			$success = curl_exec($this->_ch);
+			if(!$this->_redirectUrl) break;
+			
+			// do a redirect
+			curl_setopt($this->_ch, CURLOPT_REFERER, $this->url);
+			$this->url = $this->_redirectUrl;
+			curl_setopt($this->_ch, CURLOPT_URL, $this->url);
+		}
+		// will execute if body function not set (or no body returned?)
+		if(!empty($this->_headers)) {
+			foreach($this->_headers as $h)
+				if(!$this->_processHttpHeader($h)) {
+					$this->aborted = true;
+					break;
+				}
+		}
 		if($this->aborted)
 			return null;
 		else
@@ -264,14 +276,34 @@ class XTUrlFetcher_Curl extends XTUrlFetcher {
 	}
 	
 	function curl_header_func(&$ch, $header) {
-		if($this->_processHttpHeader(trim($header)))
+		$theader = trim($header);
+		// intercept redirect header for our redirect emulation
+		if($this->follow_redir && strtolower(substr($theader, 0, 9)) == 'location:') {
+			$this->_redirectUrl = trim(substr($theader, 9));
+			$this->close();
+			return 0;
+		}
+		// gather headers - we can't process them because we may do so prematurely (we need to check all headers for a redirect first)
+		$this->_headers[] = $header;
+		return strlen($header);
+		/*
+		elseif($this->_processHttpHeader($theader))
 			return strlen($header);
 		else {
 			$this->close();
 			return 0;
-		}
+		}*/
 	}
 	function curl_body_func(&$ch, $data) {
+		if(!empty($this->_headers)) {
+			foreach($this->_headers as $h)
+				if(!$this->_processHttpHeader($h)) {
+					$this->aborted = true;
+					$this->close();
+					return 0;
+				}
+			$this->_headers = null;
+		}
 		if(call_user_func_array($this->body_function, array(&$this, &$data)))
 			return strlen($data);
 		else {
@@ -339,7 +371,7 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 			}
 			
 			$databuf = ''; // returned string if no body_function defined
-			$doneheaders = false;
+			$doneheaders = $chunked = false;
 			while(!feof($fr)) {
 				if(!$doneheaders) {
 					$data = self::fill_fread($fr, 16384);
@@ -369,6 +401,8 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 						}
 						if($this->aborted) break;
 					}
+					// check for chunked encoding; we won't bother handling the full spec for this - for simplicity, just do the common case
+					$chunked = preg_match("~\r\ntransfer-encoding\:\s*chunked\s*\r\n~i", $headerdata);
 					
 					$p += 4;
 					$data = substr($data, $p);
@@ -382,6 +416,10 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 					}
 				}
 				if($len) {
+					if($chunked) {
+						// TODO: simple decode chunked encoding
+						// this is potentially tricky because the fread could potentially stop inbetween a length value
+					}
 					if(isset($this->body_function)) {
 						if(!call_user_func_array($this->body_function, array(&$this, &$data))) {
 							$this->aborted = true;
@@ -434,7 +472,12 @@ class XTUrlFetcher_Fopen extends XTUrlFetcher {
 		// send headers if possible
 		$meta = @stream_get_meta_data($fr);
 		if(isset($meta['wrapper_data'])) {
-			foreach($meta['wrapper_data'] as $header) {
+			// headers are appended, even onto redirects, so first try to find the last redirected-to header
+			$firstHeader = 0;
+			for($i=0, $c=count($meta['wrapper_data']); $i<$c; ++$i)
+				if(substr($meta['wrapper_data'][$i], 0, 7) == 'HTTP/1.')
+					$firstHeader = $i;
+			foreach(array_slice($meta['wrapper_data'], $firstHeader) as $header) {
 				if(!$this->_processHttpHeader($header)) {
 					fclose($fr);
 					return null;
