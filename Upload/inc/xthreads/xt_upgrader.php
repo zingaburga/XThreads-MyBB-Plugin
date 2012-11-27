@@ -278,7 +278,6 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	$db->update_query('threadfields', array('textmask' => $db->escape_string('^([^ "(),:;<>@\\[\\\\\\]]+)@([a-z0-9_.\\-]+)$')), 'textmask="'.$db->escape_string('^([a-z0-9_.\\-]+)@([a-z0-9_.\\-]+)$').'"');
 	// we never used this, so may as well get rid of it
 	$db->write_query('ALTER TABLE `'.$db->table_prefix.'forums` DROP COLUMN `xthreads_wol_xtattachment`');
-	xthreads_buildtfcache(); // will also update XThreads forum cache
 	
 	if(XTHREADS_MODIFY_TEMPLATES)
 		find_replace_templatesets('showthread', '#\\{\\$classic_header\\}#', '{$threadfields_display}{$classic_header}');
@@ -303,6 +302,10 @@ if(XTHREADS_INSTALLED_VERSION < 1.60) {
 	if(!empty($rmtpl))
 		$db->delete_query('templates', 'title IN ("'.implode('","', $rmtpl).'") AND sid=-1');
 	xthreads_insert_templates($newtpl, -2);
+}
+
+if(XTHREADS_INSTALLED_VERSION < 1.62) {
+	xthreads_buildtfcache(); // will also update XThreads forum cache
 }
 
 return true;

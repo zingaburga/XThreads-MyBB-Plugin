@@ -357,7 +357,7 @@ function xthreads_default_threadfields_formhtml($type) {
 		<tr class="xta_input_url_row">
 			<td class="xtasel_label" style="vertical-align: top;">{$lang_xthreads_attachurl}: </td>
 			<td>
-				<if {MULTIPLE} then><textarea name="xtaurl_{KEY}"{WIDTH_PROP_COLS} rows="3" class="xta_input_url">{VALUE_URL}</textarea><else /><input type="url" class="textbox xta_input_url" name="xtaurl_{KEY}"{WIDTH_PROP_SIZE} value="{VALUE_URL}" /></if>
+				<if {MULTIPLE} then><textarea name="xtaurl_{KEY}"{WIDTH_PROP_COLS} rows="3" class="xta_input_url">{VALUE_URL}</textarea><else /><input type="text" class="textbox xta_input_url" name="xtaurl_{KEY}"{WIDTH_PROP_SIZE} value="{VALUE_URL}" /></if>
 			</td>
 		</tr></table>
 	</if>
