@@ -637,7 +637,7 @@ function xthreads_buildtfcache() {
 				$tf[$field] = false;
 		}
 		$thumblist = '';
-		if(isset($tf['fileimgthumbs'])) {
+		if(isset($tf['fileimgthumbs']) && is_array($tf['fileimgthumbs'])) { // will be an empty string if there's no thumbnails set
 			foreach($tf['fileimgthumbs'] as $name => &$evalstr) {
 				if(!$evalstr) continue;
 				$thumblist .= '
