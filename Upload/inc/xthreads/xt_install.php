@@ -91,7 +91,15 @@ function xthreads_install() {
 	
 	switch($dbtype) {
 		case 'mysql':
-			$create_table_suffix = ' ENGINE=MyISAM'.$create_table_suffix;
+			$engine = 'MyISAM';
+			// try to see if a custom table engine is being used
+			$query = $db->query('SHOW TABLE STATUS LIKE "'.$db->table_prefix.'threads"', true);
+			if($query) {
+				$eng = $db->fetch_field($query, 'Engine');
+				if(in_array(strtolower($eng), array('innodb','aria','xtradb'))) // only stick to common possibilities to avoid issues with exquisite setups
+					$engine = $eng;
+			}
+			$create_table_suffix = ' ENGINE='.$engine.$create_table_suffix;
 			$auto_increment = ' auto_increment';
 		break;
 		case 'sqlite':
