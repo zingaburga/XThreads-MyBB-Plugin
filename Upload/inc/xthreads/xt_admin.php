@@ -386,86 +386,83 @@ function xthreads_eval_flipfields($a) {
 }
 
 function xthreads_write_xtcachefile() {
-	if($fp = @fopen(MYBB_ROOT.'cache/xthreads.php', 'w')) {
-		/* fwrite($fp, '<?php if(!defined("IN_MYBB")) exit;
-return array(
-	"version" => '.XTHREADS_VERSION.'
-);'); */
+	$fp = @fopen(MYBB_ROOT.'cache/xthreads.php', 'w');
+	if(!$fp) return false;
 
-		$defines = array();
-		foreach(array(
-			'XTHREADS_ALLOW_URL_FETCH' => true,
-			'XTHREADS_URL_FETCH_DISALLOW_HOSTS' => 'localhost,127.0.0.1',
-			'XTHREADS_URL_FETCH_DISALLOW_PORT' => false,
-			'XTHREADS_UPLOAD_FLOOD_TIME' => 1800,
-			'XTHREADS_UPLOAD_FLOOD_NUMBER' => 50,
-			'XTHREADS_UPLOAD_EXPIRE_TIME' => 3*3600,
-			'XTHREADS_UPLOAD_LARGEFILE_SIZE' => 10*1048576,
-			'XTHREADS_ALLOW_PHP_THREADFIELDS' => 2,
-			'XTHREADS_ATTACH_USE_QUERY' => 0,
-			'XTHREADS_MODIFY_TEMPLATES' => true,
-			
-			'XTHREADS_COUNT_DOWNLOADS' => 2,
-			'XTHREADS_CACHE_TIME' => 604800,
-			'XTHREADS_PROXY_REDIR_HEADER_PREFIX' => '',
-			'XTHREADS_EXPIRE_ATTACH_LINK' => 0,
-			'XTHREADS_ATTACH_LINK_IPMASK' => 0,
-			'XTHREADS_MIME_OVERRIDE' => '',
-		) as $name => $val) {
-			if(defined($name))
-				$val = constant($name);
-			// support legacy query string definition
-			elseif($name == 'XTHREADS_ATTACH_USE_QUERY' && defined('ARCHIVE_QUERY_STRINGS') && ARCHIVE_QUERY_STRINGS)
-				$val = 1;
-			// name transition from XThreads 1.45 and older
-			elseif(in_array($name, array('XTHREADS_COUNT_DOWNLOADS','XTHREADS_CACHE_TIME','XTHREADS_PROXY_REDIR_HEADER_PREFIX')) && defined(substr($name, 0, 9)))
-				$val = constant(substr($name, 0, 9));
-			
-			if(is_string($val))
-				// don't need to escape ' characters as we don't use them here
-				$val = '\''.$val.'\'';
-			elseif(is_bool($val))
-				$val = ($val ? 'true':'false');
-			else {
-				// nice formatters
-				switch($name) {
-					// size fields
-					case 'XTHREADS_UPLOAD_LARGEFILE_SIZE':
-						$suf = '';
-						while($val > 1 && !($val % 1024)) {
-							$val /= 1024;
-							$suf .= '*1024';
-						}
-						if($val == 1)
-							$val = ($suf ? substr($suf, 1) : $val);
-						else
-							$val .= $suf;
-						break;
-					
-					// time fields
-					case 'XTHREADS_UPLOAD_FLOOD_TIME': case 'XTHREADS_UPLOAD_EXPIRE_TIME': case 'CACHE_TIME':
-						if(!($val % 3600)) {
-							$val /= 3600;
-							if(!($val % 24))
-								$val = ($val / 24).'*24*3600';
-							else
-								$val = $val.'*3600';
-							break;
-						} elseif(!($val % 60)) {
-							$val = ($val / 60).'*60';
-							break;
-						}
-						
-						// fall through
-					default:
-						$val = strval($val);
-				}
-			}
-			$defines[$name] = 'define(\''.$name.'\', '.$val.');';
-		}
-		$defines['XTHREADS_INSTALLED_VERSION'] = 'define(\'XTHREADS_INSTALLED_VERSION\', '.XTHREADS_VERSION.');';
+	$defines = array();
+	foreach(array(
+		'XTHREADS_ALLOW_URL_FETCH' => true,
+		'XTHREADS_URL_FETCH_DISALLOW_HOSTS' => 'localhost,127.0.0.1',
+		'XTHREADS_URL_FETCH_DISALLOW_PORT' => false,
+		'XTHREADS_UPLOAD_FLOOD_TIME' => 1800,
+		'XTHREADS_UPLOAD_FLOOD_NUMBER' => 50,
+		'XTHREADS_UPLOAD_EXPIRE_TIME' => 3*3600,
+		'XTHREADS_UPLOAD_LARGEFILE_SIZE' => 10*1048576,
+		'XTHREADS_ALLOW_PHP_THREADFIELDS' => 2,
+		'XTHREADS_ATTACH_USE_QUERY' => 0,
+		'XTHREADS_MODIFY_TEMPLATES' => true,
 		
-		fwrite($fp, <<<ENDSTR
+		'XTHREADS_COUNT_DOWNLOADS' => 2,
+		'XTHREADS_CACHE_TIME' => 604800,
+		'XTHREADS_PROXY_REDIR_HEADER_PREFIX' => '',
+		'XTHREADS_EXPIRE_ATTACH_LINK' => 0,
+		'XTHREADS_ATTACH_LINK_IPMASK' => 0,
+		'XTHREADS_MIME_OVERRIDE' => '',
+	) as $name => $val) {
+		if(defined($name))
+			$val = constant($name);
+		// support legacy query string definition
+		elseif($name == 'XTHREADS_ATTACH_USE_QUERY' && defined('ARCHIVE_QUERY_STRINGS') && ARCHIVE_QUERY_STRINGS)
+			$val = 1;
+		// name transition from XThreads 1.45 and older
+		elseif(in_array($name, array('XTHREADS_COUNT_DOWNLOADS','XTHREADS_CACHE_TIME','XTHREADS_PROXY_REDIR_HEADER_PREFIX')) && defined(substr($name, 0, 9)))
+			$val = constant(substr($name, 0, 9));
+		
+		if(is_string($val))
+			// don't need to escape ' characters as we don't use them here
+			$val = '\''.$val.'\'';
+		elseif(is_bool($val))
+			$val = ($val ? 'true':'false');
+		else {
+			// nice formatters
+			switch($name) {
+				// size fields
+				case 'XTHREADS_UPLOAD_LARGEFILE_SIZE':
+					$suf = '';
+					while($val > 1 && !($val % 1024)) {
+						$val /= 1024;
+						$suf .= '*1024';
+					}
+					if($val == 1)
+						$val = ($suf ? substr($suf, 1) : $val);
+					else
+						$val .= $suf;
+					break;
+				
+				// time fields
+				case 'XTHREADS_UPLOAD_FLOOD_TIME': case 'XTHREADS_UPLOAD_EXPIRE_TIME': case 'CACHE_TIME':
+					if(!($val % 3600)) {
+						$val /= 3600;
+						if(!($val % 24))
+							$val = ($val / 24).'*24*3600';
+						else
+							$val = $val.'*3600';
+						break;
+					} elseif(!($val % 60)) {
+						$val = ($val / 60).'*60';
+						break;
+					}
+					
+					// fall through
+				default:
+					$val = strval($val);
+			}
+		}
+		$defines[$name] = 'define(\''.$name.'\', '.$val.');';
+	}
+	$defines['XTHREADS_INSTALLED_VERSION'] = 'define(\'XTHREADS_INSTALLED_VERSION\', '.XTHREADS_VERSION.');';
+	
+	fwrite($fp, <<<ENDSTR
 <?php
 // XThreads definition file
 // This file contains a number of "internal" settings which you can modify if you wish
@@ -602,8 +599,8 @@ $defines[XTHREADS_INSTALLED_VERSION]
 
 ENDSTR
 );
-		fclose($fp);
-	}
+	fclose($fp);
+	return true;
 }
 function xthreads_buildtfcache() {
 	global $db, $cache;
@@ -664,6 +661,7 @@ function xthreads_buildtfcache() {
 	
 	
 	$fp = fopen(MYBB_ROOT.'cache/xthreads_evalcache.php', 'w');
+	if(!$fp) return false;
 	fwrite($fp, '<?php /* this file caches preparsed versions of display formats - please do not modify this file */
 '.$evalcache.$thumbcache);
 	
@@ -699,6 +697,7 @@ function xthreads_buildtfcache() {
 		}');
 	}
 	fclose($fp);
+	return true;
 }
 function xthreads_buildtfcache_parseitem(&$tf) {
 	require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
