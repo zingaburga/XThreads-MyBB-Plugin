@@ -428,7 +428,7 @@ function xthreads_breadcrumb_hack($fid) {
 		
 		// we can't really hide the active breadcrumb, so ignore current forum...
 		// (actually, it might be possible if we rewrite forum ids)
-		if($pforum['pid']) {
+		if($pforum['pid'] && !empty($pforumcache[$pforum['pid']])) {
 			$prevforum =& $pforum;
 			$forum =& xthreads_get_array_first($pforumcache[$pforum['pid']]);
 			while($forum) {
@@ -437,7 +437,7 @@ function xthreads_breadcrumb_hack($fid) {
 					$prevforum['pid'] = $forum['fid'];
 					$prevforum =& $forum;
 				}
-				if(!$forum['pid']) break;
+				if(!$forum['pid'] || empty($pforumcache[$forum['pid']])) break;
 				$forum =& xthreads_get_array_first($pforumcache[$forum['pid']]);
 			}
 			$prevforum['pid'] = 0;
