@@ -419,7 +419,7 @@ function xthreads_breadcrumb_hack_printthread() {
 		
 		// firstly, skip any hidden top-level parents
 		$prevforum =& $pforum;
-		while($prevforum && $prevforum['xthreads_hidebreadcrumb'])
+		while($prevforum && $prevforum['xthreads_hidebreadcrumb'] && !empty($pforumcache[$prevforum['fid']]))
 			$prevforum =& xthreads_get_array_first($pforumcache[$prevforum['fid']]);
 		
 		if($prevforum) {
