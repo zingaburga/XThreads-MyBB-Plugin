@@ -310,13 +310,13 @@ if(XTHREADS_INSTALLED_VERSION < 1.64 && XTHREADS_INSTALLED_VERSION > 1.32) {
 	// we'll fix up broken regexes in these versions if they exist
 	// note that this does assume people haven't deliberately used bad regexes
 	$db->update_query('threadfields', array(
-		'textmask' => $db->escape_string('^(https?)\://([^/?#]+)(/[^\r\n"<>&]*)?$')
+		'textmask' => $db->escape_string('^(https?)\\://([^/?#]+)(/([^\\r\\n"<>#?]*)(\\?([^\\r\\n"<>#]*))?(#([^\\r\\n"<>]*))?)?$')
 	), 'textmask="'.$db->escape_string('^(https?)\\://([a-z0-9.\\-_]+)(/[^\\r\\n"<>&]*)?$').'"');
 	$db->update_query('threadfields', array(
-		'textmask' => $db->escape_string('^([a-z0-9]+)\://([^/?#]+)(/[^\r\n"<>&]*)?$')
+		'textmask' => $db->escape_string('^([a-z0-9]+)\\://([^/?#]+)(/([^\\r\\n"<>#?]*)(\\?([^\\r\\n"<>#]*))?(#([^\\r\\n"<>]*))?)?$')
 	), 'textmask="'.$db->escape_string('^([a-z0-9]+)\\://([a-z0-9.\\-_]+)(/[^\\r\\n"<>&]*)?$').'"');
 	$db->update_query('threadfields', array(
-		'textmask' => $db->escape_string('^([^:/?#]+)\\:(.+)$')
+		'textmask' => $db->escape_string('^([^:/?#]+)\\:((//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?)$')
 	), 'textmask="'.$db->escape_string('^([a-z0-9]+)\\:(.+)$').'"');
 }
 
