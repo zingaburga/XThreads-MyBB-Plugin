@@ -435,6 +435,44 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 		}
 		if($modify) $purl['host'] = implode('.', $parts);
 	}
+	// IPv6 version - normalize IPv6 addresses
+	// (regex won't match [::], but we don't need to process that anyway)
+	elseif(substr_count($purl['host'], ':') > 1 && substr_count($purl['host'], ':') < 8 && preg_match('~^\\[(?:[0-9a-f]{1,4}\\:){0,7}(?:\\:\\:?(?:[0-9a-f]{1,4}\\:){0,6})?(?:[0-9a-f]{1,4})\\]$~i', $purl['host']) && strpos($purl['host'], ':::')===false) {
+		$parts = explode(':', strtolower(substr($purl['host'], 1, -1)));
+		// expand double-colon
+		$expand = 8 - count($parts);
+		if($expand) {
+			if(($i = array_search('', $parts, true)) !== false) {
+				array_splice($parts, $i, 1, array_fill(0, $expand+1, '0'));
+			}
+			// TODO: check if IP is still valid
+		}
+		// strip leading zeros
+		foreach($parts as &$part) {
+			$part = ltrim($part, '0');
+			if($part === '') $part = '0';
+		}
+		// compress stream of zeros
+		$parts = implode(':', $parts);
+		preg_match_all('~(?<=\\:)(0\\:){2,}~', ':'.$parts.':', $ipzeros, PREG_PATTERN_ORDER|PREG_OFFSET_CAPTURE);
+		if(!empty($ipzeros) && !empty($ipzeros[0])) {
+			$longest = 0;
+			$longest_start = 0;
+			foreach($ipzeros[0] as $ipzero) {
+				$l = strlen($ipzero[0]);
+				if($l > $longest) {
+					$longest = $l;
+					$longest_start = $ipzero[1];
+				}
+			}
+			if($longest && $longest_start) { // this should _always_ be true here
+				$parts = ' '.$parts;
+				$parts = substr($parts, 0, $longest_start-1).'::'.substr($parts, $longest_start+$longest);
+				$parts = ltrim($parts);
+			}
+		}
+		$purl['host'] = '['.$parts.']';
+	}
 	
 	if(XTHREADS_URL_FETCH_DISALLOW_HOSTS && in_array($purl['host'], array_map('trim', explode(',', XTHREADS_URL_FETCH_DISALLOW_HOSTS))))
 		return array('error' => $lang->xthreads_xtfurlerr_badhost);

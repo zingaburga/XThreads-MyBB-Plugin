@@ -392,7 +392,7 @@ function xthreads_write_xtcachefile() {
 	$defines = array();
 	foreach(array(
 		'XTHREADS_ALLOW_URL_FETCH' => true,
-		'XTHREADS_URL_FETCH_DISALLOW_HOSTS' => 'localhost,127.0.0.1',
+		'XTHREADS_URL_FETCH_DISALLOW_HOSTS' => 'localhost,127.0.0.1,[::1]',
 		'XTHREADS_URL_FETCH_DISALLOW_PORT' => false,
 		'XTHREADS_UPLOAD_FLOOD_TIME' => 1800,
 		'XTHREADS_UPLOAD_FLOOD_NUMBER' => 50,
