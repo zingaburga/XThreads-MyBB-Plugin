@@ -309,12 +309,8 @@ function xthreads_validate_attachment(&$attachment, &$tf) {
 	if($tf['filemaxsize'] && $attachment['size'] > $tf['filemaxsize']) {
 		return $lang->sprintf($lang->xthreads_xtaerr_error_attachsize, get_friendly_size($tf['filemaxsize']));
 	}
-	if($tf['fileexts']) {
-		$ext = strtolower(get_extension($attachment['name']));
-		if(strpos('|'.strtolower($tf['fileexts']).'|', '|'.$ext.'|') === false) {
-			return $lang->error_attachtype;
-		}
-	}
+	if(!xthreads_fetch_url_validext($attachment['name'], $tf['fileexts']))
+		return $lang->error_attachtype;
 	if(!empty($tf['filemagic'])) {
 		$validmagic = false;
 		if($fp = @fopen($attachment['tmp_name'], 'rb')) {
@@ -541,11 +537,13 @@ function xthreads_fetch_url($url, $max_size=0, $valid_ext='', $valid_magic=array
 	return $ret;
 }
 function xthreads_fetch_url_validext(&$name, &$exts) {
-	if($exts) {
-		$ext = strtolower(get_extension($name));
-		if(strpos('|'.strtolower($exts).'|', '|'.$ext.'|') === false) {
-			return false;
+	if(!xthreads_empty($exts)) {
+		$fn = strtolower($name);
+		foreach(explode('|', strtolower($exts)) as $ext) {
+			if($ext !== '' && substr($fn, -strlen($ext) -1) == '.'.$ext)
+				return true;
 		}
+		return false;
 	}
 	return true;
 }
