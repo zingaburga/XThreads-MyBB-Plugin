@@ -939,7 +939,7 @@ function xthreads_upload_attachments() {
 			}
 			elseif($v['inputtype'] == XTHREADS_INPUT_FILE && XTHREADS_ALLOW_URL_FETCH && !xthreads_empty($mybb->input['xtaurl_'.$k])) {
 				// the preg_match is just a basic prelim check - the real URL checking is done later; we need this prelim check to stop it erroring out on the defalt "http://" string
-				if(preg_match('~^[a-z0-9\\-]+\\://[a-z0-9_\\-@:.]+(?:/.*)?$~', $mybb->input['xtaurl_'.$k]))
+				if(preg_match('~^[a-z0-9\\-]+\\://[^/]+(?:/.*)?$~', $mybb->input['xtaurl_'.$k]))
 					$ul = $mybb->input['xtaurl_'.$k];
 			}
 			!isset($ul) or $ul = array($ul);
