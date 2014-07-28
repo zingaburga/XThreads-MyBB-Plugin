@@ -61,7 +61,7 @@ function xthreads_info() {
 		$lang->uninstall = str_replace('{data}', xthreads_install_img_uninstall(), $imgcode).'<span style="color: #FF0000;">'.$lang->uninstall.'</span>';
 	}
 	return array(
-		'name'          => '</strong><small style="font-family: Tempus Sans ITC, Lucida Calligraphy, Harrington, Comic Sans MS, Some other less-readable goofy font, Serif"><a href="'.$info['website'].'">'.$info['name'].'</a> v'.$info['version'].', '.$info['description'].'<!-- ',
+		'name'          => '</strong><small style="font-family: Tempus Sans ITC, Lucida Calligraphy, Harrington, Comic Sans MS, Some other less-readable goofy font, Serif"><a href="'.$info['website'].'">'.$info['name'].'</a> v'.$info['version'].', '.$lang->xthreads_fun_desc.'<!-- ',
 		'author'        => '--><i><small>',
 		'compatibility' => $info['compatibility'],
 		'guid'          => $info['guid']
