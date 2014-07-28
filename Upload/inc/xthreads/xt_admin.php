@@ -1770,15 +1770,21 @@ function xthreads_vercheck() {
 		// need to upgrade
 		if(!$lang->xthreads_upgrade_done) $lang->load('xthreads');
 		if($mybb->input['xthreads_upgrade'] && $mybb->input['my_post_key'] == $mybb->post_code) {
-			// perform upgrade
-			$result = require(MYBB_ROOT.'inc/xthreads/xt_upgrader.php');
-			if($result === true) {
-				xthreads_write_xtcachefile();
-				$msg = array('message' => $lang->xthreads_upgrade_done, 'type' => 'success');
+			if(!file_exists(MYBB_ROOT.'cache/xthreads.php'))
+				touch(MYBB_ROOT.'cache/xthreads.php');
+			if(is_writable(MYBB_ROOT.'cache/xthreads.php')) {
+				// perform upgrade
+				$result = require(MYBB_ROOT.'inc/xthreads/xt_upgrader.php');
+				if($result === true) {
+					xthreads_write_xtcachefile();
+					$msg = array('message' => $lang->xthreads_upgrade_done, 'type' => 'success');
+				} else {
+					$msg = array('message' => $lang->xthreads_upgrade_failed, 'type' => 'error');
+					if(is_string($result) && $result)
+						$msg['message'] .= ' '.$result;
+				}
 			} else {
-				$msg = array('message' => $lang->xthreads_upgrade_failed, 'type' => 'error');
-				if(is_string($result) && $result)
-					$msg['message'] .= ' '.$result;
+				$msg = array('message' => $lang->xthreads_upgrade_failed.$lang->xthreads_cachefile_not_writable, 'type' => 'error');
 			}
 			unset($mybb->input['xthreads_upgrade']);
 		} else {
