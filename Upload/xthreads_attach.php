@@ -88,11 +88,13 @@ function do_processing() {
 		//if(get_magic_quotes_gpc())
 		//	$_SERVER['PATH_INFO'] = stripslashes($_SERVER['PATH_INFO']);
 	} else {
-		if(!isset($_SERVER['PATH_INFO'])) {
-			if(isset($_SERVER['SCRIPT_NAME']) && isset($_SERVER['PHP_SELF'])) {
-				$snlen = strlen($_SERVER['SCRIPT_NAME']);
-				if(substr($_SERVER['PHP_SELF'], 0, $snlen) == $_SERVER['SCRIPT_NAME'])
-					$_SERVER['PATH_INFO'] = substr($_SERVER['PHP_SELF'], $snlen);
+		if(!isset($_SERVER['PATH_INFO']) && isset($_SERVER['SCRIPT_NAME'])) {
+			$snlen = strlen($_SERVER['SCRIPT_NAME']);
+			foreach(array('PHP_SELF', 'REQUEST_URI') as $key) {
+				if(isset($_SERVER[$key]) && substr($_SERVER[$key], 0, $snlen+1) == $_SERVER['SCRIPT_NAME'].'/') {
+					$_SERVER['PATH_INFO'] = substr($_SERVER[$key], $snlen);
+					break;
+				}
 			}
 		}
 
@@ -215,9 +217,9 @@ function do_processing() {
 		if(XTHREADS_COUNT_DOWNLOADS && !$thumb) increment_downloads($match[1]);
 	}
 	header('Allow: GET, HEAD');
-	header('Last-Modified: '.gmdate('D, d M Y H:i:s', $modtime).'GMT');
+	header('Last-Modified: '.gmdate('D, d M Y H:i:s', $modtime).' GMT');
 	if(XTHREADS_CACHE_TIME) {
-		header('Expires: '.gmdate('D, d M Y H:i:s', time() + XTHREADS_CACHE_TIME).'GMT');
+		header('Expires: '.gmdate('D, d M Y H:i:s', time() + XTHREADS_CACHE_TIME).' GMT');
 		header('Cache-Control: max-age='.XTHREADS_CACHE_TIME);
 	} else {
 		header('Expires: Sat, 1 Jan 2000 01:00:00 GMT');
