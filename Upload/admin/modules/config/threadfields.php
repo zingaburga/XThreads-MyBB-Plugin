@@ -202,10 +202,10 @@ if(!$mybb->input['action'])
 	function xt_fields_delcheck() {
 		var c=this.checked;
 		var n=this.id.substr(<?php echo strlen('threadfields_mark_'); ?>);
-		$('threadfields_order_'+n).disabled = c;
+		document.getElementById('threadfields_order_'+n).disabled = c;
 		
 		var bg = (c ? '#fffbd9':''), fg = (c ? '#a0a0a0':'');
-		var robj = $('threadfields_row_'+n);
+		var robj = document.getElementById('threadfields_row_'+n);
 		robj.style.backgroundColor = bg;
 		robj.style.color = fg;
 		var cells = robj.getElementsByTagName('td');
@@ -216,7 +216,7 @@ if(!$mybb->input['action'])
 	}
 	var xt_fields = [<?php echo $js_indexes; ?>];
 	for(i=1; i<xt_fields.length; i++) {
-		var xt_o = $('threadfields_mark_'+xt_fields[i]);
+		var xt_o = document.getElementById('threadfields_mark_'+xt_fields[i]);
 		xt_o.onclick = xt_fields_delcheck;
 		// weird, the apply method isn't working here...
 		//xt_fields_delcheck(xt_o);
@@ -225,7 +225,7 @@ if(!$mybb->input['action'])
 	
 	function xt_fields_submit() {
 		for(i=1; i<xt_fields.length; i++) {
-			if($('threadfields_mark_'+xt_fields[i]).checked) {
+			if(document.getElementById('threadfields_mark_'+xt_fields[i]).checked) {
 				return confirm("<?php echo xt_js_str_escape($lang->threadfields_delete_field_confirm); ?>");
 			}
 		}
@@ -955,25 +955,25 @@ function threadfields_add_edit_handler(&$tf, $update) {
 <!--
 	var xt_inited = false;
 	function xt_visi(o,v) {
-		$(o).style.display = (v ? '':'none');
+		document.getElementById(o).style.display = (v ? '':'none');
 	}
-	$('sanitize').onchange = function() {
-		xt_visi('parser_opts', this.options[this.selectedIndex].value == "<?php echo XTHREADS_SANITIZE_PARSER; ?>" && $('row_sanitize').style.display != 'none');
+	document.getElementById('sanitize').onchange = function() {
+		xt_visi('parser_opts', this.options[this.selectedIndex].value == "<?php echo XTHREADS_SANITIZE_PARSER; ?>" && document.getElementById('row_sanitize').style.display != 'none');
 	};
 	
 	function xt_multival_enable() {
-		var si = parseInt($('inputtype').options[$('inputtype').selectedIndex].value);
+		var si = parseInt(document.getElementById('inputtype').options[document.getElementById('inputtype').selectedIndex].value);
 		var checkboxIn = (si == <?php echo XTHREADS_INPUT_CHECKBOX; ?>);
 		var pureFileIn = (si == <?php echo XTHREADS_INPUT_FILE; ?>);
 		var fileIn = (pureFileIn || si == <?php echo XTHREADS_INPUT_FILE_URL; ?>);
 		e = checkboxIn; // forced
 		
-		var datatypeText = ($('datatype').options[$('datatype').selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>");
+		var datatypeText = (document.getElementById('datatype').options[document.getElementById('datatype').selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>");
 		xt_visi('row_multival_enable', checkboxIn || ((
 			si != <?php echo XTHREADS_INPUT_RADIO; ?> && (datatypeText || pureFileIn)
 		)));
 		
-		if(!e) e = ($('multival_enable_yes').checked && $('row_multival_enable').style.display != 'none');
+		if(!e) e = (document.getElementById('multival_enable_yes').checked && document.getElementById('row_multival_enable').style.display != 'none');
 		xt_visi('row_multival', e);
 		xt_visi('row_multival_limit', e);
 		xt_visi('row_dispitemformat', e);
@@ -982,28 +982,28 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		
 		// hide some sanitise options (if browser supports it)
 		var sanitizeOptShow = ((datatypeVisible && !datatypeText) ? 'none' : '');
-		for(i in $('sanitize').options) {
-			var optItem = $('sanitize').options[i];
+		for(i in document.getElementById('sanitize').options) {
+			var optItem = document.getElementById('sanitize').options[i];
 			if(!optItem) continue; // fix IE6 bug
 			if(optItem.value == "<?php echo XTHREADS_SANITIZE_HTML_NL; ?>" || optItem.value == "<?php echo XTHREADS_SANITIZE_NONE; ?>") {
 				// our target
-				if(sanitizeOptShow == 'none' && $('sanitize').selectedIndex == i)
-					$('sanitize').selectedIndex = 0;
+				if(sanitizeOptShow == 'none' && document.getElementById('sanitize').selectedIndex == i)
+					document.getElementById('sanitize').selectedIndex = 0;
 				optItem.style.display = sanitizeOptShow;
 			}
 		}
 		
-		dispfmt_obj = $('dispformat');
+		dispfmt_obj = document.getElementById('dispformat');
 		fileVal = "<a href=\"{URL}\">{FILENAME}</a>";
 		nonFileVal = "{VALUE}";
 		if(pureFileIn) {
 			if(e) {
-				if($('dispitemformat').value == nonFileVal) {
+				if(document.getElementById('dispitemformat').value == nonFileVal) {
 					if(dispfmt_obj.value == nonFileVal)
-						$('dispitemformat').value = fileVal;
+						document.getElementById('dispitemformat').value = fileVal;
 					else {
 						// swap dispformat <-> dispitemformat
-						$('dispitemformat').value = dispfmt_obj.value;
+						document.getElementById('dispitemformat').value = dispfmt_obj.value;
 						dispfmt_obj.value = nonFileVal;
 					}
 				}
@@ -1012,9 +1012,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			} else {
 				if(dispfmt_obj.value == nonFileVal) {
 					dispfmt_obj.value = fileVal;
-					if($('dispitemformat').value != nonFileVal) {
+					if(document.getElementById('dispitemformat').value != nonFileVal) {
 						// maybe swap?
-						var DIFval = $('dispitemformat').value.toUpperCase();
+						var DIFval = document.getElementById('dispitemformat').value.toUpperCase();
 						if((function(s){
 							for(i in s)
 								if(DIFval.indexOf("{"+s[i]+"}") > -1)
@@ -1023,40 +1023,40 @@ function threadfields_add_edit_handler(&$tf, $update) {
 						})(
 							["DOWNLOADS","DOWNLOADS_FRIENDLY","FILENAME","UPLOADMIME","URL","FILESIZE","FILESIZE_FRIENDLY","MD5HASH","UPLOADTIME","UPLOAD_TIME","UPLOAD_DATE","UPDATETIME","UPDATE_TIME","UPDATE_DATE","THUMBS","DIMS","ICON","MODIFIED"]
 						)) {
-							dispfmt_obj.value = $('dispitemformat').value;
-							$('dispitemformat').value = nonFileVal;
+							dispfmt_obj.value = document.getElementById('dispitemformat').value;
+							document.getElementById('dispitemformat').value = nonFileVal;
 						}
 					}
 				}
-				if($('dispitemformat').value == fileVal)
-					$('dispitemformat').value = nonFileVal;
+				if(document.getElementById('dispitemformat').value == fileVal)
+					document.getElementById('dispitemformat').value = nonFileVal;
 			}
 		} else {
-			if($('dispitemformat').value == fileVal)
-				$('dispitemformat').value = nonFileVal;
+			if(document.getElementById('dispitemformat').value == fileVal)
+				document.getElementById('dispitemformat').value = nonFileVal;
 			if(dispfmt_obj.value == fileVal)
 				dispfmt_obj.value = nonFileVal;
 		}
 	}
-	$('multival_enable_yes').onclick = xt_multival_enable;
-	$('multival_enable_no').onclick = xt_multival_enable;
+	document.getElementById('multival_enable_yes').onclick = xt_multival_enable;
+	document.getElementById('multival_enable_no').onclick = xt_multival_enable;
 	
-	($('use_formhtml_yes').onclick = $('use_formhtml_no').onclick = xt_use_formhtml = function() {
-		xt_visi('row_formhtml', $('use_formhtml_yes').checked);
+	(document.getElementById('use_formhtml_yes').onclick = document.getElementById('use_formhtml_no').onclick = xt_use_formhtml = function() {
+		xt_visi('row_formhtml', document.getElementById('use_formhtml_yes').checked);
 		xt_visi('formhtml_desc_js', true);
 	})();
 	
 	function xt_filereqimg() {
-		var e = ($('filereqimg_yes').checked && $('row_filereqimg').style.display != 'none');
+		var e = (document.getElementById('filereqimg_yes').checked && document.getElementById('row_filereqimg').style.display != 'none');
 		xt_visi('row_fileimage_mindim', e);
 		xt_visi('row_fileimage_maxdim', e);
 		xt_visi('row_fileimgthumbs', e);
 	}
-	$('filereqimg_yes').onclick = xt_filereqimg;
-	$('filereqimg_no').onclick = xt_filereqimg;
+	document.getElementById('filereqimg_yes').onclick = xt_filereqimg;
+	document.getElementById('filereqimg_no').onclick = xt_filereqimg;
 	
 	
-	($('inputtype').onchange = function() {
+	(document.getElementById('inputtype').onchange = function() {
 		var si = parseInt(this.options[this.selectedIndex].value);
 		
 		var pureFileIn = (si == <?php echo XTHREADS_INPUT_FILE; ?>);
@@ -1068,7 +1068,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		var textAreaIn = (si == <?php echo XTHREADS_INPUT_TEXTAREA; ?>);
 		var textIn = (textAreaIn || si == <?php echo XTHREADS_INPUT_TEXT; ?>);
 		xt_visi('row_sanitize', !fileIn && !selectIn);
-		$('sanitize').onchange();
+		document.getElementById('sanitize').onchange();
 		
 		xt_visi('inputtype_file_explain', pureFileIn);
 		
@@ -1096,21 +1096,21 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_filereqimg();
 		
 		if(textAreaIn) {
-			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML; ?>")
-				$('sanitize').selectedIndex++;
+			if(document.getElementById('sanitize').options[document.getElementById('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML; ?>")
+				document.getElementById('sanitize').selectedIndex++;
 		} else if(textIn) {
-			if($('sanitize').options[$('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML_NL; ?>")
-				$('sanitize').selectedIndex--;
+			if(document.getElementById('sanitize').options[document.getElementById('sanitize').selectedIndex].value == "<?php echo XTHREADS_SANITIZE_HTML_NL; ?>")
+				document.getElementById('sanitize').selectedIndex--;
 		}
 		
 		var setFormhtml = true;
-		if($('use_formhtml_yes').checked) {
+		if(document.getElementById('use_formhtml_yes').checked) {
 			if(!xt_inited)
-				setFormhtml = ($("formhtml").value == "");
+				setFormhtml = (document.getElementById("formhtml").value == "");
 			else
 				setFormhtml = confirm("<?php echo xt_js_str_escape($lang->threadfields_formhtml_js_reset_warning); ?>");
 			if(setFormhtml) {
-				$('use_formhtml_no').checked = true;
+				document.getElementById('use_formhtml_no').checked = true;
 			}
 			xt_use_formhtml();
 		}
@@ -1124,31 +1124,31 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				}
 				echo '
 				case '.$inputtype.':
-					if(setFormhtml) $("formhtml").value = "'.xt_js_str_escape($formhtml_info[0]).'";
-					$("formhtml_desc_ul_js").innerHTML = "'.xt_js_str_escape($formhtml_desc).'";
+					if(setFormhtml) document.getElementById("formhtml").value = "'.xt_js_str_escape($formhtml_info[0]).'";
+					document.getElementById("formhtml_desc_ul_js").innerHTML = "'.xt_js_str_escape($formhtml_desc).'";
 					break;';
 			} ?>
 		}
-	}).apply($('inputtype'));
+	}).apply(document.getElementById('inputtype'));
 	
-	($('datatype').onchange = function() {
+	(document.getElementById('datatype').onchange = function() {
 		//var isText = this.options[this.selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>";
 		//xt_visi('row_multival_enable', isText);
 		xt_multival_enable();
-	}).apply($('datatype'));
+	}).apply(document.getElementById('datatype'));
 	
-	($('editable').onchange = function() {
+	(document.getElementById('editable').onchange = function() {
 		xt_visi('row_editable_gids', this.options[this.selectedIndex].value == "99");
-	}).apply($('editable'));
+	}).apply(document.getElementById('editable'));
 	
-	($('viewable_gids').onchange = function() {
+	(document.getElementById('viewable_gids').onchange = function() {
 		var e=false;
-		var o=$('viewable_gids').options;
+		var o=document.getElementById('viewable_gids').options;
 		for(i=0; i<o.length; i++)
 			if(e = o[i].selected) // no, I do mean =, not ==
 				break;
 		xt_visi('row_unviewableval', e);
-	}).apply($('viewable_gids'));
+	}).apply(document.getElementById('viewable_gids'));
 	
 	<?php
 		$textmask_types = array(
@@ -1167,7 +1167,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			'color' => '^[a-z\\-]+|#?[0-9a-f]{6}$'
 		);
 	?>
-	$('textmask').parentNode.innerHTML =
+	document.getElementById('textmask').parentNode.innerHTML =
 			'<select name="textmask_select" id="textmask_select">' +
 <?php
 	foreach($textmask_types as $type => &$mask) {
@@ -1177,7 +1177,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	}
 ?>
 			'<option value="custom">'+<?php echo "'",$lang->threadfields_textmask_custom,"'"; ?>+'</option>' +
-			'</select> ' + $('textmask').parentNode.innerHTML + '<div id="textmask_select_descriptions" style="font-size: smaller; padding-top: 0.5em;">' +
+			'</select> ' + document.getElementById('textmask').parentNode.innerHTML + '<div id="textmask_select_descriptions" style="font-size: smaller; padding-top: 0.5em;">' +
 <?php
 	foreach($textmask_types as $type => &$mask) {
 		$langvar = 'threadfields_textmask_'.$type.'_desc';
@@ -1201,41 +1201,41 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	// determine which option to be selected by default
 	(function() {
 		// we can only index by number, and as we're a little lazy, create a name -> index map
-		var textmaskSelectOpts = $('textmask_select').options;
+		var textmaskSelectOpts = document.getElementById('textmask_select').options;
 		var textmaskSelectMap = {};
 		for(i=0; i<textmaskSelectOpts.length; i++) {
 			textmaskSelectMap[textmaskSelectOpts[i].value] = i;
 		}
 		
-		var mask = $('textmask').value;
+		var mask = document.getElementById('textmask').value;
 		for(var maskName in textmaskMapping) {
 			if(mask == textmaskMapping[maskName]) {
-				$('textmask_select').selectedIndex = textmaskSelectMap[maskName];
+				document.getElementById('textmask_select').selectedIndex = textmaskSelectMap[maskName];
 				textmaskSelectUpdated();
 				return;
 			}
 		}
-		$('textmask_select').selectedIndex = textmaskSelectMap["custom"];
+		document.getElementById('textmask_select').selectedIndex = textmaskSelectMap["custom"];
 	})();
-	$('textmask_select').onchange = function() {
+	document.getElementById('textmask_select').onchange = function() {
 		var maskName = this.options[this.selectedIndex].value;
 		if(textmaskMapping[maskName])
-			$('textmask').value = textmaskMapping[maskName];
+			document.getElementById('textmask').value = textmaskMapping[maskName];
 		textmaskSelectUpdated();
 	};
-	$('textmask_select').onkeypress = $('textmask_select').onkeydown = $('textmask_select').onkeyup = function(e) {
-		$('textmask_select').onchange();
+	document.getElementById('textmask_select').onkeypress = document.getElementById('textmask_select').onkeydown = document.getElementById('textmask_select').onkeyup = function(e) {
+		document.getElementById('textmask_select').onchange();
 		return true;
 	};
 	function textmaskSelectUpdated() {
-		var maskName = $('textmask_select').options[$('textmask_select').selectedIndex].value;
+		var maskName = document.getElementById('textmask_select').options[document.getElementById('textmask_select').selectedIndex].value;
 		var d = (maskName != "custom");
-		$('textmask').readOnly = d;
-		$('textmask').tabIndex = (d?'-1':''); // note, this is non-standard
-		$('textmask').style.background = (d ? "#F0F0F0":"");
-		$('textmask').style.color = (d ? "#808080":"");
+		document.getElementById('textmask').readOnly = d;
+		document.getElementById('textmask').tabIndex = (d?'-1':''); // note, this is non-standard
+		document.getElementById('textmask').style.background = (d ? "#F0F0F0":"");
+		document.getElementById('textmask').style.color = (d ? "#808080":"");
 		
-		var o = $('textmask_select_descriptions').childNodes;
+		var o = document.getElementById('textmask_select_descriptions').childNodes;
 		for(i=0; i<o.length; i++) {
 			if(o[i].id == "textmask_selector_desc_"+maskName)
 				o[i].style.display = "";
@@ -1243,9 +1243,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				o[i].style.display = "none";
 		}
 	}
-	$('textmask').onfocus = function() {
+	document.getElementById('textmask').onfocus = function() {
 		if(this.readOnly)
-			$('textmask_select').focus();
+			document.getElementById('textmask_select').focus();
 	};
 	xt_inited = true;
 //-->
@@ -1259,7 +1259,7 @@ xtOFEditorLang.saveButton = "<?php echo $lang->xthreads_js_save_changes; ?>";
 xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_changes; ?>";
 
 var fmtMapEditor = new xtOFEditor();
-fmtMapEditor.src = $('formatmap');
+fmtMapEditor.src = document.getElementById('formatmap');
 fmtMapEditor.loadFunc = function(s) {
 	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
 	var data = [];
@@ -1287,7 +1287,7 @@ fmtMapEditor.copyStyles=true;
 fmtMapEditor.init();
 
 var editValEditor = new xtOFEditor();
-editValEditor.src = $('editable_values');
+editValEditor.src = document.getElementById('editable_values');
 editValEditor.loadFunc = function(s) {
 	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
 	var data = [];

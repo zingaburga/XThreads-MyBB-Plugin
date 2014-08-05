@@ -8,7 +8,15 @@ var appendNewChild = function(e,t) {
 	e.appendChild(o);
 	return o;
 };
-var xtOFEditor = Class.create();
+if(jQuery) {
+	var listen = function(obj, event, f) {
+		jQuery(obj).on(event, f);
+	};
+} else {
+	// prototype
+	var listen = Event.observe.bind(Event);
+}
+var xtOFEditor = function() {};
 
 var xtOFEditorLang = {};
 
@@ -57,10 +65,10 @@ xtOFEditor.prototype = {
 			if(this.src.form.onsubmit)
 				this.oldFormSubmit = this.src.form.onsubmit;
 			this.src.form.onsubmit = this.formSubmit.bind(this);
-			//Event.observe(this.src.form, "submit", this.formSubmit.bind(this));
+			//listen(this.src.form, "submit", this.formSubmit.bind(this));
 		}
-		Event.observe(window, "focus", this.focusWin.bind(this));
-		Event.observe(window, "beforeunload", this.parentLeave.bind(this));
+		listen(window, "focus", this.focusWin.bind(this));
+		listen(window, "beforeunload", this.parentLeave.bind(this));
 	},
 	
 	isOpen: function() {
@@ -179,7 +187,7 @@ xtOFEditor.prototype = {
 		
 		frm.onsubmit = this.save.bind(this);
 		//this.window.onbeforeunload = this.beforeClose.bind(this);
-		Event.observe(this.window, "beforeunload", this.beforeClose.bind(this));
+		listen(this.window, "beforeunload", this.beforeClose.bind(this));
 		this.selectFirstBox = true; // select first textbox added
 		for(i=0; i<data.length; i++)
 			this.addEditLine(data[i]);
@@ -220,7 +228,7 @@ xtOFEditor.prototype = {
 				if(input.select)
 					input.select();
 			}
-			//Event.observe(input, "change", updatFunc);
+			//listen(input, "change", updatFunc);
 			input.onchange = updatFunc;
 		}
 	},

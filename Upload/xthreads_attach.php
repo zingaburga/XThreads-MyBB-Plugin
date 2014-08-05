@@ -450,6 +450,18 @@ function increment_downloads($aid) {
 	}
 	$GLOBALS['mybb'] = new dummy_mybb;
 	
+	if(!function_exists('get_execution_time')) {
+		// required by MyBB >= 1.7
+		function get_execution_time() {
+			static $time_start;
+			if($time_start) {
+				$total = microtime(true) - $time_start;
+				$time_start = 0;
+				return max(0, $total);
+			}
+			$time_start = microtime(true);
+		}
+	}
 	
 	$dbclass = 'db_'.$config['database']['type'];
 	require_once MYBB_ROOT.'inc/'.$dbclass.'.php';

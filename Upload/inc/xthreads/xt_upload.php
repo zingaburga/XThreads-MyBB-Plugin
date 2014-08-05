@@ -181,7 +181,7 @@ function do_upload_xtattachment($attachment, &$tf, $update_attachment=0, $tid=0,
 		// Check if attachment already uploaded
 		// TODO: this is actually a little problematic - perhaps verify that this is attached to this field (or maybe rely on checks in xt_updatehooks file)
 		if(isset($file_md5))
-			$md5check = ' OR md5hash="'.$db->escape_string($file_md5).'"';
+			$md5check = ' OR md5hash='.xthreads_db_escape_binary($file_md5);
 		else
 			$md5check = '';
 		$prevattach = $db->fetch_array($db->simple_select('xtattachments', 'aid', 'filename="'.$db->escape_string($attachment['name']).'" AND (md5hash IS NULL'.$md5check.') AND filesize='.$file_size.' AND (posthash="'.$posthash.'" OR (tid='.$tid.' AND tid!=0))'));
@@ -257,7 +257,7 @@ function do_upload_xtattachment($attachment, &$tf, $update_attachment=0, $tid=0,
 		'updatetime' => $timestamp,
 	);
 	if(isset($file_md5))
-		$attacharray['md5hash'] = $file_md5;
+		$attacharray['md5hash'] = new xthreads_db_binary_value($file_md5);
 	else
 		$attacharray['md5hash'] = null;
 	if(!empty($img_dimensions)) {

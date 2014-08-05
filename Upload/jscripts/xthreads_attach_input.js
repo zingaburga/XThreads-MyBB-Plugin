@@ -146,7 +146,6 @@ function xta_load() {
 	});
 	
 	// re-arrangable multi-attachments
-	// TODO: update this with jQuery version if necessary
 	if(typeof Sortable != 'undefined') each(s('.xta_file_list'), function(e) {
 		items = child(e, '.xta_file');
 		if(items.length < 2) return;
@@ -161,6 +160,21 @@ function xta_load() {
 		}
 		opts.tag = items[0].tagName;
 		Sortable.create(e, opts);
+	});
+	else if(jQuery) each(s('.xta_file_list'), function(e) {
+		items = child(e, '.xta_file');
+		if(items.length < 2) return;
+		
+		each(items, function(c) {
+			c.style.cursor = "move";
+			c.className += " xta_movable"; // for external styling
+		});
+		$(e).sortable({
+			axis: 'y',
+			//containment: 'parent',
+			revert: true
+			// cursor: 'move'
+		});
 	});
 }
 

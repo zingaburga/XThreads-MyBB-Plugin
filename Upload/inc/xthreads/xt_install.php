@@ -26,7 +26,7 @@ function xthreads_info() {
 		'author'        => 'ZiNgA BuRgA',
 		'authorsite'    => 'http://mybbhacks.zingaburga.com/',
 		'version'       => xthreads_format_version_number(XTHREADS_VERSION),
-		'compatibility' => '14*,15*,16*',
+		'compatibility' => '14*,15*,16*,17*,18*',
 		'guid'          => ''
 	);
 	if(is_object($plugins)) {
@@ -34,6 +34,7 @@ function xthreads_info() {
 	}
 	if($mybb->input['action'] || !is_object($GLOBALS['table'])) // not main plugins page
 		return $info;
+	if($mybb->version_code >= 1700) return $info;
 	
 	static $done = false;
 	if(!$done) {
@@ -251,7 +252,9 @@ function xthreads_install() {
 
 function xthreads_insert_templates($new_templates, $set=-1) {
 	global $mybb, $db;
-	if($mybb->version_code >= 1500) // MyBB 1.6 beta or final
+	if($mybb->version_code >= 1700) // MyBB 1.8 beta or final
+		$tpl_ver = 1800;
+	elseif($mybb->version_code >= 1500) // MyBB 1.6 beta or final
 		$tpl_ver = 1600;
 	elseif($mybb->version_code >= 1400) {
 		//$tpl_ver = min($mybb->version_code, 1411);
@@ -277,8 +280,6 @@ function xthreads_new_templates() {
 Put your stuff here
 </div>
 -->',
-		'showthread_threadfield_row' => '<tr><td class="{$bgcolor}" width="15%"><strong>{$title}</strong></td><td class="{$bgcolor}">{$value}</td></tr>',
-		'showthread_threadfields' => '{$threadfields_display_rows}',
 		'forumdisplay_searchforum_inline' => '<form action="forumdisplay.php" method="get">
 	<span class="smalltext"><strong>{$lang->search_forum}</strong></span>
 	<input type="text" class="textbox" name="search" value="{$searchval}" /> {$gobutton}
@@ -292,7 +293,13 @@ Put your stuff here
 <td class="{$altbg}" width="20%"><strong>{$tf[\'title\']}</strong></td>
 <td class="{$altbg}">{$inputfield}<small style="display: block;">{$tf[\'desc\']}</small></td>
 </tr>'
-	);
+	) + ($GLOBALS['mybb']->version_code >= 1700 ? array(
+		'showthread_threadfield_row' => '<tr><td width="15%" class="{$bgcolor}"><strong>{$title}</strong></td><td class="{$bgcolor}">{$value}</td></tr>',
+		'showthread_threadfields' => '<tr><td id="showthread_threadfields" style="padding: 0;"><table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" width="100%">{$threadfields_display_rows}</table></td></tr>',
+	) : array(
+		'showthread_threadfield_row' => '<tr><td class="{$bgcolor}" width="15%"><strong>{$title}</strong></td><td class="{$bgcolor}">{$value}</td></tr>',
+		'showthread_threadfields' => '{$threadfields_display_rows}',
+	));
 }
 
 function xthreads_undo_template_edits() {
@@ -342,7 +349,10 @@ function xthreads_activate() {
 		find_replace_templatesets('editpost', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
 		find_replace_templatesets('newthread', '#\\{\\$posticons\\}#', '{$extra_threadfields}{$posticons}');
 		find_replace_templatesets('showthread', '#\\{\\$posts\\}#', '{$first_post}{$posts}');
-		find_replace_templatesets('showthread', '#\\{\\$classic_header\\}#', '{$threadfields_display}{$classic_header}');
+		if($GLOBALS['mybb']->version_code >= 1700)
+			find_replace_templatesets('showthread', '#\<tr\>\s*\<td id\="posts_container"\>#', '{$threadfields_display}$0');
+		else
+			find_replace_templatesets('showthread', '#\\{\\$classic_header\\}#', '{$threadfields_display}{$classic_header}');
 		find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
 		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
 		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);

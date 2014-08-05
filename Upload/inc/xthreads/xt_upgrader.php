@@ -318,6 +318,12 @@ if(XTHREADS_INSTALLED_VERSION < 1.64 && XTHREADS_INSTALLED_VERSION > 1.32) {
 	$db->update_query('threadfields', array(
 		'textmask' => $db->escape_string('^([^:/?#]+)\\:((//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?)$')
 	), 'textmask="'.$db->escape_string('^([a-z0-9]+)\\:(.+)$').'"');
+	
+	// if anyone's using custom file input HTML, try to fix the scriptaculous reference
+	$db->write_query('UPDATE '.$db->table_prefix.'threadfields
+		SET formhtml = REPLACE(formhtml, "'.$db->escape_string('src="{$mybb->settings[\'bburl\']}/jscripts/scriptaculous.js?load=effects,dragdrop"').'", "'.$db->escape_string('src="{$mybb->settings[\'bburl\']}/jscripts/<if $mybb->version_code>=1700 then>xthreads_jquery-ui.min.js<else>scriptaculous.js?load=effects,dragdrop</if>"').'")
+		WHERE inputtype = '.XTHREADS_INPUT_FILE.' AND formhtml != ""
+	');
 }
 
 

@@ -363,7 +363,7 @@ function xthreads_default_threadfields_formhtml($type) {
 	</if>
 </div>
 <if !$tplvars[\'xta_js_dragdrop_added\'] and {MULTIPLE} then>
-	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/scriptaculous.js?load=effects,dragdrop"></script>
+	<script type="text/javascript" src="{$mybb->settings[\'bburl\']}/jscripts/<if $mybb->version_code>=1700 then>xthreads_jquery-ui.min.js<else>scriptaculous.js?load=effects,dragdrop</if>"></script>
 	<setvar xta_js_dragdrop_added>1</setvar>
 </if>
 <if !$tplvars[\'xta_js_added\'] and ({ATTACH[\'aid\']} or XTHREADS_ALLOW_URL_FETCH or {MULTIPLE}) then>
@@ -1081,7 +1081,7 @@ function &xthreads_admin_forumedit_get_description($lv) {
 	$desc = $lang->$langdesc;
 	if(($p = strpos($desc, '<!-- more -->')) !== false) {
 		$desc = substr($desc, 0, $p) .
-				'<a href="#" onclick="this.style.display=\'none\';$(\'xthreads_desc_expander_'.$expander_id.'\').style.display=\'\';return false;" style="padding-left: 1em; padding-right: 1em;">'.$lang->xthreads_desc_more.'</a><span style="display: none;" id="xthreads_desc_expander_'.$expander_id.'">' .
+				'<a href="#" onclick="this.style.display=\'none\';document.getElementById(\'xthreads_desc_expander_'.$expander_id.'\').style.display=\'\';return false;" style="padding-left: 1em; padding-right: 1em;">'.$lang->xthreads_desc_more.'</a><span style="display: none;" id="xthreads_desc_expander_'.$expander_id.'">' .
 				substr($desc, $p+13 /*strlen('<!-- more -->')*/) . '</span>';
 		
 		++$expander_id;
@@ -1318,7 +1318,7 @@ function xthreads_admin_forumedit() {
 <script type="text/javascript">
 <!--
 var ofEditorSO = new xtOFEditor();
-ofEditorSO.src = $('xthreads_settingoverrides');
+ofEditorSO.src = document.getElementById('xthreads_settingoverrides');
 ofEditorSO.loadFunc = ofEditor.loadFunc;
 ofEditorSO.saveFunc = ofEditor.saveFunc;
 ofEditorSO.fields = [
@@ -1581,7 +1581,7 @@ xtOFEditorLang.saveButton = "<?php echo $lang->xthreads_js_save_changes; ?>";
 xtOFEditorLang.closeSaveChanges = "<?php echo $lang->xthreads_js_close_save_changes; ?>";
 
 var ofEditor = new xtOFEditor();
-ofEditor.src = $('<?php echo $fieldname; ?>');
+ofEditor.src = document.getElementById('<?php echo $fieldname; ?>');
 ofEditor.loadFunc = function(s) {
 	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
 	var data = [];

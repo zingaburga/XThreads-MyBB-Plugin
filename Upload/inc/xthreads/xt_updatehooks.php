@@ -1258,7 +1258,32 @@ function xthreads_db_escape($s) {
 	if($s === true) return '1';
 	if($s === false) return '0';
 	if(is_string($s)) return '\''.$GLOBALS['db']->escape_string($s).'\'';
+	if(is_object($s)) // assume xthreads_db_binary_value
+		return $s->escaped();
 	return (string)$s;
+}
+function xthreads_db_escape_binary($s) {
+	global $db;
+	if(isset($db->db_encoding)) { // hack for MyBB >= 1.6.12 to force it to not screw up our binary field
+		$old_db_encoding = $db->db_encoding;
+		$db->db_encoding = 'binary';
+	}
+	$ret = $db->escape_string($s);
+	if(isset($old_db_encoding)) $db->db_encoding = $old_db_encoding;
+	return '\''.$ret.'\'';
+}
+// work around different cases of binary escaping between MyBB versions by giving us a special type to differentiate between normal strings and binary strings
+class xthreads_db_binary_value {
+	var $v;
+	function xthreads_db_binary_value($v) {
+		$this->v = $v;
+	}
+	function __toString() {
+		return $this->v;
+	}
+	function escaped() {
+		return xthreads_db_escape_binary($this->v);
+	}
 }
 
 // $db->update_query function which uses above escape method automatically
