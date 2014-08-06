@@ -1319,8 +1319,24 @@ function xthreads_admin_forumedit() {
 <!--
 var ofEditorSO = new xtOFEditor();
 ofEditorSO.src = document.getElementById('xthreads_settingoverrides');
-ofEditorSO.loadFunc = ofEditor.loadFunc;
-ofEditorSO.saveFunc = ofEditor.saveFunc;
+ofEditorSO.loadFunc = function(s) {
+	var a = s.replace(/\r/g, "").replace(/\{\n\}/g, "\r").split("\n");
+	var data = [];
+	for(var i=0; i<a.length; i++) {
+		a[i] = a[i].replace(/\r/g, "\n");
+		var p = a[i].indexOf("=");
+		if(p < 0) continue;
+		data.push([ a[i].substring(0, p), a[i].substring(p+1) ]);
+	}
+	return data;
+};
+ofEditorSO.saveFunc = function(a) {
+	var ret = "";
+	for(var i=0; i<a.length; i++) {
+		if(a[i][0]) ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
+	}
+	return ret;
+};
 ofEditorSO.fields = [
 	{title: "<?php echo $lang->xthreads_js_settingoverrides_setting; ?>", width: '45%', elemFunc: function(c) {
 		var o = appendNewChild(c, "select");
@@ -1570,7 +1586,7 @@ function xthreads_admin_modtool_commit() {
 
 // just because both the ModTools and Default Thread Filter fields use a very similar OFE...
 function xthreads_admin_common_ofe($fieldname) {
-	global $lang;
+	global $lang, $mybb;
 	if(!$lang->xthreads_js_confirm_form_submit) $lang->load('xthreads');
 ?><script type="text/javascript" src="jscripts/xtofedit.js?xtver=<?php echo XTHREADS_VERSION; ?>"></script>
 <script type="text/javascript">
@@ -1589,19 +1605,46 @@ ofEditor.loadFunc = function(s) {
 		a[i] = a[i].replace(/\r/g, "\n");
 		var p = a[i].indexOf("=");
 		if(p < 0) continue;
-		data.push([ a[i].substring(0, p), a[i].substring(p+1) ]);
+		data.push([ a[i].substring(0, p).replace(/\[\]$/, ''), a[i].substring(p+1) ]);
 	}
 	return data;
 };
 ofEditor.saveFunc = function(a) {
+	// find duplicates and mark as an array
+	var set = {}, arrays = {};
+	for(var i=0; i<a.length; i++) {
+		if(a[i][0]) {
+			if(a[i][0] in set)
+				arrays[a[i][0]] = 1;
+			else
+				set[a[i][0]] = 1;
+		}
+	}
 	var ret = "";
 	for(var i=0; i<a.length; i++) {
-		if(a[i][0]) ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
+		if(a[i][0]) {
+			if(a[i][0] in arrays)
+				a[i][0] += '[]';
+			ret += a[i].join("=").replace(/\n/g, "{\n}") + "\n";
+		}
 	}
 	return ret;
 };
 ofEditor.fields = [
-	{title: "<?php echo $lang->xthreads_js_defaultfilter_field; ?>", width: '45%', elemFunc: ofEditor.textBoxFunc},
+	{title: "<?php echo $lang->xthreads_js_defaultfilter_field; ?>", width: '45%', elemFunc: function(c) {
+		var o = appendNewChild(c, "select");
+		o.size = 1;
+		o.style.width = '100%';
+		o.innerHTML = '<option value=""></option><option value="__xt_uid"><?php echo $lang->xthreads_filter_uid; ?></option><option value="__xt_lastposteruid"><?php echo $lang->xthreads_filter_lastposteruid; ?></option><?php if($mybb->version_code >= 1500) echo '<option value="__xt_prefix">', $lang->xthreads_sort_ext_prefix, '</option>'; ?><option value="__xt_icon"><?php echo $lang->xthreads_sort_ext_icon; ?></option><optgroup label="<?php echo $lang->custom_threadfields; ?>"><?php
+			global $db;
+			$query = $db->simple_select('threadfields','title,field', '', array('order_by' => 'disporder', 'order_dir' => 'asc'));
+			while($field = $db->fetch_array($query)) {
+				echo '<option value="'.htmlspecialchars_uni($field['field']).'">'.strtr(htmlspecialchars_uni($field['title']), array('\\'=>'\\\\','\''=>'\\\'')).'</option>';
+			}
+			$db->free_result($query);
+		?></optgroup>';
+		return o;
+	}},
 	{title: "<?php echo $lang->xthreads_js_defaultfilter_value; ?>", width: '55%', elemFunc: ofEditor.textAreaFunc}
 ];
 
