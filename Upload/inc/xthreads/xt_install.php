@@ -128,7 +128,7 @@ function xthreads_install() {
 			uid '.xthreads_db_fielddef('int').' not null default 0,
 			field varchar(50) not null default \'\',
 			posthash varchar(50) not null default \'\',
-			filename varchar(120) not null default \'\',
+			filename varchar(255) not null default \'\',
 			uploadmime varchar(120) not null default \'\',
 			filesize '.xthreads_db_fielddef('bigint').' not null default 0,
 			attachname varchar(120) not null default \'\',
