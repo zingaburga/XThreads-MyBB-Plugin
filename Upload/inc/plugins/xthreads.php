@@ -759,9 +759,11 @@ function xthreads_get_xta_url(&$xta, $thumb='') {
 		$delim = '|';
 	if(isset($xta['md5hash'])) {
 		$md5hash = $xta['md5hash'];
-		if(isset($md5hash{15}) && !isset($md5hash{16})) {
+		if(is_object($md5hash)) // assume xthreads_db_binary_value
+			$md5hash = bin2hex($md5hash->__toString());
+		elseif(isset($md5hash{15}) && !isset($md5hash{16}))
 			$md5hash = bin2hex($md5hash);
-		} elseif(!isset($md5hash{31}) || isset($md5hash{32}))
+		elseif(!isset($md5hash{31}) || isset($md5hash{32}))
 			$md5hash = '';
 		if($md5hash) $md5hash .= $delim;
 	} else
