@@ -328,6 +328,7 @@ class XTImageTransform {
 			imagealphablending($im, true); // blend into background
 			imagesavealpha($im, false);
 			@imagecopy($im, $this->_img, 0,0,0,0, $this->WIDTH,$this->HEIGHT);
+			@imageinterlace($im, false);
 			imagejpeg($im, $fn, $this->_jpeg_quality);
 			imagedestroy($im);
 		} else
