@@ -1222,8 +1222,8 @@ function xthreads_js_remove_noreplies_notice() {
 	$js = '
 <script type="text/javascript">
 <!--
-	if($("xthreads_noreplies")) 
-		$("xthreads_noreplies").style.display = "none";
+	if(document.getElementById("xthreads_noreplies")) 
+		document.getElementById("xthreads_noreplies").style.display = "none";
 //-->
 </script>
 ';
