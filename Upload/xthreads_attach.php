@@ -450,8 +450,8 @@ function increment_downloads($aid) {
 	}
 	$GLOBALS['mybb'] = new dummy_mybb;
 	
+	// functions required by MyBB >= 1.7
 	if(!function_exists('get_execution_time')) {
-		// required by MyBB >= 1.7
 		function get_execution_time() {
 			static $time_start;
 			if($time_start) {
@@ -460,6 +460,16 @@ function increment_downloads($aid) {
 				return max(0, $total);
 			}
 			$time_start = microtime(true);
+		}
+	}
+	if(!function_exists('format_time_duration')) {
+		function format_time_duration($time) {
+			if(!is_numeric($time)) return '-';
+			// drop microseconds case - no-one really cares
+			if($time < 1)
+				return number_format(round(1000 * $time, 2)).' ms';
+			else
+				return round($time, 3).' seconds';
 		}
 	}
 	
