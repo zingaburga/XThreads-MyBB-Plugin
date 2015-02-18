@@ -157,6 +157,7 @@
     <li><strong>num_values_friendly</strong> - formatted version of the above</li>
     <li><strong>value</strong> - reference back to <code>$threadfields['<em>key</em>']</code>, unless the field is a multivalued field, in which case, this is an array of each individual value
       <br />For multivalued file fields: this directly references the <em>value</em> item, whilst <strong>items</strong> stores an array of the full attachment info - in other words, <code>{$GLOBALS['threadfields_x']['<em>key</em>']['value'][0]}</code> is the same as <code>{$GLOBALS['threadfields_x']['<em>key</em>']['items'][0]['value']}</code> for a multivalued file field</li>
+    <li><strong>raw_value</strong> - raw value of the thread field taken directly from the database</li>
    </ul>
    
    <h2>Additional Template Variables</h2>
