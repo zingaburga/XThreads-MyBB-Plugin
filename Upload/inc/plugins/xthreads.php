@@ -551,7 +551,7 @@ function xthreads_sanitize_disp(&$s, &$tfinfo, $mename=null, $noextra=false) {
 			$threadfields_x = array();
 		$sx =& $threadfields_x[$tfinfo['field']];
 	} // otherwise, let the following line dummy the variable
-	$sx = array('title' => htmlspecialchars_uni($tfinfo['title']), 'desc' => htmlspecialchars_uni($tfinfo['desc']), 'num_values' => 1, 'num_values_friendly' => my_number_format(1));
+	$sx = array('title' => htmlspecialchars_uni($tfinfo['title']), 'desc' => htmlspecialchars_uni($tfinfo['desc']), 'num_values' => 1, 'num_values_friendly' => my_number_format(1), 'raw_value' => $s);
 	
 	$dispfmt = 'dispformat';
 	
