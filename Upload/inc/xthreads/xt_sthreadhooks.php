@@ -198,7 +198,7 @@ function xthreads_showthread_firstpost() {
 					$this->xthreads_firstpost_hack = false;
 					return array(\'pid\' => $GLOBALS[\'thread\'][\'firstpost\']);
 				}
-				return parent::fetch_array($query);
+				return parent::fetch_array($query, $resulttype);
 			}
 		';
 		$firstpost_hack_code = 'if($options[\'limit_start\']) $this->xthreads_firstpost_hack = true;';
