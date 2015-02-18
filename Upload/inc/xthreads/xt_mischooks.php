@@ -322,7 +322,7 @@ function xthreads_wol_patch_init(&$ua) {
 							$GLOBALS[\'thread_fid_map\'][$r[\'tid\']] = $r[\'fid\'];
 							return $r;
 						}
-						return parent::fetch_array($query);
+						return parent::fetch_array($query, $resulttype);
 					}
 				');
 				$db->xthreads_db_wol_hook = false;
