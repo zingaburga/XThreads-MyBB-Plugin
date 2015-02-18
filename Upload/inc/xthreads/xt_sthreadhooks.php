@@ -193,7 +193,7 @@ function xthreads_showthread_firstpost() {
 		$GLOBALS['postcounter'] = '-0';
 		
 		$extra_code = '
-			function fetch_array($query, $resulttype=MYSQL_ASSOC) {
+			function fetch_array($query, $resulttype=1) { // 1 == MYSQL_ASSOC == MYSQLI_ASSOC == PGSQL_ASSOC
 				if($this->xthreads_firstpost_hack) {
 					$this->xthreads_firstpost_hack = false;
 					return array(\'pid\' => $GLOBALS[\'thread\'][\'firstpost\']);

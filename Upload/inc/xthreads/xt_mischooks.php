@@ -316,7 +316,7 @@ function xthreads_wol_patch_init(&$ua) {
 					';
 				
 				control_object($db, $hook.'
-					function fetch_array($query, $resulttype=MYSQL_ASSOC) { // MYSQL_ASSOC == MYSQLI_ASSOC == PGSQL_ASSOC
+					function fetch_array($query, $resulttype=1) { // 1 == MYSQL_ASSOC == MYSQLI_ASSOC == PGSQL_ASSOC
 						if($this->xthreads_db_wol_hook) {
 							$r = parent::fetch_array($query, $resulttype);
 							$GLOBALS[\'thread_fid_map\'][$r[\'tid\']] = $r[\'fid\'];
