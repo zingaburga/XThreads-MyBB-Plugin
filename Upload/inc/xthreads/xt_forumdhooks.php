@@ -557,6 +557,7 @@ function xthreads_forumdisplay_filter() {
 				$page_url_xt = '?'.substr($page_url_xt, 1);
 			// pollute Google SEO's cache with our param
 			$GLOBALS['google_seo_url_cache'][GOOGLE_SEO_FORUM][$foruminfo['fid']] = $gsurl.$page_url_xt;
+			$GLOBALS['sorturl'] .= htmlspecialchars_uni($xthreads_forum_filter_args);
 		} else {
 			// inject URL into multipage using template cache hack
 			global $templates;
