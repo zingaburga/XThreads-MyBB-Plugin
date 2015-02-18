@@ -193,12 +193,12 @@ function xthreads_showthread_firstpost() {
 		$GLOBALS['postcounter'] = '-0';
 		
 		$extra_code = '
-			function fetch_array($query) {
+			function fetch_array($query, $resulttype=MYSQL_ASSOC) {
 				if($this->xthreads_firstpost_hack) {
 					$this->xthreads_firstpost_hack = false;
 					return array(\'pid\' => $GLOBALS[\'thread\'][\'firstpost\']);
 				}
-				return parent::fetch_array($query);
+				return parent::fetch_array($query, $resulttype);
 			}
 		';
 		$firstpost_hack_code = 'if($options[\'limit_start\']) $this->xthreads_firstpost_hack = true;';
