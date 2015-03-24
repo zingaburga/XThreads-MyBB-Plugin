@@ -1073,8 +1073,10 @@ function xthreads_upload_attachments() {
 			xthreads_rm_attach_fs($xta_cache[$aid]);
 		}
 	}
+	
+	$is_editing = ($GLOBALS['current_page'] == 'editpost.php');
 	// if editing post, also commit change to thread field immediately (waiting for user to submit is unreliable)
-	if(($GLOBALS['current_page'] == 'editpost.php' || ($GLOBALS['thread']['tid'] && $GLOBALS['current_page'] == 'newthread.php')) && !empty($threadfield_updates)) {
+	if(($is_editing || ($GLOBALS['thread']['tid'] && $GLOBALS['current_page'] == 'newthread.php')) && !empty($threadfield_updates)) {
 		xthreads_db_update_replace('threadfields_data', $threadfield_updates, 'tid', $GLOBALS['thread']['tid']);
 		//$db->update_query('threadfields_data', $threadfield_updates, 'tid='.$GLOBALS['thread']['tid']);
 	}
@@ -1082,15 +1084,43 @@ function xthreads_upload_attachments() {
 	@ignore_user_abort(false);
 	
 	if(!empty($errors)) {
+		global $plugins;
+		
+		$is_mybb_18 = ($mybb->version_code >= 1700);
+		
 		// MyBB 1.4 - 1.5
 		// and MyBB 1.6 is inconsistent (does different things on newthread/editpost)...
-		if($mybb->version_code < 1600 || $GLOBALS['current_page'] == 'editpost.php') { // can't find a better way to check other than to check version numbers
+		if($mybb->version_code < 1600 || $is_editing) { // can't find a better way to check other than to check version numbers
 			global $theme, $templates;
 			$errstr = '<li>'.implode('</li><li>', $errors).'</li>';
-			$attachedfile = array('error' => '<ul>'.$errstr.'</ul>');
-			eval('$GLOBALS[\'attacherror\'] .= "'.$templates->get('error_attacherror').'";');
+			if($is_editing && $is_mybb_18) {
+				// special workaround for MyBB 1.8
+				$GLOBALS['xt_attach_errors'] =& $errstr;
+				$templates->cache['__xt_orig_error_attacherror'] = $templates->cache['error_attacherror'];
+				function xthreads_upload_attachments_error() {
+					global $theme, $templates, $attacherror, $mybb, $lang, $fid;
+					if($attacherror) return; // already handled by template cache hack
+					
+					$attachedfile = array('error' => '<ul>'.$GLOBALS['xt_attach_errors'].'</ul>');
+					eval('$attacherror = "'.$templates->get('__xt_orig_error_attacherror').'";');
+				}
+				$plugins->add_hook('editpost_action_start', 'xthreads_upload_attachments_error');
+			} else {
+				$attachedfile = array('error' => '<ul>'.$errstr.'</ul>');
+				eval('$GLOBALS[\'attacherror\'] .= "'.$templates->get('error_attacherror').'";');
+			}
 			// if there's going to be a MyBB attachment error, and it's not been evaluated yet, shove it in the template to force it through - safe since this function is guaranteed to run only once
 			$templates->cache['error_attacherror'] = str_replace('{$attachedfile[\'error\']}', '<ul>'.strtr($errstr, array('\\' => '\\\\', '$' => '\\$', '{' => '\\{', '}' => '\\}')).'<li>{$attachedfile[\'error\']}</li></ul>', $templates->cache['error_attacherror']);
+		} elseif($is_mybb_18) {
+			// for MyBB 1.8
+			$GLOBALS['xt_attach_errors'] =& $errors;
+			function xthreads_upload_attachments_error() {
+				if(empty($GLOBALS['errors']))
+					$GLOBALS['errors'] =& $GLOBALS['xt_attach_errors'];
+				else
+					$GLOBALS['errors'] = array_merge($GLOBALS['errors'], $GLOBALS['xt_attach_errors']);
+			}
+			$plugins->add_hook('newthread_start', 'xthreads_upload_attachments_error');
 		} else {
 			// for MyBB 1.6
 			if(empty($GLOBALS['errors']))
@@ -1098,12 +1128,12 @@ function xthreads_upload_attachments() {
 			else
 				$GLOBALS['errors'] = array_merge($GLOBALS['errors'], $errors);
 		}
-		$mybb->input['action'] = ($GLOBALS['current_page'] == 'newthread.php' ? 'newthread' : 'editpost');
+		$mybb->input['action'] = ($is_editing ? 'editpost' : 'newthread');
 		
 		// block the preview, since a failed upload can stuff it up
 		// lower priority to go before inputdisp function (contention, the function checks for 'previewpost')
-		$GLOBALS['plugins']->add_hook('newthread_start', 'xthreads_newthread_ulattach_blockpreview', 5);
-		$GLOBALS['plugins']->add_hook('editpost_start', 'xthreads_editthread_ulattach_blockpreview', 5);
+		$plugins->add_hook('newthread_start', 'xthreads_newthread_ulattach_blockpreview', 5);
+		$plugins->add_hook('editpost_start', 'xthreads_editthread_ulattach_blockpreview', 5);
 	}
 }
 function xthreads_newthread_ulattach_blockpreview() {
