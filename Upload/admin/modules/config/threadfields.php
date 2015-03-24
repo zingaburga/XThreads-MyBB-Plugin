@@ -267,9 +267,6 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		}
 		$mybb->input['textmask'] = str_replace("\x0", '', $mybb->input['textmask']);
 		$mybb->input['filemaxsize'] = xthreads_size_to_bytes($mybb->input['filemaxsize']);
-		$mybb->input['fileimage_mindim'] = strtolower($mybb->input['fileimage_mindim']);
-		$mybb->input['fileimage_maxdim'] = strtolower($mybb->input['fileimage_maxdim']);
-		
 		$mybb->input['fileimage_mindim'] = strtolower(trim($mybb->input['fileimage_mindim']));
 		$mybb->input['fileimage_maxdim'] = strtolower(trim($mybb->input['fileimage_maxdim']));
 		if(!xthreads_empty($mybb->input['formatmap'])) {
@@ -802,7 +799,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		$data['fileimage_mindim'] = $data['fileimage_maxdim'] = '';
 		if($data['fileimage']) {
 			list($min, $max) = explode('|', $data['fileimage']);
-			if($min == '0x0') $min = '';
+			if($min === '0x0') $min = '';
 			$data['fileimage_mindim'] = $min;
 			$data['fileimage_maxdim'] = $max;
 		}
