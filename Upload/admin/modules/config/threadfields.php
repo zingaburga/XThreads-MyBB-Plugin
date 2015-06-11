@@ -492,7 +492,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			elseif(strlen($mybb->input['newfield']) > 50) {
 				$errors[] = $lang->error_field_name_too_long;
 			}
-			elseif(!preg_match('~^[a-z0-9_\\-]+$~i', $mybb->input['newfield'])) {
+			elseif(!preg_match('~^[a-zA-Z0-9_]+$~', $mybb->input['newfield'])) {
 				$errors[] = $lang->error_field_name_invalid;
 			}
 			elseif(isset($mybb->input['newfield']{2}) && $mybb->input['newfield']{0} == '_' && $mybb->input['newfield']{1} == '_') {

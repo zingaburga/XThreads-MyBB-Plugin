@@ -15,7 +15,7 @@ $l['custom_threadfields'] = 'Custom Thread Fields';
 $l['can_manage_threadfields'] = 'Can manage custom thread fields';
 $l['custom_threadfields_desc'] = 'You can add/edit/remove custom thread fields here.';
 $l['threadfields_name'] = 'Key';
-$l['threadfields_name_desc'] = 'The key through which this field is accessed through.  Should be kept to alphanumeric characters, underscores (_) and hypens (-) only.  Note that only inputs for this field on newthread/editpost are automatically added for you; forumdisplay/showthread etc templates aren\'t affected, so you will need to make changes to the relevant templates for this to be useful.  Use <code>{$GLOBALS[\'threadfields\'][\'<em style="color: #00A000;">key</em>\']}</code> in templates to reference this field (this is slightly different for file inputs - more info given below if you choose to make a file input).';
+$l['threadfields_name_desc'] = 'The key through which this field is accessed through.  Should be kept to alphanumeric characters and underscores (_) only.  Note that only inputs for this field on newthread/editpost are automatically added for you; forumdisplay/showthread etc templates aren\'t affected, so you will need to make changes to the relevant templates for this to be useful.  Use <code>{$GLOBALS[\'threadfields\'][\'<em style="color: #00A000;">key</em>\']}</code> in templates to reference this field (this is slightly different for file inputs - more info given below if you choose to make a file input).';
 $l['threadfields_file_name_info'] = 'Variables are referenced with <code>{$GLOBALS[\'threadfields\'][\'<em style="color: #00A000;">key</em>\'][\'<em style="color: #0000A0;">item</em>\']}</code>, where <em style="color: #0000A0;">item</em> can be one of the following:
 <ul style="margin-top: 0.2em;">
 	<li><em>downloads</em> - number of times the file has been downloaded</li>
@@ -300,7 +300,7 @@ $l['error_invalid_max_dims'] = 'Invalid maximum dimensions specified.';
 $l['error_invalid_thumb_dims'] = 'Invalid thumbnail dimensions specified.';
 $l['error_field_name_in_use'] = 'The field key you have chosen is already in use for another field.  Please choose an unused unique key.';
 $l['error_field_name_tid'] = 'Key name cannot be &quot;tid&quot; - please choose a different name.';
-$l['error_field_name_invalid'] = 'Key names must contain only alphanumeric, underscore and hypen characters.';
+$l['error_field_name_invalid'] = 'Key names must contain only underscores or alphanumeric characters.';
 $l['error_field_name_reserved'] = 'Sorry, key names cannot start with two underscore characters (__) because this is a reserved construct.';
 $l['error_field_name_too_long'] = 'Key names must be 50 characters long or less.';
 
