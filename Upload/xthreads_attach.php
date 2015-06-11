@@ -473,6 +473,7 @@ function increment_downloads($aid) {
 		}
 	}
 	
+	@include_once MYBB_ROOT.'inc/db_base.php'; // MyBB >= 1.8.4
 	$dbclass = 'db_'.$config['database']['type'];
 	require_once MYBB_ROOT.'inc/'.$dbclass.'.php';
 	if(!class_exists($dbclass)) return;
