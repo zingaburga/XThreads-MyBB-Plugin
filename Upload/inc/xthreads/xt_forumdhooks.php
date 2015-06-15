@@ -499,22 +499,22 @@ function xthreads_forumdisplay_filter() {
 	if($q) {
 		// and now we have to patch the DB to get proper thread counts...
 		$dbf = $dbt = $dbu = '';
-		if($GLOBALS['datecut'] <= 0) {
+		if($GLOBALS['datecut'] <= 0 && !@$GLOBALS['fpermissions']['canonlyviewownthreads']) {
 			if(!empty($tf_filters))
 				$dbf_code = '
 					$table = "threads t LEFT JOIN {$this->table_prefix}threadfields_data tfd ON t.tid=tfd.tid";
-					$fields = "COUNT(t.tid) AS threads, 0 AS unapprovedthreads";
-					$conditions .= \''.strtr($tvisibleonly_tmp.$q, array('\'' => '\\\'', '\\' => '\\\\')).'\';
+					$fields = "COUNT(t.tid) AS threads, 0 AS unapprovedthreads, 0 AS deletedthreads";
+					$conditions .= \''.strtr($tvisibleonly_tmp.$q, array('\'' => '\\\'', '\\' => '\\\\')).'\'." $GLOBALS[useronly] $GLOBALS[datecutsql] $GLOBALS[prefixsql]";
 				';
 			else
 				$dbf_code = '
 					$table = "threads";
-					$fields = "COUNT(tid) AS threads, 0 AS unapprovedthreads";
-					$conditions .= \''.strtr($visibleonly, array('\'' => '\\\'', '\\' => '\\\\')).'\';
+					$fields = "COUNT(tid) AS threads, 0 AS unapprovedthreads, 0 AS deletedthreads";
+					$conditions .= \''.strtr($visibleonly, array('\'' => '\\\'', '\\' => '\\\\')).'\'." $GLOBALS[useronly] $GLOBALS[datecutsql] $GLOBALS[prefixsql]";
 				';
 			$dbf = '
-				static $dont_f = false;
-				if(!$done_f && $table == "forums" && $fields == "threads, unapprovedthreads") {
+				static $done_f = false;
+				if(!$done_f && $table == "forums" && ($fields == "threads, unapprovedthreads" || $fields == "threads, unapprovedthreads, deletedthreads")) {
 					$done_f = true;
 					'.$dbf_code.'
 					
@@ -582,7 +582,7 @@ function xthreads_forumdisplay_filter() {
 			$GLOBALS['sorturl'] .= $page_url_xt;
 			
 			// may need to replace first &amp; with a ?
-			if(($mybb->settings['seourls'] == 'yes' || ($mybb->settings['seourls'] == 'auto' && $_SERVER['SEO_SUPPORT'] == 1)) && $GLOBALS['sortby'] == 'lastpost' && $GLOBALS['sortordernow'] == 'desc' && ($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999)) //  && (strpos(FORUM_URL_PAGED, '{page}') === false) - somewhat unsupported, since MyBB hard codes the page 1 elimination behaviour
+			if(($mybb->settings['seourls'] == 'yes' || ($mybb->settings['seourls'] == 'auto' && $_SERVER['SEO_SUPPORT'] == 1)) && $GLOBALS['sortby'] == 'lastpost' && $GLOBALS['sortordernow'] == 'desc' && ($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999) && !@$GLOBALS['tprefix']) //  && (strpos(FORUM_URL_PAGED, '{page}') === false) - somewhat unsupported, since MyBB hard codes the page 1 elimination behaviour
 				$page_url_xt = '?'.substr($page_url_xt, 5);
 		}
 		$templates->cache['forumdisplay_threadlist'] = str_replace('<select name="sortby">', '{$xthreads_forum_filter_form}{$xthreads_forum_search_form}<select name="sortby">', $templates->cache['forumdisplay_threadlist']);
