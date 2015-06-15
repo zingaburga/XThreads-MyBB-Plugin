@@ -13,6 +13,14 @@ function xthreads_forumdisplay() {
 		$mybb->input['sortby'] = $forum['defaultsortby'];
 	
 	$threadfield_cache = xthreads_gettfcache($fid);
+	
+	// Quick Thread integration
+	if(!empty($threadfield_cache) && function_exists('quickthread_run'))
+		xthreads_forumdisplay_quickthread();
+	
+	$fpermissions = forum_permissions($fid);
+	$show_threads = ($fpermissions['canview'] == 1 && $fpermissions['canviewthreads'] != 0);
+	
 	$tf_filters = array();
 	$filters_set = array(
 		'__search' => array('hiddencss' => '', 'visiblecss' => 'display: none;', 'selected' => array('' => ' selected="selected"'), 'checked' => array('' => ' checked="checked"'), 'active' => array('' => 'filtertf_active'), 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active'),
@@ -21,36 +29,38 @@ function xthreads_forumdisplay() {
 	$xthreads_forum_filter_form = $xthreads_forum_filter_args = '';
 	$use_default_filter = true;
 	if(!empty($threadfield_cache)) {
-		function xthreads_forumdisplay_dbhook(&$s, &$db) {
-			global $threadfield_cache, $fid, $plugins, $threadfields, $xthreads_forum_sort;
-			//if(empty($threadfield_cache)) return;
-			
-			$fields = '';
-			foreach($threadfield_cache as &$v)
-				$fields .= ', tfd.`'.$v['field'].'` AS `xthreads_'.$v['field'].'`';
-			
-			$sortjoin = '';
-			if(!empty($xthreads_forum_sort) && isset($xthreads_forum_sort['sortjoin']))
-				$sortjoin = ' LEFT JOIN '.$db->table_prefix.$xthreads_forum_sort['sortjoin'];
-			
-			$s = strtr($s, array(
-				'SELECT t.*, ' => 'SELECT t.*'.$fields.', ',
-				'WHERE t.fid=' => 'LEFT JOIN `'.$db->table_prefix.'threadfields_data` tfd ON t.tid=tfd.tid'.$sortjoin.' WHERE t.fid=',
-			));
-			$plugins->add_hook('forumdisplay_thread', 'xthreads_forumdisplay_thread');
-			$threadfields = array();
-		}
-		
-		control_object($db, '
-			function query($string, $hide_errors=0, $write_query=0) {
-				static $done=false;
-				if(!$done && !$write_query && strpos($string, \'SELECT t.*, \') && strpos($string, \'t.username AS threadusername, u.username\') && strpos($string, \'FROM '.TABLE_PREFIX.'threads t\')) {
-					$done = true;
-					xthreads_forumdisplay_dbhook($string, $this);
-				}
-				return parent::query($string, $hide_errors, $write_query);
+		if($show_threads) {
+			function xthreads_forumdisplay_dbhook(&$s, &$db) {
+				global $threadfield_cache, $fid, $plugins, $threadfields, $xthreads_forum_sort;
+				//if(empty($threadfield_cache)) return;
+				
+				$fields = '';
+				foreach($threadfield_cache as &$v)
+					$fields .= ', tfd.`'.$v['field'].'` AS `xthreads_'.$v['field'].'`';
+				
+				$sortjoin = '';
+				if(!empty($xthreads_forum_sort) && isset($xthreads_forum_sort['sortjoin']))
+					$sortjoin = ' LEFT JOIN '.$db->table_prefix.$xthreads_forum_sort['sortjoin'];
+				
+				$s = strtr($s, array(
+					'SELECT t.*, ' => 'SELECT t.*'.$fields.', ',
+					'WHERE t.fid=' => 'LEFT JOIN `'.$db->table_prefix.'threadfields_data` tfd ON t.tid=tfd.tid'.$sortjoin.' WHERE t.fid=',
+				));
+				$plugins->add_hook('forumdisplay_thread', 'xthreads_forumdisplay_thread');
+				$threadfields = array();
 			}
-		');
+			
+			control_object($db, '
+				function query($string, $hide_errors=0, $write_query=0) {
+					static $done=false;
+					if(!$done && !$write_query && strpos($string, \'SELECT t.*, \') && strpos($string, \'t.username AS threadusername, u.username\') && strpos($string, \'FROM '.TABLE_PREFIX.'threads t\')) {
+						$done = true;
+						xthreads_forumdisplay_dbhook($string, $this);
+					}
+					return parent::query($string, $hide_errors, $write_query);
+				}
+			');
+		}
 		
 		// also check for forumdisplay filters/sort
 		// and generate form HTML
@@ -108,10 +118,6 @@ function xthreads_forumdisplay() {
 				}
 			}
 		}
-		
-		// Quick Thread integration
-		if(function_exists('quickthread_run'))
-			xthreads_forumdisplay_quickthread();
 	}
 	if(!isset($xthreads_forum_sort) && $mybb->input['sortby'] && in_array($mybb->input['sortby'], array('prefix', 'icon', 'lastposter', 'numratings', 'attachmentcount'))) {
 		global $xthreads_forum_sort;
@@ -261,33 +267,35 @@ function xthreads_forumdisplay() {
 		unset($filters_set['__search']['nullselected'], $filters_set['__search']['nullchecked'], $filters_set['__search']['nullactive']);
 	}
 	
-	$using_filter = ($forum['xthreads_inlinesearch'] || !empty($tf_filters) || !empty($xt_filters));
-	if($using_filter || isset($xthreads_forum_sort)) {
-		// only nice way to do all of this is to gain control of $templates, so let's do it
-		control_object($GLOBALS['templates'], '
-			function get($title, $eslashes=1, $htmlcomments=1) {
-				static $done=false;
-				if(!$done && $title == \'forumdisplay_orderarrow\') {
-					$done = true;
-					'.($using_filter?'xthreads_forumdisplay_filter();':'').'
-					'.(isset($xthreads_forum_sort)?'
-						$orderbyhack = xthreads_forumdisplay_sorter();
-						return $orderbyhack.parent::get($title, $eslashes, $htmlcomments);
-					':'').'
+	if($show_threads) {
+		$using_filter = ($forum['xthreads_inlinesearch'] || !empty($tf_filters) || !empty($xt_filters));
+		if($using_filter || isset($xthreads_forum_sort)) {
+			// only nice way to do all of this is to gain control of $templates, so let's do it
+			control_object($GLOBALS['templates'], '
+				function get($title, $eslashes=1, $htmlcomments=1) {
+					static $done=false;
+					if(!$done && $title == \'forumdisplay_orderarrow\') {
+						$done = true;
+						'.($using_filter?'xthreads_forumdisplay_filter();':'').'
+						'.(isset($xthreads_forum_sort)?'
+							$orderbyhack = xthreads_forumdisplay_sorter();
+							return $orderbyhack.parent::get($title, $eslashes, $htmlcomments);
+						':'').'
+					}
+					return parent::get($title, $eslashes, $htmlcomments);
 				}
-				return parent::get($title, $eslashes, $htmlcomments);
+			');
+			
+			/*
+			if($forum['xthreads_inlinesearch']) {
+				// give us a bit of a free speed up since this isn't really being used anyway...
+				$templates->cache['forumdisplay_searchforum'] = '';
 			}
-		');
-		
-		/*
-		if($forum['xthreads_inlinesearch']) {
-			// give us a bit of a free speed up since this isn't really being used anyway...
-			$templates->cache['forumdisplay_searchforum'] = '';
+			*/
+			
+			// generate stuff for pagination/sort-links and fields for forms (sort listboxes, inline search)
+			
 		}
-		*/
-		
-		// generate stuff for pagination/sort-links and fields for forms (sort listboxes, inline search)
-		
 	}
 	
 	if($forum['xthreads_fdcolspan_offset']) {
