@@ -511,7 +511,9 @@ function xthreads_sanitize_disp_set_xta_fields(&$s, $aid, &$tfinfo, $dispfmt='',
 	if(isset($s['md5hash'])) {
 		$s['md5hash'] = bin2hex($s['md5hash']);
 	}
-	$s['icon'] = get_attachment_icon(get_extension($s['filename']));
+	// 'icon' field disabled because it fetches the "attachment_icon" template in MyBB 1.8, and I'm too lazy to cache it (I doubt this is being used much anyway)
+	// if needed, "< ?=get_attachment_icon(get_extension({FILENAME}))? >" (without spaces) replicates it anyway
+	//$s['icon'] = get_attachment_icon(get_extension($s['filename']));
 	
 	$settings =& $GLOBALS['mybb']->settings;
 	$s['upload_time'] = my_date($settings['timeformat'], $s['uploadtime']);

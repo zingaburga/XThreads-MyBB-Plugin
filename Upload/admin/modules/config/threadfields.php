@@ -1018,7 +1018,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 									return true;
 							return false;
 						})(
-							["DOWNLOADS","DOWNLOADS_FRIENDLY","FILENAME","UPLOADMIME","URL","FILESIZE","FILESIZE_FRIENDLY","MD5HASH","UPLOADTIME","UPLOAD_TIME","UPLOAD_DATE","UPDATETIME","UPDATE_TIME","UPDATE_DATE","THUMBS","DIMS","ICON","MODIFIED"]
+							["DOWNLOADS","DOWNLOADS_FRIENDLY","FILENAME","UPLOADMIME","URL","FILESIZE","FILESIZE_FRIENDLY","MD5HASH","UPLOADTIME","UPLOAD_TIME","UPLOAD_DATE","UPDATETIME","UPDATE_TIME","UPDATE_DATE","THUMBS","DIMS","MODIFIED"]
 						)) {
 							dispfmt_obj.value = document.getElementById('dispitemformat').value;
 							document.getElementById('dispitemformat').value = nonFileVal;

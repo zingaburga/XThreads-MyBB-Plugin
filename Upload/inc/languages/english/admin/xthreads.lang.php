@@ -30,7 +30,6 @@ $l['threadfields_file_name_info'] = 'Variables are referenced with <code>{$GLOBA
 	<li><em>upload_date</em> - date when file was initially uploaded</li>
 	<li><em>update_time</em> - time when file was last updated (will be upload_time if never updated)</li>
 	<li><em>update_date</em> - date when file was last updated (will be upload_date if never updated)</li>
-	<li><em>icon</em> - MyBB\'s attachment file type icon</li>
 	<li><em>value</em> - if no file is uploaded, will be Blank Value (see below), otherwise, will be Display Format</li>
 	<li><em>dims</em> - an array containing width/height of uploaded image if the option to require image uploads is chosen.  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'dims\'][\'w\']}</code> would get the width of the uploaded image.</li>
 	<li><em>thumbs</em> - an array containing width/height/URL of thumbnails (if used).  For example <code>{$GLOBALS[\'threadfields\'][\'myimage\'][\'thumbs\'][\'320x240\'][\'w\']}</code> would get the real image width of the 320x240 thumbnail.</li>
