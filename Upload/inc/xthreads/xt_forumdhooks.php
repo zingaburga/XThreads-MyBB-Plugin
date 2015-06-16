@@ -497,20 +497,25 @@ function xthreads_forumdisplay_filter() {
 		}
 	}
 	if($q) {
+		if(!empty($tf_filters)) {
+			global $__xt_tvisibleonly;
+			$__xt_tvisibleonly = $tvisibleonly_tmp.$q;
+		}
 		// and now we have to patch the DB to get proper thread counts...
 		$dbf = $dbt = $dbu = '';
-		if($GLOBALS['datecut'] <= 0 && !@$GLOBALS['fpermissions']['canonlyviewownthreads']) {
+		// TODO: the following conditional may change depending on the outcome of this bug: https://github.com/mybb/mybb/issues/1890
+		if(($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999) && !@$GLOBALS['fpermissions']['canonlyviewownthreads']) {
 			if(!empty($tf_filters))
 				$dbf_code = '
 					$table = "threads t LEFT JOIN {$this->table_prefix}threadfields_data tfd ON t.tid=tfd.tid";
 					$fields = "COUNT(t.tid) AS threads, 0 AS unapprovedthreads, 0 AS deletedthreads";
-					$conditions .= \''.strtr($tvisibleonly_tmp.$q, array('\'' => '\\\'', '\\' => '\\\\')).'\'." $GLOBALS[useronly] $GLOBALS[datecutsql] $GLOBALS[prefixsql]";
+					$conditions .= " $GLOBALS[__xt_tvisibleonly] $GLOBALS[tuseronly] $GLOBALS[datecutsql2] $GLOBALS[prefixsql2]";
 				';
 			else
 				$dbf_code = '
 					$table = "threads";
 					$fields = "COUNT(tid) AS threads, 0 AS unapprovedthreads, 0 AS deletedthreads";
-					$conditions .= \''.strtr($visibleonly, array('\'' => '\\\'', '\\' => '\\\\')).'\'." $GLOBALS[useronly] $GLOBALS[datecutsql] $GLOBALS[prefixsql]";
+					$conditions .= " $GLOBALS[visibleonly] $GLOBALS[useronly] $GLOBALS[datecutsql] $GLOBALS[prefixsql]";
 				';
 			$dbf = '
 				static $done_f = false;
@@ -521,17 +526,34 @@ function xthreads_forumdisplay_filter() {
 				}
 			';
 		}
-		if(!empty($tf_filters))
+		if(!empty($tf_filters)) {
+			// if filtering by thread fields, we need to patch the counting query to include threadfield data and patch the query to reference the correct tables
+			function xthreads_forumdisplay_filter_fixqcond($conditions) {
+				$repl = array();
+				foreach(array(
+					'useronly' => 'tuseronly',
+					'visibleonly' => '__xt_tvisibleonly',
+					'datecutsql' => 'datecutsql2',
+					'prefixsql' => 'prefixsql2'
+				) as $from => $to) {
+					if($GLOBALS[$from])
+						$repl[$GLOBALS[$from]] = $GLOBALS[$to];
+				}
+				if(empty($repl))
+					return $conditions;
+				return strtr($conditions, $repl);
+			}
 			$dbt = '
 				static $done_t = false;
 				if(!$done_t && $table == "threads" && $fields == "COUNT(tid) AS threads") {
 					$done_t = true;
 					$table = "threads t LEFT JOIN {$this->table_prefix}threadfields_data tfd ON t.tid=tfd.tid";
 					$fields = "COUNT(t.tid) AS threads";
-					$conditions .= \''.strtr($q, array('\'' => '\\\'', '\\' => '\\\\')).'\';
+					$conditions = xthreads_forumdisplay_filter_fixqcond($conditions);
 					$options = array("limit" => 1);
 				}
 			';
+		}
 		
 		if($__xt_visibleonly != $visibleonly && $mybb->user['uid'])
 			// fix up posts query in MyBB 1.6.4
