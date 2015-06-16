@@ -1835,7 +1835,7 @@ function xthreads_vercheck() {
 		}
 	}
 	if($msg) {
-		if($admin_session['data']['flash_message'])
+		if(isset($admin_session['data']['flash_message']))
 			$admin_session['data']['flash_message']['message'] .= '</div><br /><div class="'.$msg['type'].'">'.$msg['message'];
 		else
 			$admin_session['data']['flash_message'] =& $msg;
