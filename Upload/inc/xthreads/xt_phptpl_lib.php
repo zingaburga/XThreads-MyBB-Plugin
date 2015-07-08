@@ -8,6 +8,10 @@ if(!defined('IN_MYBB'))
 function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 {
 	$GLOBALS['__phptpl_if'] = array();
+	if(defined('HHVM_VERSION'))
+		$fields_var = var_export($fields, true);
+	else
+		$fields_var = '$fields';
 	$find = array(
 		'#\<((?:else)?if\s+(.*?)\s+then|else\s*/?|/if)\>#sie', // note that this relies on preg_replace working in a forward order
 		'#\<func (htmlspecialchars|htmlspecialchars_uni|intval|floatval|urlencode|rawurlencode|addslashes|stripslashes|trim|crc32|ltrim|rtrim|chop|md5|nl2br|sha1|strrev|strtoupper|strtolower|my_strtoupper|my_strtolower|alt_trow|get_friendly_size|filesize|strlen|my_strlen|my_wordwrap|random_str|unicode_chr|bin2hex|str_rot13|str_shuffle|strip_tags|ucfirst|ucwords|basename|dirname|unhtmlentities)\>#i',
@@ -17,23 +21,23 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 		'#\<setvar\s+([a-z0-9_\-+!(),.]+)\>(.*?)\</setvar\>#ie',
 	);
 	$repl = array(
-		'xthreads_phptpl_if(\'$1\', \'$2\', $fields)',
+		'xthreads_phptpl_if(\'$1\', \'$2\', '.$fields_var.')',
 		'".$1("',
 		'")."',
 		//'".eval("return \"".$GLOBALS[\'templates\']->get(\'$1\')."\";")."',
-		'\'".strval(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\')."\'',
-		'\'".(($GLOBALS["tplvars"]["$1"] = (\'._xthreads_phptpl_expr_parse(\'$2\', $fields).\'))?"":"")."\'',
+		'\'".strval(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\')."\'',
+		'\'".(($GLOBALS["tplvars"]["$1"] = (\'._xthreads_phptpl_expr_parse(\'$2\', '.$fields_var.').\'))?"":"")."\'',
 	);
 	
 	if($evalvarname) {
 		$find[] = '#\<while\s+(.*?)\s+do\>#sie';
-		$repl[] = '\'"; while(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\') { $'.$evalvarname.'.="\'';
+		$repl[] = '\'"; while(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\') { $'.$evalvarname.'.="\'';
 		
 		$find[] = '#\<foreach\s+(.*?)\s+do\>#sie';
-		$repl[] = '\'"; foreach(\'._xthreads_phptpl_expr_parse(\'$1\', $fields).\' as $__key => $__value) { $'.$evalvarname.'.="\'';
+		$repl[] = '\'"; foreach(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\' as $__key => $__value) { $'.$evalvarname.'.="\'';
 		
 		$find[] = '#\<repeat\s+(.*?)\s+do\>#sie';
-		$repl[] = '\'"; for($__iter=0; $__iter < \'._xthreads_phptpl_expr_parse(\'$1\', $fields).\'; ++$__iter) { $'.$evalvarname.'.="\'';
+		$repl[] = '\'"; for($__iter=0; $__iter < \'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\'; ++$__iter) { $'.$evalvarname.'.="\'';
 		
 		$find[] = '#\</(while|foreach|repeat)\>#i';
 		$repl[] = '"; } $'.$evalvarname.'.="';
@@ -41,7 +45,7 @@ function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
 	
 	if(xthreads_allow_php()) {
 		$find[] = '#\<\?(?:php|\s).+?(\?\>)#se';
-		$repl[] = 'xthreads_phptpl_evalphp(\'$0\', \'$1\', $fields)';
+		$repl[] = 'xthreads_phptpl_evalphp(\'$0\', \'$1\', '.$fields_var.')';
 	}
 	$ourtpl = preg_replace($find, $repl, $ourtpl);
 }
