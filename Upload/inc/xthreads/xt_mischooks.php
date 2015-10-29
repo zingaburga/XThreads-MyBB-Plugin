@@ -114,9 +114,10 @@ function xthreads_portal() {
 	$threadfield_cache = xthreads_gettfcache();
 	
 	$fids = array_flip(array_map('intval', explode(',', $mybb->settings['portal_announcementsfid'])));
+	$all_fids = ($mybb->settings['portal_announcementsfid'] == '-1');
 	$fields = '';
 	foreach($threadfield_cache as $k => &$v) {
-		$available = (!$v['forums']);
+		$available = (!$v['forums']) || $all_fids;
 		if(!$available)
 			foreach(explode(',', $v['forums']) as $fid) {
 				if(isset($fids[$fid])) {
