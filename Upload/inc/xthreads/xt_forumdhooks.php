@@ -559,7 +559,7 @@ function xthreads_forumdisplay_filter() {
 			// fix up posts query in MyBB 1.6.4
 			$dbu = '
 				static $done_u = false;
-				if(!$done_u && $table == "posts" && $fields == "tid,uid" && strpos($conditions, $GLOBALS[\'visibleonly\'])) {
+				if(!$done_u && $table == "posts" && ($fields == "tid,uid" || $fields == "DISTINCT tid,uid") && strpos($conditions, $GLOBALS[\'visibleonly\'])) {
 					$done_u = true;
 					$conditions = str_replace($GLOBALS[\'visibleonly\'], $GLOBALS[\'__xt_visibleonly\'], $conditions);
 				}
