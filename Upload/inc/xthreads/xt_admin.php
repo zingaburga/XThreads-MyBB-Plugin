@@ -34,7 +34,8 @@ $plugins->add_hook('admin_tools_system_health_start', 'xthreads_admin_fileperms'
 
 $plugins->add_hook('admin_tools_get_admin_log_action', 'xthreads_admin_logs');
 
-$plugins->add_hook('admin_load', 'xthreads_vercheck');
+if(xthreads_is_installed())
+	$plugins->add_hook('admin_load', 'xthreads_vercheck');
 if($GLOBALS['run_module'] == 'config' && $GLOBALS['action_file'] == 'plugins.php') {
 	require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 } else {
@@ -44,6 +45,13 @@ if($GLOBALS['run_module'] == 'config' && $GLOBALS['action_file'] == 'plugins.php
 		global $plugins;
 		require_once MYBB_ROOT.'inc/xthreads/xt_install.php';
 	}
+}
+
+function xthreads_is_installed() {
+	static $is_installed = null;
+	if(!isset($is_installed))
+		$is_installed = $GLOBALS['db']->table_exists('threadfields');
+	return $is_installed;
 }
 
 function xthreads_db_fielddef($type, $size=null, $unsigned=null) {

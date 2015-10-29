@@ -15,13 +15,6 @@ if(isset($plugins) && is_object($plugins)) {
 // note that once you have XThreads installed, this will be stored in cache/xthreads.php instead
 @define('XTHREADS_MODIFY_TEMPLATES', true);
 
-function xthreads_is_installed() {
-	static $is_installed = null;
-	if(!isset($is_installed))
-		$is_installed = $GLOBALS['db']->table_exists('threadfields');
-	return $is_installed;
-}
-
 function xthreads_install() {
 	global $db, $cache, $plugins;
 	$plugins->run_hooks('xthreads_install_start');
