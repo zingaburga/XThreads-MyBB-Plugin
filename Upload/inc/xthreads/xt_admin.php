@@ -1575,8 +1575,8 @@ function xthreads_admin_modtool() {
 }
 
 function xthreads_admin_modtool_commit() {
-	global $mybb, $thread_options, $db;
-	if(isset($GLOBALS['update_tool'])) {
+	global $mybb, $thread_options, $update_tool, $db;
+	if(isset($update_tool)) {
 		// updating
 		$tid = (int)$mybb->input['tid'];
 	} else {
@@ -1588,7 +1588,10 @@ function xthreads_admin_modtool_commit() {
 	// TODO: validate this?
 	$thread_options['edit_threadfields'] = $mybb->input['edit_threadfields'];
 	
-	$db->update_query('modtools', array('threadoptions' => $db->escape_string(serialize($thread_options))), 'tid='.$tid);
+	// set this twice to handle different positionings of the hook in different MyBB versions
+	$threadoptions = $db->escape_string(serialize($thread_options));
+	if(isset($update_tool)) $update_tool['threadoptions'] = $threadoptions;
+	$db->update_query('modtools', array('threadoptions' => $threadoptions), 'tid='.$tid);
 }
 
 
