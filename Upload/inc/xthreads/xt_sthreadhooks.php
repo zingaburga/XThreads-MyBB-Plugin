@@ -25,8 +25,8 @@ function xthreads_showthread() {
 	if($threadfields_display_rows)
 		eval('$threadfields_display = "'.$templates->get('showthread_threadfields').'";');
 	
-	/*
 	global $mybb;
+	/*
 	if($mybb->input['action'] == 'xtnext' || $mybb->input['action'] == 'xtprev') {
 		global $db;
 		$add_join = false;
@@ -105,6 +105,14 @@ function xthreads_showthread() {
 		exit;
 	}
 	*/
+	
+	// fix screwy jeditable default
+	if($mybb->version_code >= 1800) {
+		$GLOBALS['header'] .= '<script type="text/javascript"><!--
+try { jQuery.fn.editable.defaults.placeholder=""; } catch(x) {}
+// -->
+</script>';
+	}
 }
 
 function xthreads_showthread_firstpost() {
