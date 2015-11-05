@@ -1570,7 +1570,7 @@ function xthreads_admin_modtool() {
 	}
 	function xthreads_admin_modtool_4(&$args) {
 		$GLOBALS['plugins']->remove_hook('admin_formcontainer_output_row', 'xthreads_admin_modtool_4');
-		xthreads_admin_common_ofe('edit_threadfields');
+		xthreads_admin_common_ofe('edit_threadfields', true);
 	}
 }
 
@@ -1596,9 +1596,18 @@ function xthreads_admin_modtool_commit() {
 
 
 // just because both the ModTools and Default Thread Filter fields use a very similar OFE...
-function xthreads_admin_common_ofe($fieldname) {
-	global $lang, $mybb;
+function xthreads_admin_common_ofe($fieldname, $fieldsOnly=false) {
+	global $lang, $mybb, $db;
 	if(!$lang->xthreads_js_confirm_form_submit) $lang->load('xthreads');
+	
+	$fieldOptions = '';
+	$query = $db->simple_select('threadfields','title,field', '', array('order_by' => 'disporder', 'order_dir' => 'asc'));
+	while($field = $db->fetch_array($query)) {
+		$fieldOptions .= '<option value="'.htmlspecialchars_uni($field['field']).'">'.strtr(htmlspecialchars_uni($field['title']), array('\\'=>'\\\\','\''=>'\\\'')).'</option>';
+	}
+	$db->free_result($query);
+	
+	
 ?><script type="text/javascript" src="jscripts/xtofedit.js?xtver=<?php echo XTHREADS_VERSION; ?>"></script>
 <script type="text/javascript">
 <!--
@@ -1646,14 +1655,11 @@ ofEditor.fields = [
 		var o = appendNewChild(c, "select");
 		o.size = 1;
 		o.style.width = '100%';
-		o.innerHTML = '<option value=""></option><option value="__xt_uid"><?php echo $lang->xthreads_filter_uid; ?></option><option value="__xt_lastposteruid"><?php echo $lang->xthreads_filter_lastposteruid; ?></option><?php if($mybb->version_code >= 1500) echo '<option value="__xt_prefix">', $lang->xthreads_sort_ext_prefix, '</option>'; ?><option value="__xt_icon"><?php echo $lang->xthreads_sort_ext_icon; ?></option><optgroup label="<?php echo $lang->custom_threadfields; ?>"><?php
-			global $db;
-			$query = $db->simple_select('threadfields','title,field', '', array('order_by' => 'disporder', 'order_dir' => 'asc'));
-			while($field = $db->fetch_array($query)) {
-				echo '<option value="'.htmlspecialchars_uni($field['field']).'">'.strtr(htmlspecialchars_uni($field['title']), array('\\'=>'\\\\','\''=>'\\\'')).'</option>';
-			}
-			$db->free_result($query);
-		?></optgroup>';
+		<?php if($fieldsOnly) { ?>
+		o.innerHTML = '<option value=""></option><?php echo $fieldOptions; ?>';
+		<?php } else { ?>
+		o.innerHTML = '<option value=""></option><option value="__xt_uid"><?php echo $lang->xthreads_filter_uid; ?></option><option value="__xt_lastposteruid"><?php echo $lang->xthreads_filter_lastposteruid; ?></option><?php if($mybb->version_code >= 1500) echo '<option value="__xt_prefix">', $lang->xthreads_sort_ext_prefix, '</option>'; ?><option value="__xt_icon"><?php echo $lang->xthreads_sort_ext_icon; ?></option><optgroup label="<?php echo $lang->custom_threadfields; ?>"><?php echo $fieldOptions; ?></optgroup>';
+		<?php } ?>
 		return o;
 	}},
 	{title: "<?php echo $lang->xthreads_js_defaultfilter_value; ?>", width: '55%', elemFunc: ofEditor.textAreaFunc}
