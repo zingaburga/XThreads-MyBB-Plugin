@@ -219,6 +219,7 @@ function xthreads_wol_patch(&$a) {
 	global $forums, $threads, $posts, $attachments;
 	$langargs = array();
 	$user_activity =& $a['user_activity'];
+	$activity = $user_activity['activity'];
 	switch($user_activity['activity']) {
 		case 'announcements':
 		case 'forumdisplay':
@@ -232,6 +233,8 @@ function xthreads_wol_patch(&$a) {
 			$fid = $thread_fid_map[$tid];
 			$langargs = array($user_activity['aid'], $threads[$tid], get_thread_link($tid));
 			break;
+		case 'showpost':
+			$activity = 'showthread';
 		case 'newreply':
 			if($user_activity['pid'])
 				$user_activity['tid'] = $posts[$user_activity['pid']];
@@ -261,7 +264,7 @@ function xthreads_wol_patch(&$a) {
 	if(!$fid) return;
 	global $forumcache;
 	if(!is_array($forumcache)) $forumcache = $GLOBALS['cache']->read('forums');
-	$wolstr =& $forumcache[$fid]['xthreads_wol_'.$user_activity['activity']];
+	$wolstr =& $forumcache[$fid]['xthreads_wol_'.$activity];
 	if(!xthreads_empty($wolstr)) {
 		if(empty($langargs))
 			$a['location_name'] = $wolstr;
@@ -278,13 +281,14 @@ function xthreads_wol_patch_init(&$ua) {
 		case 'attachment':
 		case 'newreply':
 		case 'showthread':
+		case 'showpost':
 			static $done_hook = false;
 			if(!$done_hook) {
 				$done_hook = true;
 				// hook in to get thread_fid_map
 				global $db;
 				$GLOBALS['thread_fid_map'] = array();
-				if($GLOBALS['mybb']->version_code >= 1500)
+				if($GLOBALS['mybb']->version_code >= 1500 && $GLOBALS['mybb']->version_code < 1700)
 					$hook = '
 						function query($string, $hide_errors=0, $write_query=0) {
 							static $done=false;
@@ -308,7 +312,7 @@ function xthreads_wol_patch_init(&$ua) {
 							if($done && $this->xthreads_db_wol_hook) {
 								$this->xthreads_db_wol_hook = false;
 							}
-							if(!$done && $table == "threads" && $fields == "fid,tid,subject,visible" && substr($conditions, 0, 7) == "tid IN(" && empty($options)) {
+							if(!$done && $table == "threads" && ($fields == "fid,tid,subject,visible" || $fields == "uid, fid, tid, subject, visible, prefix") && substr($conditions, 0, 7) == "tid IN(" && empty($options)) {
 								$done = true;
 								$this->xthreads_db_wol_hook = true;
 							}
