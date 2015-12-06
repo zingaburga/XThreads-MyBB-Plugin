@@ -319,15 +319,11 @@ function xthreads_input_posthandler_insert(&$ph) {
 	}
 	
 	if($update) {
-		xthreads_db_update('threadfields_data', $updates, 'tid='.$tid);
-		// check if actually updated (it may be possible that an entry for this thread isn't added yet)
-		if($db->affected_rows() > 0)
-			return;
-		// otherwise, fall through and run a replace query
+		xthreads_db_update_replace('threadfields_data', $updates, 'tid', $tid);
+	} else {
+		$updates['tid'] = $tid;
+		xthreads_db_replace('threadfields_data', $updates, 'tid='.$tid);
 	}
-	
-	$updates['tid'] = $tid;
-	xthreads_db_replace('threadfields_data', $updates, 'tid='.$tid);
 }
 
 function xthreads_convert_str_to_datatype($s, $type) {
@@ -1078,7 +1074,6 @@ function xthreads_upload_attachments() {
 	// if editing post, also commit change to thread field immediately (waiting for user to submit is unreliable)
 	if(($is_editing || ($GLOBALS['thread']['tid'] && $GLOBALS['current_page'] == 'newthread.php')) && !empty($threadfield_updates)) {
 		xthreads_db_update_replace('threadfields_data', $threadfield_updates, 'tid', $GLOBALS['thread']['tid']);
-		//$db->update_query('threadfields_data', $threadfield_updates, 'tid='.$GLOBALS['thread']['tid']);
 	}
 	
 	@ignore_user_abort(false);
@@ -1361,16 +1356,18 @@ function xthreads_db_replace($table, $insert, $where) {
 		return xthreads_db_insert($table, $insert);
 }
 
-// try to update, if unsuccessful, will run replace query
+// upsert type query emulation
 function xthreads_db_update_replace($table, $update, $idname, $idval) {
-	if($GLOBALS['db']->type == 'pgsql')
+	global $db;
+	if($db->type == 'pgsql')
 		$fd = '"';
 	else
 		$fd = '`';
 	
 	$where = $fd.$idname.$fd.'='.xthreads_db_escape($idval);
-	xthreads_db_update($table, $update, $where);
-	if($GLOBALS['db']->affected_rows() == 0) {
+	if($db->fetch_field($db->simple_select($table, $fd.$idname.$fd, $where), $idname)) {
+		xthreads_db_update($table, $update, $where);
+	} else {
 		$update[$idname] = $idval;
 		xthreads_db_replace($table, $update, $where);
 	}
