@@ -43,7 +43,7 @@ function xthreads_attach_hash(&$odd=false) {
 		else {
 			@include MYBB_ROOT.'inc/config.php';
 		}
-		$secret = md5(substr(md5($config['database']['database'].','.$config['database']['password']), 0, 12).MYBB_ROOT);
+		$secret = md5(substr(md5($config['database']['database'].','.$config['database']['password']), 0, 12).__FILE__);
 		unset($config);
 	}
 	$key = $secret;
