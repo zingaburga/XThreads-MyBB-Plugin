@@ -5,52 +5,103 @@
 if(!defined('IN_MYBB'))
 	die('This file cannot be accessed directly.');
 
-function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
-{
-	$GLOBALS['__phptpl_if'] = array();
-	if(defined('HHVM_VERSION'))
-		$fields_var = var_export($fields, true);
-	else
-		$fields_var = '$fields';
-	$find = array(
-		'#\<((?:else)?if\s+(.*?)\s+then|else\s*/?|/if)\>#sie', // note that this relies on preg_replace working in a forward order
-		'#\<func (htmlspecialchars|htmlspecialchars_uni|intval|floatval|urlencode|rawurlencode|addslashes|stripslashes|trim|crc32|ltrim|rtrim|chop|md5|nl2br|sha1|strrev|strtoupper|strtolower|my_strtoupper|my_strtolower|alt_trow|get_friendly_size|filesize|strlen|my_strlen|my_wordwrap|random_str|unicode_chr|bin2hex|str_rot13|str_shuffle|strip_tags|ucfirst|ucwords|basename|dirname|unhtmlentities)\>#i',
-		'#\</func\>#i',
-		//'#\<template\s+([a-z0-9_ \-+!(),.]+)(\s*/)?\>#i',
-		'#\<\?=(.*?)\?\>#sie',
-		'#\<setvar\s+([a-z0-9_\-+!(),.]+)\>(.*?)\</setvar\>#ie',
-	);
-	$repl = array(
-		'xthreads_phptpl_if(\'$1\', \'$2\', '.$fields_var.')',
-		'".$1("',
-		'")."',
-		//'".eval("return \"".$GLOBALS[\'templates\']->get(\'$1\')."\";")."',
-		'\'".strval(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\')."\'',
-		'\'".(($GLOBALS["tplvars"]["$1"] = (\'._xthreads_phptpl_expr_parse(\'$2\', '.$fields_var.').\'))?"":"")."\'',
-	);
-	
-	if($evalvarname) {
-		$find[] = '#\<while\s+(.*?)\s+do\>#sie';
-		$repl[] = '\'"; while(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\') { $'.$evalvarname.'.="\'';
+if(function_exists('preg_replace_callback_array')) {
+	// PHP >= 7
+	// note, this will break parsers from PHP < 5.3
+	function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
+	{
+		$GLOBALS['__phptpl_if'] = array();
+		$repl = array(
+			'#\<((?:else)?if\s+(.*?)\s+then|else\s*/?|/if)\>#si' => function($m) use($fields) {
+				return xthreads_phptpl_if($m[1], _xthreads_phptpl_expr_parse2($m[2], $fields));
+			},
+			'#\<func (htmlspecialchars|htmlspecialchars_uni|intval|floatval|urlencode|rawurlencode|addslashes|stripslashes|trim|crc32|ltrim|rtrim|chop|md5|nl2br|sha1|strrev|strtoupper|strtolower|my_strtoupper|my_strtolower|alt_trow|get_friendly_size|filesize|strlen|my_strlen|my_wordwrap|random_str|unicode_chr|bin2hex|str_rot13|str_shuffle|strip_tags|ucfirst|ucwords|basename|dirname|unhtmlentities)\>#i' => function($m) {
+				return '".'.$m[1].'("';
+			},
+			'#\</func\>#i' => function() {
+				return '")."';
+			},
+			//'#\<template\s+([a-z0-9_ \-+!(),.]+)(\s*/)?\>#i' => function($m) {return $GLOBALS['templates']->get($m[1]);},
+			'#\<\?=(.*?)\?\>#s' => function($m) use($fields) {
+				return '".strval('._xthreads_phptpl_expr_parse2($m[1], $fields).')."';
+			},
+			'#\<setvar\s+([a-z0-9_\-+!(),.]+)\>(.*?)\</setvar\>#i' => function($m) use($fields) {
+				return '".(($GLOBALS["tplvars"][\''.$m[1].'\'] = ('._xthreads_phptpl_expr_parse2($m[2], $fields).'))?"":"")."';
+			},
+		);
 		
-		$find[] = '#\<foreach\s+(.*?)\s+do\>#sie';
-		$repl[] = '\'"; foreach(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\' as $__key => $__value) { $'.$evalvarname.'.="\'';
+		if($evalvarname) {
+			$repl['#\<while\s+(.*?)\s+do\>#si'] = function($m) use($fields, $evalvarname) {
+				return '"; while('._xthreads_phptpl_expr_parse2($m[1], $fields).') { $'.$evalvarname.'.="';
+			};
+			$repl['#\<foreach\s+(.*?)\s+do\>#si'] = function($m) use($fields, $evalvarname) {
+				return '"; foreach('._xthreads_phptpl_expr_parse2($m[1], $fields).' as $__key => $__value) { $'.$evalvarname.'.="';
+			};
+			$repl['#\<repeat\s+(.*?)\s+do\>#si'] = function($m) use($fields, $evalvarname) {
+				return '"; for($__iter=0; $__iter < '._xthreads_phptpl_expr_parse2($m[1], $fields).'; ++$__iter) { $'.$evalvarname.'.="';
+			};
+			$repl['#\</(while|foreach|repeat)\>#i'] = function($m) use($evalvarname) {
+				return '"; } $'.$evalvarname.'.="';
+			};
+		}
 		
-		$find[] = '#\<repeat\s+(.*?)\s+do\>#sie';
-		$repl[] = '\'"; for($__iter=0; $__iter < \'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\'; ++$__iter) { $'.$evalvarname.'.="\'';
+		if(xthreads_allow_php()) {
+			$repl['#\<\?(?:php|\s).+?(\?\>)#s'] = function($m) use($fields) {
+				return xthreads_phptpl_evalphp(_xthreads_phptpl_expr_parse2($m[0], $fields), $m[1]);
+			};
+		}
+		$ourtpl = preg_replace_callback_array($repl, $ourtpl);
+	}
+} else {
+	function xthreads_phptpl_parsetpl(&$ourtpl, $fields=array(), $evalvarname=null)
+	{
+		$GLOBALS['__phptpl_if'] = array();
+		if(defined('HHVM_VERSION'))
+			$fields_var = var_export($fields, true);
+		else
+			$fields_var = '$fields';
+		$find = array(
+			'#\<((?:else)?if\s+(.*?)\s+then|else\s*/?|/if)\>#sie', // note that this relies on preg_replace working in a forward order
+			'#\<func (htmlspecialchars|htmlspecialchars_uni|intval|floatval|urlencode|rawurlencode|addslashes|stripslashes|trim|crc32|ltrim|rtrim|chop|md5|nl2br|sha1|strrev|strtoupper|strtolower|my_strtoupper|my_strtolower|alt_trow|get_friendly_size|filesize|strlen|my_strlen|my_wordwrap|random_str|unicode_chr|bin2hex|str_rot13|str_shuffle|strip_tags|ucfirst|ucwords|basename|dirname|unhtmlentities)\>#i',
+			'#\</func\>#i',
+			//'#\<template\s+([a-z0-9_ \-+!(),.]+)(\s*/)?\>#i',
+			'#\<\?=(.*?)\?\>#se',
+			'#\<setvar\s+([a-z0-9_\-+!(),.]+)\>(.*?)\</setvar\>#ie',
+		);
+		$repl = array(
+			'xthreads_phptpl_if(\'$1\', _xthreads_phptpl_expr_parse(\'$2\', '.$fields_var.'))',
+			'".$1("',
+			'")."',
+			//'".eval("return \"".$GLOBALS[\'templates\']->get(\'$1\')."\";")."',
+			'\'".strval(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\')."\'',
+			'\'".(($GLOBALS["tplvars"]["$1"] = (\'._xthreads_phptpl_expr_parse(\'$2\', '.$fields_var.').\'))?"":"")."\'',
+		);
 		
-		$find[] = '#\</(while|foreach|repeat)\>#i';
-		$repl[] = '"; } $'.$evalvarname.'.="';
+		if($evalvarname) {
+			$find[] = '#\<while\s+(.*?)\s+do\>#sie';
+			$repl[] = '\'"; while(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\') { $'.$evalvarname.'.="\'';
+			
+			$find[] = '#\<foreach\s+(.*?)\s+do\>#sie';
+			$repl[] = '\'"; foreach(\'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\' as $__key => $__value) { $'.$evalvarname.'.="\'';
+			
+			$find[] = '#\<repeat\s+(.*?)\s+do\>#sie';
+			$repl[] = '\'"; for($__iter=0; $__iter < \'._xthreads_phptpl_expr_parse(\'$1\', '.$fields_var.').\'; ++$__iter) { $'.$evalvarname.'.="\'';
+			
+			$find[] = '#\</(while|foreach|repeat)\>#i';
+			$repl[] = '"; } $'.$evalvarname.'.="';
+		}
+		
+		if(xthreads_allow_php()) {
+			$find[] = '#\<\?(?:php|\s).+?(\?\>)#se';
+			$repl[] = 'xthreads_phptpl_evalphp(_xthreads_phptpl_expr_parse(\'$0\', '.$fields_var.'), \'$1\')';
+		}
+		$ourtpl = preg_replace($find, $repl, $ourtpl);
 	}
 	
-	if(xthreads_allow_php()) {
-		$find[] = '#\<\?(?:php|\s).+?(\?\>)#se';
-		$repl[] = 'xthreads_phptpl_evalphp(\'$0\', \'$1\', '.$fields_var.')';
-	}
-	$ourtpl = preg_replace($find, $repl, $ourtpl);
 }
 
-function xthreads_phptpl_if($s, $e, $fields)
+
+function xthreads_phptpl_if($s, $e)
 {
 	if($s[0] == '/') {
 		// end if tag
@@ -63,12 +114,12 @@ function xthreads_phptpl_if($s, $e, $fields)
 		$s = strtolower(substr($s, 0, strpos($s, ' ')));
 		if($s == 'if') {
 			$GLOBALS['__phptpl_if'][] = 'i0';
-			return '".(('._xthreads_phptpl_expr_parse($e, $fields).')?"';
+			return '".(('.$e.')?"';
 		} elseif($s == 'elseif') {
 			$last = array_pop($GLOBALS['__phptpl_if']);
 			$last = 'i'.((int)substr($last, 1) + 1);
 			$GLOBALS['__phptpl_if'][] = $last;
-			return '":(('._xthreads_phptpl_expr_parse($e, $fields).')?"';
+			return '":(('.$e.')?"';
 		} else {
 			$last = array_pop($GLOBALS['__phptpl_if']);
 			$last[0] = 'e';
@@ -78,18 +129,20 @@ function xthreads_phptpl_if($s, $e, $fields)
 	}
 }
 
-function xthreads_phptpl_expr_parse_fixstr_simple($match) {
-	return preg_replace('~\$GLOBALS\\[\\s*\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\s*\\]~', '$GLOBALS[$1]', $match[0]);
-}
-function xthreads_phptpl_expr_parse_fixstr_complex($match) {
-	return preg_replace('~(?<!\{)\$GLOBALS\\[\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\](((?:-\\>|\\:\\:)[a-zA-Z_][a-zA-Z_0-9]*|\\[\s*([\'"])?[ a-zA-Z_ 0-9]+\\4\s*\\])*)~', '{$0}', $match[0]);
-}
-
 function _xthreads_phptpl_expr_parse($str, $fields=array()) {
 	if(!$str && $str !== '0') return '';
 	
 	// unescapes the slashes added by xthreads_sanitize_eval, plus addslashes() (double quote only) during preg_replace()
 	$str = strtr($str, array('\\$' => '$', '\\\\"' => '"', '\\\\' => '\\'));
+	
+	return xthreads_phptpl_expr_parse($str, $fields);
+}
+// for non-eval escaped stuff
+function _xthreads_phptpl_expr_parse2($str, $fields=array()) {
+	if(!$str && $str !== '0') return '';
+	
+	// unescapes the slashes added by xthreads_sanitize_eval
+	$str = strtr($str, array('\\$' => '$', '\\"' => '"', '\\\\' => '\\'));
 	
 	return xthreads_phptpl_expr_parse($str, $fields);
 }
@@ -110,10 +163,15 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 	
 	// fix variables in double-quote and heredoc strings
 	$strpreg = '~(")(|\\\\\\\\|.*?([^\\\\]|[^\\\\](\\\\\\\\)+))\\1~s';
-	if(xthreads_allow_php())
-		$str = preg_replace_callback(array($strpreg, "~\<\<\<([a-zA-Z_][a-zA-Z_0-9]*)\r?\n.*?\r?\n\\1;?\r?\n~s"), 'xthreads_phptpl_expr_parse_fixstr_complex', $str);
-	else
-		$str = preg_replace_callback($strpreg, 'xthreads_phptpl_expr_parse_fixstr_simple', $str);
+	if(xthreads_allow_php()) {
+		$str = preg_replace_callback(array($strpreg, "~\<\<\<([a-zA-Z_][a-zA-Z_0-9]*)\r?\n.*?\r?\n\\1;?\r?\n~s"), function($match) {
+			return preg_replace('~(?<!\{)\$GLOBALS\\[\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\](((?:-\\>|\\:\\:)[a-zA-Z_][a-zA-Z_0-9]*|\\[\s*([\'"])?[ a-zA-Z_ 0-9]+\\4\s*\\])*)~', '{$0}', $match[0]);
+		}, $str);
+	} else {
+		$str = preg_replace_callback($strpreg, function($match) {
+			return preg_replace('~\$GLOBALS\\[\\s*\'([a-zA-Z_][a-zA-Z_0-9]*)\'\\s*\\]~', '$GLOBALS[$1]', $match[0]);
+		}, $str);
+	}
 	
 	if(!empty($fields))
 		// we need to parse {VALUE} tokens here, as they need to be parsed a bit differently, and so that they're checked for safe expressions
@@ -184,10 +242,10 @@ function &xthreads_phptpl_get_allowed_funcs()
 		return $allowed_funcs;
 }
 
-function xthreads_phptpl_evalphp($str, $end, $fields=array())
+function xthreads_phptpl_evalphp($str, $end)
 {
 	return '".eval(\'ob_start(); ?>'
-		.strtr(_xthreads_phptpl_expr_parse($str, $fields), array('\'' => '\\\'', '\\' => '\\\\'))
+		.strtr($str, array('\'' => '\\\'', '\\' => '\\\\'))
 		.($end?'':'?>').'<?php return ob_get_clean();\')."';
 }
 
@@ -225,7 +283,7 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 			if(isset($r)) {
 				$tr['{'.$f.'}'] = ($in_string ? $r : '("'.$r.'")');
 			} else {
-				$ptr[] = '~\\{('.preg_quote($f, '~').')((?:-\>|\[)[^}]+?)?\\}~e';
+				$ptr[] = '~\\{('.preg_quote($f, '~').')((?:-\>|\[)[^}]+?)?\\}~';
 			}
 			if($f == 'RAWVALUE') $do_value_repl = true;
 		}
@@ -233,14 +291,20 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 		$str_end = ($in_string?'}':'."")');
 		if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', $str_start.'$vars[\'$1$\'][$2]'.$str_end, $s);
 		if(!empty($tr))  $s = strtr($s, $tr);
-		if(!empty($ptr)) $s = preg_replace($ptr, '\''.$str_start.'\\$vars[\\\'$1\\\']\'._xthreads_phptpl_expr_parse(\'$2\').\''.$str_end.'\'', $s);
+		if(!empty($ptr)) {
+			$s = preg_replace_callback($ptr, function($match) use($in_string) {
+				if($in_string)
+					return '{$vars[\''.$m[1].'\']'._xthreads_phptpl_expr_parse2($m[2]).'}';
+				else
+					return '("".$vars[\''.$m[1].'\']'._xthreads_phptpl_expr_parse2($m[2]).'."")';
+			}, $s);
+		}
 		// careful with _xthreads_phptpl_expr_parse() call above - we avoid infinite looping by not supplying $fields
 		// although _xthreads_phptpl_expr_parse should always be called outside string context, the above is safe because the user cannot put in a '}' character at all - that is, achieving something like {$vars['VAL'][0]}".whatever."{$var} should be impossible
 		// an issue with the above, is that it's impossible to do something like {VAR[{VALUE}]} because variables are all auto-global'd... (but even if not, the above isn't guaranteed to work anyway, since the end token '}' might match early, eg {VAR[)
 	}
 	return $s;
 }
-
 
 
 // sanitises string $s so that we can directly eval it during "run-time" rather than performing sanitisation there
@@ -251,21 +315,21 @@ function xthreads_sanitize_eval(&$s, $fields=array(), $evalvarname=null) {
 	}
 	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
-	$s = preg_replace(
+	$s = preg_replace_callback('~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((?:-\>|\[)[^}]+?)?\\}~', function($m) {
+		return '{$GLOBALS[\''.$m[1].'\']'._xthreads_phptpl_expr_parse2($m[2]).'}';
+	}, preg_replace(
 		array(
-			'~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((?:-\>|\[)[^}]+?)?\\}~e',
 			'~\{\\\\\$forumurl\\\\\$\}~i',
 			'~\{\\\\\$forumurl\?\}~i',
 			'~\{\\\\\$threadurl\\\\\$\}~i',
 			'~\{\\\\\$threadurl\?\}~i'
 		), array(
-			'\'{$GLOBALS[\\\'$1\\\']\'._xthreads_phptpl_expr_parse(\'$2\').\'}\'',
 			'{$GLOBALS[\'forumurl\']}',
 			'{$GLOBALS[\'forumurl_q\']}',
 			'{$GLOBALS[\'threadurl\']}',
 			'{$GLOBALS[\'threadurl_q\']}',
 		), strtr($s, array('\\' => '\\\\', '$' => '\\$', '"' => '\\"'))
-	);
+	));
 	
 	// replace conditionals
 	xthreads_phptpl_parsetpl($s, $fields, $evalvarname);
