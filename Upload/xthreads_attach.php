@@ -20,6 +20,21 @@ define('LOAD_SESSION', false);
 // if using error_no_permission, must load entire global core
 
 
+function fatal_error($header, $msg) {
+	header('HTTP/1.1 '.$header);
+	header('Content-Type: text/html; charset=iso-8859-1');
+	/*
+	if(XTHREADS_CACHE_TIME) {
+		header('Expires: '.gmdate('D, d M Y H:i:s', time() + XTHREADS_CACHE_TIME).' GMT');
+		header('Cache-Control: max-age='.XTHREADS_CACHE_TIME);
+	} else {
+		header('Expires: Sat, 1 Jan 2000 01:00:00 GMT');
+		header('Cache-Control: no-cache, must-revalidate');
+		header('Pragma: no-cache');
+	}
+	*/
+	die('<html><head><title>Download Error</title></head><body>'.$msg.'</body></html>');
+}
 
 if(LOAD_SESSION) {
 	// we'll be lazy and just load the full MyBB core
@@ -42,8 +57,7 @@ else {
 	unset($_GET, $_POST, $_FILES, $_ENV);
 	foreach(array('GLOBALS', '_COOKIE', '_REQUEST', '_SERVER') as $p)
 		if(isset($_REQUEST[$p]) || isset($_FILES[$p]) || isset($_COOKIE[$p])) {
-			header('HTTP/1.1 400 Bad Request');
-			die('Bad request');
+			fatal_error('400 Bad Request', 'Bad request');
 		}
 	// script will work if magic quotes is on, unless filenames happen to have quotes or something
 	@set_magic_quotes_runtime(0);
@@ -77,10 +91,8 @@ function do_processing() {
 			$bburl = 'htp://example.com/'; // dummy
 	}
 	
-	if(!@is_dir($basedir)) {
-		header('HTTP/1.1 500 Internal Server Error');
-		die('Can\'t find XThreads base directory.');
-	}
+	if(!@is_dir($basedir))
+		fatal_error('500 Internal Server Error', 'Can\'t find XThreads base directory.');
 
 	// parse input filename
 	if(isset($_REQUEST['file']) && $_REQUEST['file'] !== '') { // using query string
@@ -98,10 +110,8 @@ function do_processing() {
 			}
 		}
 
-		if(!isset($_SERVER['PATH_INFO']) || !$_SERVER['PATH_INFO']) {
-			header('HTTP/1.1 400 Bad Request');
-			die('No parameters specified.');
-		}
+		if(!isset($_SERVER['PATH_INFO']) || !$_SERVER['PATH_INFO'])
+			fatal_error('400 Bad Request', 'No parameters specified.');
 	}
 	
 	// xtattachment URL test during installation
@@ -110,10 +120,8 @@ function do_processing() {
 	}
 	
 	// maybe disallow \:*?"<>| in filenames, but then, they're valid *nix names...
-	if(!preg_match('~^[/|]([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})[/|]([0-9a-fA-F]{32}[/|])?([^/]*)([/|]thumb([a-zA-Z0-9_]+))?$~', $_SERVER['PATH_INFO'], $match)) {
-		header('HTTP/1.1 400 Bad Request');
-		die('Received malformed request string.');
-	}
+	if(!preg_match('~^[/|]([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})[/|]([0-9a-fA-F]{32}[/|])?([^/]*)([/|]thumb([a-zA-Z0-9_]+))?$~', $_SERVER['PATH_INFO'], $match))
+		fatal_error('400 Bad Request', 'Received malformed request string.');
 
 	$thumb = null;
 	if($match[6]) $thumb =& $match[7];
@@ -136,10 +144,8 @@ function do_processing() {
 		$fn_rel = $month_dir.$fn;
 	elseif(file_exists($basedir.$fn))
 		$fn_rel = $fn;
-	else {
-		header('HTTP/1.1 404 Not Found');
-		die('Specified attachment not found.'.(XTHREADS_EXPIRE_ATTACH_LINK ? '  It\'s possible that the link has expired - try going back, refresh the page, and access the attachment again.':''));
-	}
+	else
+		fatal_error('404 Not Found', 'Specified attachment not found.'.(XTHREADS_EXPIRE_ATTACH_LINK ? '  It\'s possible that the link has expired - try going back, refresh the page, and access the attachment again.':''));
 	$fn = $basedir.$fn_rel;
 
 	// check to see if unmodified/cached
@@ -175,10 +181,8 @@ function do_processing() {
 	
 	if(!XTHREADS_PROXY_REDIR_HEADER_PREFIX) {
 		$fp = fopen($fn, 'rb');
-		if(!$fp) {
-			header('HTTP/1.1 500 Internal Server Error');
-			die('Failed to open file.');
-		}
+		if(!$fp)
+			fatal_error('500 Internal Server Error', 'Failed to open file.');
 		
 		$range_start = 0;
 		$fsize = filesize($fn);
