@@ -60,7 +60,8 @@ else {
 			fatal_error('400 Bad Request', 'Bad request');
 		}
 	// script will work if magic quotes is on, unless filenames happen to have quotes or something
-	@set_magic_quotes_runtime(0);
+	if(function_exists('set_magic_quotes_runtime'))
+		@set_magic_quotes_runtime(0);
 	@ini_set('magic_quotes_runtime', 0); 
 	// will also work with register globals, so we won't bother with these
 	
