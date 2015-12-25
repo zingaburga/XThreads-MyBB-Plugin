@@ -294,9 +294,9 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 		if(!empty($ptr)) {
 			$s = preg_replace_callback($ptr, function($match) use($in_string) {
 				if($in_string)
-					return '{$vars[\''.$m[1].'\']'._xthreads_phptpl_expr_parse2($m[2]).'}';
+					return '{$vars[\''.$match[1].'\']'._xthreads_phptpl_expr_parse2($match[2]).'}';
 				else
-					return '("".$vars[\''.$m[1].'\']'._xthreads_phptpl_expr_parse2($m[2]).'."")';
+					return '("".$vars[\''.$match[1].'\']'._xthreads_phptpl_expr_parse2($match[2]).'."")';
 			}, $s);
 		}
 		// careful with _xthreads_phptpl_expr_parse() call above - we avoid infinite looping by not supplying $fields
