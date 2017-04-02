@@ -446,11 +446,6 @@ function xthreads_breadcrumb_hack($fid) {
 }
 
 function xthreads_handle_uploads() {
-	// hijack this function to do something else:
-	// slight optimisation - since it's possible for multiple template prefixes to cause the template list to become large (maybe a few KB? - not really that large is it?)
-	// and the fact that I don't think anything uses it afterwards, we can unset it to save some memory
-	unset($GLOBALS['templatelist']);
-	
 	global $mybb, $current_page;
 	if($mybb->request_method == 'post' && ($current_page == 'newthread.php' || ($current_page == 'editpost.php' && $mybb->input['action'] != 'deletepost'))) {
 		require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
