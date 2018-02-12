@@ -68,8 +68,8 @@ function xta_load() {
 					row.style.display = (v?"":"none");
 					// also clear data so that it doesn't get submitted
 					if(!v) {
-						if(l = child(row, '.xta_input_file')) clear_file(l[0]);
-						if(l = child(row, '.xta_input_url'))  l[0].value = "http://";
+						if(l = child(row, '.xta_input_file')[0]) clear_file(l);
+						if(l = child(row, '.xta_input_url')[0])  l.value = "http://";
 					}
 				}
 			};
