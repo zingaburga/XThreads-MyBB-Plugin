@@ -27,16 +27,16 @@ function xta_load() {
 				return Selector.findChildElements(e, [s]);
 		};
 		parnt = function(e,s) {
-			r = $(e).up(s);
+			var r = $(e).up(s);
 			return r ? [r]:r;
 		};
 	}
 	
 	// hack to clear the contents of a file input
 	clear_file = function(e) {
-		n = document.createElement(e.tagName);
-		a = e.attributes;
-		for(i=0; i<a.length; i++) {
+		var n = document.createElement(e.tagName);
+		var a = e.attributes;
+		for(var i=0; i<a.length; i++) {
 			if(a[i].specified) {
 				n.setAttribute(a[i].nodeName, a[i].nodeValue);
 			}
@@ -54,17 +54,18 @@ function xta_load() {
 	});
 	// bind 'remove' checkboxes
 	each(s('.xta_file'), function(e){
-		chk = child(e, '.xtarm')[0];
+		var chk = child(e, '.xtarm')[0];
 		chk.onclick = (function(e,c) {
 			return function(){
-				v = c.checked;
+				var v = c.checked;
+				var l, lnk;
 				if(l = child(e, '.xta_file_link')[0])
 					l.style.textDecoration = (v?"line-through":"");
 				// add xta_removed class to support external styling
 				e.className = e.className.replace(/(\s|^)xta_removed(\s|$)/, ' ');
 				if(v) e.className += " xta_removed";
 				if(lnk = c.getAttribute('data')) {
-					row = document.getElementById(lnk);
+					var row = document.getElementById(lnk);
 					row.style.display = (v?"":"none");
 					// also clear data so that it doesn't get submitted
 					if(!v) {
@@ -79,7 +80,7 @@ function xta_load() {
 	
 	// URL fetching option buttons
 	each(s('.xta_input'), function(e){
-		opts = child(e, '.xtasel');
+		var opts = child(e, '.xtasel');
 		if(!opts || !opts.length) return;
 		opts[0].style.display = "";
 		each(child(e, '.xtasel_label'), function(c){ // hide other labels
@@ -89,7 +90,7 @@ function xta_load() {
 			c.onclick = (function(e,c){
 				return function(){
 					if(!c.checked) return;
-					v = (c.value=="file");
+					var v = (c.value=="file");
 					child(e, '.xta_input_file_row')[0].style.display = (v?"":"none");
 					child(e, '.xta_input_url_row')[0].style.display = (!v?"":"none");
 					if(!v)
@@ -101,13 +102,14 @@ function xta_load() {
 			c.onclick();
 		});
 		// also set tabindex for URL box
+		var ti;
 		if(ti = child(e, '.xta_input_file')[0].tabIndex)
 			child(e, '.xta_input_url')[0].tabIndex = ti;
 	});
 	
 	// 'clear' buttons for files
-	clrFunc = function(e){
-		clr = child(e, 'input.xta_input_file_clr')[0];
+	var clrFunc = function(e){
+		var clr = child(e, 'input.xta_input_file_clr')[0];
 		if(!clr) return;
 		clr.style.display = "";
 		clr.onclick = (function(e){
@@ -118,20 +120,20 @@ function xta_load() {
 	};
 	each(s('.xta_input_file_wrapper'), clrFunc);
 	
-	changeFunc = function(e,fileinput, changeFunc){
+	var changeFunc = function(e,fileinput, changeFunc){
 		return function(){
 			if(!fileinput.value) return;
 			// check last input - if blank, don't append one
-			inputs = child(e, 'input.xta_input_file');
+			var inputs = child(e, 'input.xta_input_file');
 			if(!inputs[inputs.length-1].value) return;
 			
 			// append new input
-			input_ws = child(e, '.xta_input_file_wrapper');
-			input_w = input_ws[input_ws.length-1];
-			new_w = document.createElement(input_w.tagName);
+			var input_ws = child(e, '.xta_input_file_wrapper');
+			var input_w = input_ws[input_ws.length-1];
+			var new_w = document.createElement(input_w.tagName);
 			new_w.setAttribute("class", "xta_input_file_wrapper");
 			new_w.innerHTML = input_w.innerHTML;
-			new_input = child(new_w, 'input.xta_input_file')[0];
+			var new_input = child(new_w, 'input.xta_input_file')[0];
 			new_input.onchange = changeFunc(e, new_input, changeFunc);
 			e.appendChild(new_w);
 			clrFunc(new_w);
@@ -139,7 +141,7 @@ function xta_load() {
 	};
 	// bind thing for multi file input
 	each(s('.xta_input_file_container'), function(e){
-		fileinput = child(e, 'input.xta_input_file')[0];
+		var fileinput = child(e, 'input.xta_input_file')[0];
 		if(!fileinput.getAttribute('multiple')) return;
 		
 		fileinput.onchange = changeFunc(e, fileinput, changeFunc);
@@ -147,14 +149,14 @@ function xta_load() {
 	
 	// re-arrangable multi-attachments
 	if(typeof Sortable != 'undefined') each(s('.xta_file_list'), function(e) {
-		items = child(e, '.xta_file');
+		var items = child(e, '.xta_file');
 		if(items.length < 2) return;
 		
 		each(items, function(c) {
 			c.style.cursor = "move";
 			c.className += " xta_movable"; // for external styling
 		});
-		opts = {};
+		var opts = {}, o;
 		if(o=e.getAttribute("data-sortoptions")) {
 			opts = eval('('+o+')');
 		}
@@ -162,7 +164,7 @@ function xta_load() {
 		Sortable.create(e, opts);
 	});
 	else if(jQuery) each(s('.xta_file_list'), function(e) {
-		items = child(e, '.xta_file');
+		var items = child(e, '.xta_file');
 		if(items.length < 2) return;
 		
 		each(items, function(c) {

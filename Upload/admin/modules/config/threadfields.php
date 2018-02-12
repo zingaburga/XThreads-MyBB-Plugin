@@ -209,13 +209,13 @@ if(!$mybb->input['action'])
 		robj.style.backgroundColor = bg;
 		robj.style.color = fg;
 		var cells = robj.getElementsByTagName('td');
-		for(cell in cells) {
+		for(var cell in cells) {
 			cells[cell].style.backgroundColor = bg;
 			cells[cell].style.color = fg;
 		}
 	}
 	var xt_fields = [<?php echo $js_indexes; ?>];
-	for(i=1; i<xt_fields.length; i++) {
+	for(var i=1; i<xt_fields.length; i++) {
 		var xt_o = document.getElementById('threadfields_mark_'+xt_fields[i]);
 		xt_o.onclick = xt_fields_delcheck;
 		// weird, the apply method isn't working here...
@@ -224,7 +224,7 @@ if(!$mybb->input['action'])
 	}
 	
 	function xt_fields_submit() {
-		for(i=1; i<xt_fields.length; i++) {
+		for(var i=1; i<xt_fields.length; i++) {
 			if(document.getElementById('threadfields_mark_'+xt_fields[i]).checked) {
 				return confirm("<?php echo xt_js_str_escape($lang->threadfields_delete_field_confirm); ?>");
 			}
@@ -963,7 +963,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		var checkboxIn = (si == <?php echo XTHREADS_INPUT_CHECKBOX; ?>);
 		var pureFileIn = (si == <?php echo XTHREADS_INPUT_FILE; ?>);
 		var fileIn = (pureFileIn || si == <?php echo XTHREADS_INPUT_FILE_URL; ?>);
-		e = checkboxIn; // forced
+		var e = checkboxIn; // forced
 		
 		var datatypeText = (document.getElementById('datatype').options[document.getElementById('datatype').selectedIndex].value == "<?php echo XTHREADS_DATATYPE_TEXT; ?>");
 		xt_visi('row_multival_enable', checkboxIn || ((
@@ -974,12 +974,12 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		xt_visi('row_multival', e);
 		xt_visi('row_multival_limit', e);
 		xt_visi('row_dispitemformat', e);
-		datatypeVisible = (!e && !checkboxIn && !fileIn);
+		var datatypeVisible = (!e && !checkboxIn && !fileIn);
 		xt_visi('row_datatype', datatypeVisible);
 		
 		// hide some sanitise options (if browser supports it)
 		var sanitizeOptShow = ((datatypeVisible && !datatypeText) ? 'none' : '');
-		for(i in document.getElementById('sanitize').options) {
+		for(var i in document.getElementById('sanitize').options) {
 			var optItem = document.getElementById('sanitize').options[i];
 			if(!optItem) continue; // fix IE6 bug
 			if(optItem.value == "<?php echo XTHREADS_SANITIZE_HTML_NL; ?>" || optItem.value == "<?php echo XTHREADS_SANITIZE_NONE; ?>") {
@@ -990,9 +990,9 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			}
 		}
 		
-		dispfmt_obj = document.getElementById('dispformat');
-		fileVal = "<a href=\"{URL}\">{FILENAME}</a>";
-		nonFileVal = "{VALUE}";
+		var dispfmt_obj = document.getElementById('dispformat');
+		var fileVal = "<a href=\"{URL}\">{FILENAME}</a>";
+		var nonFileVal = "{VALUE}";
 		if(pureFileIn) {
 			if(e) {
 				if(document.getElementById('dispitemformat').value == nonFileVal) {
