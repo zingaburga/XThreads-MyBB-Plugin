@@ -577,7 +577,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 					default:
 						switch($mybb->input['inputtype']) {
 							case XTHREADS_INPUT_TEXTAREA:
-								$fieldtype = 'text not null';
+								$fieldtype = 'text null';
 								break;
 							case XTHREADS_INPUT_SELECT:
 							case XTHREADS_INPUT_RADIO:
@@ -592,7 +592,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 									$fieldtype = 'varchar(1024) not null default ""';
 									$using_long_varchar = true;
 								} else {
-									$fieldtype = 'text not null';
+									$fieldtype = 'text null';
 								}
 						}
 				}
