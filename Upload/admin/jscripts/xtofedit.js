@@ -146,7 +146,7 @@ xtOFEditor.prototype = {
 				this.window.document.title = xtOFEditorLang.windowTitle;
 		} catch(e) {}
 		if(!this.window.document.body) {
-			bodyTmp = this.window.document.createElement("body");
+			var bodyTmp = this.window.document.createElement("body");
 			this.window.document.appendChild(bodyTmp);
 			if(!this.window.document.body)
 				this.window.document.body = bodyTmp;
@@ -236,7 +236,7 @@ xtOFEditor.prototype = {
 	rowIsBlank: function(row) {
 		var i, j;
 		for(i=0; i<row.childNodes.length; i++) {
-			cell = row.childNodes[i];
+			var cell = row.childNodes[i];
 			if(cell.nodeName.toUpperCase() != "TD") continue;
 			for(j=0; j<cell.childNodes.length; j++)
 				var val = this.getValue(cell.childNodes[j]);
