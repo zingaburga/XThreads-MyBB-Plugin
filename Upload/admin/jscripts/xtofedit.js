@@ -29,6 +29,7 @@ xtOFEditor.prototype = {
 	
 	// internal vars
 	winOpen: false,
+	_testWinOpenTimer: null,
 	unsaved: false,
 	oldFormSubmit: null,
 	selectFirstBox: false,
@@ -73,7 +74,7 @@ xtOFEditor.prototype = {
 	
 	isOpen: function() {
 		try { // stop IE throwing error if window closed
-			return this.winOpen && this.window && this.window.document;
+			return this.winOpen && this.window && this.window.document && !this.window.closed;
 		} catch(e) {}
 		return false;
 	},
@@ -117,10 +118,25 @@ xtOFEditor.prototype = {
 			// so just close any old window
 			this.closeWindow();
 		}
-		if(this.isOpen()) {
-			try {
-				this.window.focus();
-			} catch(e) {}
+		if(this.winOpen) {
+			if(this.isOpen()) {
+				try {
+					this.window.focus();
+				} catch(e) {}
+			} else if(!this._testWinOpenTimer) {
+				// window may still be loading, so try waiting for it
+				this._testWinOpenTimer = setTimeout(function() {
+					this._testWinOpenTimer = null;
+					if(this.isOpen()) {
+						try {
+							this.window.focus();
+						} catch(e) {}
+					} else {
+						// maybe something got stuck, allow user to retry opening
+						this.winOpen = false;
+					}
+				}.bind(this), 200);
+			}
 			return;
 		}
 		this.winOpen = true; // prevent our "race" condition :P
@@ -295,11 +311,18 @@ xtOFEditor.prototype = {
 		return false;
 	},
 	
+	_beforeCloseConfirm: function() {
+		try { // for browsers which disallow confirm before close
+			return this.window.confirm(xtOFEditorLang.closeSaveChanges);
+		} catch(e) {}
+		return false;
+	},
+	
 	beforeClose: function() {
 		if(!this.isOpen()) return;
 		// check modification status and ask to save
 		this.window.document.activeElement.blur(); // run update routine
-		if(this.unsaved && this.window.confirm(xtOFEditorLang.closeSaveChanges))
+		if(this.unsaved && this._beforeCloseConfirm())
 			this.save();
 		else {
 			this.winOpen = false;
