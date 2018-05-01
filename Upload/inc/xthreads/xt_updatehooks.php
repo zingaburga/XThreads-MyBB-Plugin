@@ -157,6 +157,8 @@ function xthreads_input_validate(&$data, &$threadfield_cache, $update=false) {
 						$tr["\n"] = '';
 					$inval = explode(($v['inputtype'] == XTHREADS_INPUT_TEXTAREA ? "\n":','), strtr($inval, $tr));
 				}
+				elseif($v['inputtype'] == XTHREADS_INPUT_CHECKBOX)
+					unset($inval['__isset__']);
 				$inval = array_unique(array_map('trim', $inval));
 				foreach($inval as $valkey => &$val)
 					if(xthreads_empty($val)) unset($inval[$valkey]);
@@ -616,9 +618,12 @@ function xthreads_input_generate(&$data, &$threadfields, $fid, $tid=0) {
 		$using_default = false;
 		if(!isset($data)) // no threadfield data set for this thread
 			$defval = '';
-		elseif(isset($data[$k]))
+		elseif(isset($data[$k])) {
 			$defval = $data[$k];
-		elseif($tid) // currently set value
+			// undo checkbox hack
+			if($tf['inputtype'] == XTHREADS_INPUT_CHECKBOX && isset($defval['__isset__']))
+				unset($defval['__isset__']);
+		} elseif($tid) // currently set value
 			$defval = $tfd[$k];
 		elseif($tf['inputtype'] != XTHREADS_INPUT_FILE) {
 			$defval = eval_str($tf['defaultval']);

@@ -316,7 +316,8 @@ function xthreads_default_threadfields_formhtml($type) {
 			);
 		case XTHREADS_INPUT_CHECKBOX:
 			return array(
-				'<![ITEM[<label style="display: block;"><input{NAME_PROP} type="checkbox" class="checkbox" value="{VALUE}"{CHECKED}{TABINDEX_PROP} />{LABEL}</label>]]>',
+				'<input type="hidden" name="xthreads_{KEY}[__isset__]" value="" />
+<![ITEM[<label style="display: block;"><input{NAME_PROP} type="checkbox" class="checkbox" value="{VALUE}"{CHECKED}{TABINDEX_PROP} />{LABEL}</label>]]>',
 				array_merge($common_vars,array('SELECTED','CHECKED','LABEL'))
 			);
 		case XTHREADS_INPUT_RADIO:
