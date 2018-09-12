@@ -218,7 +218,7 @@ function xthreads_moderation_custom() {
 	if(!is_object($GLOBALS['custommod'])) return;
 	
 	control_object($GLOBALS['custommod'], '
-		function execute_thread_moderation($thread_options, $tids) {
+		function execute_thread_moderation($thread_options=array(), $tids=array()) {
 			if($thread_options[\'deletethread\'] != 1)
 				xthreads_moderation_custom_do($tids, $thread_options[\'edit_threadfields\']);
 			return parent::execute_thread_moderation($thread_options, $tids);
