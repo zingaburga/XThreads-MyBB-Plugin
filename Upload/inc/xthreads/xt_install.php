@@ -5,7 +5,7 @@ if(!defined('IN_MYBB'))
 
 // don't add hooks if we've included this file for other reasons
 if(isset($plugins) && is_object($plugins)) {
-	if(XTHREADS_ALLOW_PHP_THREADFIELDS == 2) {
+	if(!defined('XTHREADS_ALLOW_PHP_THREADFIELDS') || XTHREADS_ALLOW_PHP_THREADFIELDS == 2) {
 		$plugins->add_hook('admin_config_plugins_activate_commit', 'xthreads_plugins_phptpl_activate');
 		$plugins->add_hook('admin_config_plugins_deactivate_commit', 'xthreads_plugins_phptpl_deactivate');
 	}
