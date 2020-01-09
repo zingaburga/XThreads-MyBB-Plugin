@@ -545,7 +545,7 @@ function xthreads_forumdisplay_filter() {
 			}
 			$dbt = '
 				static $done_t = false;
-				if(!$done_t && $table == "threads" && $fields == "COUNT(tid) AS threads") {
+				if(!$done_t && ($table == "threads" || $table == "threads t") && $fields == "COUNT(tid) AS threads") {
 					$done_t = true;
 					$table = "threads t LEFT JOIN {$this->table_prefix}threadfields_data tfd ON t.tid=tfd.tid";
 					$fields = "COUNT(t.tid) AS threads";
