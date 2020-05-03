@@ -270,7 +270,7 @@ function xthreads_our_str_replace($find, &$replacements, $subject)
 function xthreads_allow_php() {
 	if(defined('XTHREADS_ALLOW_PHP_THREADFIELDS_ACTIVATION'))
 		return XTHREADS_ALLOW_PHP_THREADFIELDS_ACTIVATION;
-	return (XTHREADS_ALLOW_PHP_THREADFIELDS==1 || (XTHREADS_ALLOW_PHP_THREADFIELDS==2 && function_exists('phptpl_evalphp')));
+	return defined('XTHREADS_ALLOW_PHP_THREADFIELDS') && (XTHREADS_ALLOW_PHP_THREADFIELDS==1 || (XTHREADS_ALLOW_PHP_THREADFIELDS==2 && function_exists('phptpl_evalphp')));
 }
 
 
