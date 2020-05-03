@@ -518,6 +518,8 @@ function xthreads_sanitize_disp_set_xta_fields(&$s, $aid, &$tfinfo, $dispfmt='',
 	$s['modified'] = ($s['updatetime'] != $s['uploadtime'] ? 'modified' :'');
 	if($s['thumbs'])
 		$s['thumbs'] = unserialize($s['thumbs']);
+	else
+		$s['thumbs'] = array();
 	if(isset($s['thumbs']['orig']))
 		$s['dims'] =& $s['thumbs']['orig'];
 	if(!empty($s['thumbs'])) foreach($s['thumbs'] as $thumbdim => &$thumb) {
