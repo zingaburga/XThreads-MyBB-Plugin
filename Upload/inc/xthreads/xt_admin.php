@@ -1127,6 +1127,18 @@ function xthreads_admin_forumedit() {
 				}
 			}
 		}
+		
+		// prevent insert query bugging out if MySQL strict mode is enabled (the main write will still be performed later)
+		control_object($GLOBALS['db'], '
+			function insert_query($table, $array) {
+				static $done=false;
+				if(!$done && $table == "forums" && isset($array["name"])) {
+					$done = true;
+					$array["xthreads_tplprefix"] = $array["xthreads_langprefix"] = $array["xthreads_settingoverrides"] = $array["xthreads_defaultfilter"] = "";
+				}
+				return parent::insert_query($table, $array);
+			}
+		');
 	}
 	
 	function xthreads_admin_forumedit_hook(&$args) {
