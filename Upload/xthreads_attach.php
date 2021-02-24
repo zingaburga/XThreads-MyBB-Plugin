@@ -121,7 +121,7 @@ function do_processing() {
 	}
 	
 	// maybe disallow \:*?"<>| in filenames, but then, they're valid *nix names...
-	if(!preg_match('~^[/|]([0-9]+)_([0-9]+)_([0-9a-fA-F]{8})[/|]([0-9a-fA-F]{32}[/|])?([^/]*)([/|]thumb([a-zA-Z0-9_]+))?$~', $_SERVER['PATH_INFO'], $match))
+	if(!preg_match('~^[/|]([0-9]+)_([0-9]+)_([0-9a-fA-F]{8}0?)[/|]([0-9a-fA-F]{32}[/|])?([^/]*)([/|]thumb([a-zA-Z0-9_]+))?$~', $_SERVER['PATH_INFO'], $match))
 		fatal_error('400 Bad Request', 'Received malformed request string.');
 
 	$thumb = null;
@@ -137,7 +137,7 @@ function do_processing() {
 	if(XTHREADS_EXPIRE_ATTACH_LINK || XTHREADS_ATTACH_LINK_IPMASK) {
 		// decode special thing
 		require MYBB_ROOT.'inc/xthreads/xt_attachfuncs.php';
-		$match[3] = dechex(xthreads_attach_decode_hash(hexdec($match[3])));
+		$match[3] = xthreads_attach_decode_hash($match[3]);
 		// note that $match[3] isn't secret (eg sent as an ETag)
 	}
 	$fn = 'file_'.$match[1].'_'.$match[3].'_'.preg_replace('~[^a-zA-Z0-9_\-%]~', '', str_replace(array(' ', '.', '+'), '_', $match[5])).'.'.$fext;

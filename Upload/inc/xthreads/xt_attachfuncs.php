@@ -60,14 +60,19 @@ function xthreads_attach_hash(&$odd=false) {
 	return crc32(md5(gzdeflate($key)));
 }
 
+// these two functions assume input is hex encoded
 function xthreads_attach_encode_hash($hash) {
+	$hash = hexdec($hash);
 	$odd = false;
 	$hash ^= xthreads_attach_hash($odd);
+	$hash = str_pad(dechex($hash), 8, '0', STR_PAD_LEFT);
 	if(defined('XTHREADS_EXPIRE_ATTACH_LINK') && XTHREADS_EXPIRE_ATTACH_LINK)
-		return ($hash & ~0x1) | $odd;
+		if($odd) $hash .= '0';
 	return $hash;
 }
 function xthreads_attach_decode_hash($hash) {
-	$odd = $hash & 0x1;
-	return $hash ^ xthreads_attach_hash($odd);
+	$odd = strlen($hash) - 8;
+	$hash = hexdec(substr($hash, 0, 8));
+	$hash ^= xthreads_attach_hash($odd);
+	return str_pad(dechex($hash), 8, '0', STR_PAD_LEFT);
 }

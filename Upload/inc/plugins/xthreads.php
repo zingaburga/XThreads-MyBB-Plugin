@@ -787,7 +787,7 @@ function xthreads_get_xta_url(&$xta, $thumb='') {
 		if(!function_exists('xthreads_attach_encode_hash')) {
 			require_once MYBB_ROOT.'inc/xthreads/xt_attachfuncs.php';
 		}
-		$attachhash = dechex(xthreads_attach_encode_hash(hexdec($attachhash)));
+		$attachhash = xthreads_attach_encode_hash($attachhash);
 	}
 	return 'xthreads_attach.php'.($use_qstr?'?file=':'/').$xta['aid'].'_'.$updatetime.'_'.$attachhash.$delim.$md5hash.rawurlencode($xta['filename']).$thumb;
 }
