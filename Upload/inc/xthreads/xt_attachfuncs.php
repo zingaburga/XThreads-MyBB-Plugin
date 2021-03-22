@@ -3,6 +3,7 @@ defined('MYBB_ROOT') or die('This file cannot be accessed directly.');
 
 // saves us from including inc/functions.php, and gets around quirky MyBB IP functions
 // returns it as an 'iplong'
+// this function only works with IPv4
 function xthreads_get_ip() {
 	// okay, we have an implicit level of trust on this, but ideally, those proxying connections really should be setting REMOTE_ADDR
 	foreach(array('REMOTE_ADDR', 'HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'HTTP_REAL_IP') as $ipfield) {

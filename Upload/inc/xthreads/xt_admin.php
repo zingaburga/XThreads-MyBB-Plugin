@@ -569,8 +569,10 @@ $defines[XTHREADS_EXPIRE_ATTACH_LINK]
 /**
  * Tie download links to IP networks.
  * If non-zero, download links will vary depending on the IP address used to access the link.
- * The IP will be masked by the number of host bits you specify below.  For example, a value of 8 would mean that all 224.0.0.0/8 would get the same download link, which would be different to the link accessible from 225.0.0.0/8
+ * The IPv4 will be masked by the number of host bits you specify below.  For example, a value of 8 would mean that all 224.0.0.0/8 would get the same download link, which would be different to the link accessible from 225.0.0.0/8
  * A recommended number would be 16.  Do NOT set a value above 32.
+ * 
+ * WARNING: enabling this option is no longer recommended.  It does not handle IPv6 or use of external CDN/DDoS protection.  It also is less effective in the age of widespread CGNAT and mobile network switching.
  */
 $defines[XTHREADS_ATTACH_LINK_IPMASK]
 
