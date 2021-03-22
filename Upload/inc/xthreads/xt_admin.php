@@ -484,6 +484,7 @@ $defines[XTHREADS_ALLOW_URL_FETCH]
 /**
  * Hosts which URLs cannot be fetched from, note that this is based on the supplied URL
  *  hosts or IPs are not resolved; separate with commas
+ * Note: this only provides weak protection against SSRF, as it can easily be bypassed by anyone who can configure DNS
  */
 $defines[XTHREADS_URL_FETCH_DISALLOW_HOSTS]
 /** 
