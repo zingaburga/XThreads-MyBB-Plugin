@@ -97,10 +97,12 @@ function do_processing() {
 
 	// parse input filename
 	if(isset($_REQUEST['file']) && $_REQUEST['file'] !== '') { // using query string
+		$pathInfoEncoded = false;
 		$_SERVER['PATH_INFO'] = '/'.$_REQUEST['file'];
 		//if(get_magic_quotes_gpc())
 		//	$_SERVER['PATH_INFO'] = stripslashes($_SERVER['PATH_INFO']);
 	} else {
+		$pathInfoEncoded = true;
 		if(!isset($_SERVER['PATH_INFO']) && isset($_SERVER['SCRIPT_NAME'])) {
 			$snlen = strlen($_SERVER['SCRIPT_NAME']);
 			foreach(array('PHP_SELF', 'REQUEST_URI') as $key) {
@@ -131,7 +133,9 @@ function do_processing() {
 		$fext = $thumb.'.thumb';
 	else
 		$fext = 'upload';
-
+	
+	if($pathInfoEncoded)
+		$match[5] = rawurldecode($match[5]);
 	$match[5] = str_replace("\0", '', $match[5]);
 	$month_dir = 'ts_'.floor($match[2] / 1000000).'/';
 	if(XTHREADS_EXPIRE_ATTACH_LINK || XTHREADS_ATTACH_LINK_IPMASK) {
@@ -345,6 +349,7 @@ function do_processing() {
 							// Does this work well with IE's type sniffing?
 				}
 			}
+		// TODO: does this work properly with UTF-8 encoded names?
 		header('Content-Disposition: '.$disposition.'; filename="'.strtr($match[5], array('"'=>'\\"', "\r"=>'', "\n"=>'')).'"');
 	}
 
