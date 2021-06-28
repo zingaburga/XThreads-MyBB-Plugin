@@ -217,7 +217,7 @@ function xthreads_showthread_firstpost() {
 	control_object($db, '
 		function simple_select($table, $fields=\'*\', $conditions=\'\', $options=array()) {
 			static $done=false;
-			if(!$done && $table == \'posts p\' && $fields == \'p.pid\' && $options[\'order_by\'] == \'p.dateline\') {
+			if(!$done && $table == \'posts p\' && $fields == \'p.pid\' && ($options[\'order_by\'] == \'p.dateline\' || $options[\'order_by\'] == \'p.dateline, p.pid\')) {
 				$done = true;
 				'.$firstpost_hack_code.'
 					xthreads_showthread_firstpost_hack();
