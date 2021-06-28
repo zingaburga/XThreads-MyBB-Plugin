@@ -214,7 +214,7 @@ function xthreads_showthread_firstpost() {
 		$extra_code = '';
 		$firstpost_hack_code = 'if(!$options[\'limit_start\'])';
 	}
-	control_object($db, '
+	control_db('
 		function simple_select($table, $fields=\'*\', $conditions=\'\', $options=array()) {
 			static $done=false;
 			if(!$done && $table == \'posts p\' && $fields == \'p.pid\' && ($options[\'order_by\'] == \'p.dateline\' || $options[\'order_by\'] == \'p.dateline, p.pid\')) {

@@ -42,7 +42,7 @@ function xthreads_delete_thread($tid) {
 }
 
 function xthreads_copy_thread(&$a) {
-	control_object($GLOBALS['db'], '
+	control_db('
 		function insert_query($table, $array) {
 			static $done = false;
 			$ret = parent::insert_query($table, $array);
@@ -201,7 +201,7 @@ function xthreads_moderation() {
 	if(in_array($GLOBALS['mybb']->input['action'], $modactions)) return;
 	
 	// we are probably now looking at custom moderation - let's get ourselves a hook into the system
-	control_object($GLOBALS['db'], '
+	control_db('
 		function simple_select($table, $fields="*", $conditions="", $options=array()) {
 			static $done=false;
 			if(!$done && $table == "modtools" && substr($conditions, 0, 4) == "tid=" && empty($options)) {

@@ -18,7 +18,7 @@ function xthreads_search() {
 				'LEFT JOIN '.TABLE_PREFIX.'users u' => 'LEFT JOIN `'.$db->table_prefix.'threadfields_data` tfd ON t.tid=tfd.tid LEFT JOIN '.TABLE_PREFIX.'users u',
 			));
 		}
-		control_object($db, '
+		control_db('
 			function query($string, $hide_errors=0, $write_query=0) {
 				static $done=false;
 				if(!$done && !$write_query && strpos($string, \'SELECT \') && strpos($string, \'u.username AS userusername\') && strpos($string, \'LEFT JOIN '.TABLE_PREFIX.'users u ON \')) {
@@ -133,7 +133,7 @@ function xthreads_portal() {
 	
 	if($fields) {
 		// do DB hack
-		control_object($GLOBALS['db'], '
+		control_db('
 			function query($string, $hide_errors=0, $write_query=0) {
 				static $done=false;
 				if(!$done && !$write_query && strpos($string, \'SELECT t.*, t.username AS threadusername, u.username, u.avatar\')) {
@@ -320,7 +320,7 @@ function xthreads_wol_patch_init(&$ua) {
 						}
 					';
 				
-				control_object($db, $hook.'
+				control_db($hook.'
 					function fetch_array($query, $resulttype=1) { // 1 == MYSQL_ASSOC == MYSQLI_ASSOC == PGSQL_ASSOC
 						if($this->xthreads_db_wol_hook) {
 							$r = parent::fetch_array($query, $resulttype);

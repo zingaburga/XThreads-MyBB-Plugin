@@ -1132,7 +1132,7 @@ function xthreads_admin_forumedit() {
 		}
 		
 		// prevent insert query bugging out if MySQL strict mode is enabled (the main write will still be performed later)
-		control_object($GLOBALS['db'], '
+		control_db('
 			function insert_query($table, $array) {
 				static $done=false;
 				if(!$done && $table == "forums" && isset($array["name"])) {
@@ -1411,7 +1411,7 @@ ofEditorSO.init();
 
 function xthreads_admin_forumcommit_myplazaturbo_fix() {
 	// pull out the fid into global scope
-	control_object($GLOBALS['db'], '
+	control_db('
 		function insert_query($table, $array) {
 			static $done=false;
 			if(!$done && $table == "forums") {
@@ -1496,7 +1496,7 @@ function xthreads_admin_forumcommit() {
 }
 
 function xthreads_admin_forumdel() {
-	control_object($GLOBALS['db'], '
+	control_db('
 		function delete_query($table, $where="", $limit="") {
 			static $done=false;
 			if(!$done && $table == "threads" && substr($where, 0, 4) == "fid=") {
@@ -1543,7 +1543,7 @@ function xthreads_admin_userprune() {
 	if(empty($mybb->cookies['inlinemod_useracp']) || $mybb->input['inline_action'] != 'multiprune' || $mybb->input['processed'] != 1) return;
 	
 	// no plugin hooks?  attach to DB
-	control_object($GLOBALS['db'], '
+	control_db('
 		function delete_query($table, $where="", $limit="") {
 			static $done=false;
 			if(!$done && $table == "threads" && substr($where,0,4) == "tid=") {

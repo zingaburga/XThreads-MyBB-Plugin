@@ -50,7 +50,7 @@ function xthreads_forumdisplay() {
 				$threadfields = array();
 			}
 			
-			control_object($db, '
+			control_db('
 				function query($string, $hide_errors=0, $write_query=0) {
 					static $done=false;
 					if(!$done && !$write_query && strpos($string, \'SELECT t.*, \') && strpos($string, \'t.username AS threadusername, u.username\') && strpos($string, \'FROM '.TABLE_PREFIX.'threads t\')) {
@@ -566,7 +566,7 @@ function xthreads_forumdisplay_filter() {
 			';
 		
 		if($dbf || $dbt || $dbu) {
-			control_object($db, '
+			control_db('
 				function simple_select($table, $fields="*", $conditions="", $options=array()) {
 					'.$dbt.$dbf.$dbu.'
 					return parent::simple_select($table, $fields, $conditions, $options);

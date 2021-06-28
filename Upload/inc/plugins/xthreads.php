@@ -886,3 +886,38 @@ if(!function_exists('control_object')) {
 	}
 }
 
+
+if(!function_exists('control_db')) {
+	// explicit workaround for PDO, as trying to serialize it causes a fatal error (even though PHP doesn't complain over serializing other resources)
+	if($GLOBALS['db'] instanceof AbstractPdoDbDriver) {
+		$GLOBALS['AbstractPdoDbDriver_lastResult_prop'] = new ReflectionProperty('AbstractPdoDbDriver', 'lastResult');
+		$GLOBALS['AbstractPdoDbDriver_lastResult_prop']->setAccessible(true);
+		function control_db($code) {
+			global $db;
+			$linkvars = array(
+				'read_link' => $db->read_link,
+				'write_link' => $db->write_link,
+				'current_link' => $db->current_link,
+			);
+			unset($db->read_link, $db->write_link, $db->current_link);
+			$lastResult = $GLOBALS['AbstractPdoDbDriver_lastResult_prop']->getValue($db);
+			$GLOBALS['AbstractPdoDbDriver_lastResult_prop']->setValue($db, null); // don't let this block serialization
+			control_object($db, $code);
+			foreach($linkvars as $k=>$v)
+				$db->$k = $v;
+			$GLOBALS['AbstractPdoDbDriver_lastResult_prop']->setValue($db, $lastResult);
+		}
+	} elseif($GLOBALS['db'] instanceof DB_SQLite) {
+		function control_db($code) {
+			global $db;
+			$oldLink = $db->db;
+			unset($db->db);
+			control_object($db, $code);
+			$db->db = $oldLink;
+		}
+	} else {
+		function control_db($code) {
+			control_object($GLOBALS['db'], $code);
+		}
+	}
+}
