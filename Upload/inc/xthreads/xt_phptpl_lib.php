@@ -192,8 +192,8 @@ function xthreads_phptpl_is_safe_expression($s)
 {
 	
 	// remove all strings
-	$string_preg = '~([\'"])(|\\\\\\\\|.*?([^\\\\]|[^\\\\](\\\\\\\\)+))\\1~s';
-	preg_match_all($string_preg, $s, $strings, PREG_SET_ORDER);
+	$string_preg = '([\'"])(|\\\\\\\\|.*?([^\\\\]|[^\\\\](\\\\\\\\)+))\\1';
+	preg_match_all('~'.$string_preg.'~s', $s, $strings, PREG_SET_ORDER);
 	
 	// check double-quote strings
 	foreach($strings as &$strdef) {
@@ -204,9 +204,12 @@ function xthreads_phptpl_is_safe_expression($s)
 		}
 	}
 	
+	// block string function calls, e.g. 'exec'()
+	if(preg_match('~'.$string_preg.'\s*\(~', $s)) return false;
+	
 	// remove safe "equal" expressions and closed comments
 	// use '^' character as substitution to try to prevent possible 'some==badfunc()' type exploits
-	$check = strtr(preg_replace(array($string_preg, '~/\\*.*?\\*/~s'), ' ', $s), array('>=' => '^', '<=' => '^', '=>' => '^', '===' => '^', '!==' => '^', '==' => '^', '!=' => '^'));
+	$check = strtr(preg_replace(array('~'.$string_preg.'~s', '~/\\*.*?\\*/~s'), ' ', $s), array('>=' => '^', '<=' => '^', '=>' => '^', '===' => '^', '!==' => '^', '==' => '^', '!=' => '^'));
 	
 	// block certain characters + operators
 	if(preg_match('~([+\-/]{2}|[`#="\']|/\*|\<{3}|\?\>|\(array\)|\(object\))~i', $check)) return false;
@@ -218,7 +221,7 @@ function xthreads_phptpl_is_safe_expression($s)
 	
 	
 	// block all array index calls and $a{0}() type calls
-	if(preg_match('~[\]}]\s*\(~', $check)) return false; // note that this expression may block "{[statement]} ([statement])" type structures; this shouldn't be an issue with template conditionals, but I guess a workaround, if it does eventually be an issue, is to insert something like a "0+" before the bracket to trick the parser
+	if(preg_match('~[\]})]\s*\(~', $check)) return false; // note that this expression may block "{[statement]} ([statement])" type structures; this shouldn't be an issue with template conditionals, but I guess a workaround, if it does eventually be an issue, is to insert something like a "0+" before the bracket to trick the parser
 	
 	// check functions (implicitly blocks variable functions)
 	preg_match_all('~((\$|-\>\s*|[\\\\a-zA-Z0-9_]+\s*\:\:\s*)?[\\\\a-zA-Z0-9_]+)\s*\(~', $check, $matches);
@@ -288,8 +291,8 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 			}
 			if($f == 'RAWVALUE') $do_value_repl = true;
 		}
-		$str_start = ($in_string?'{':'("".');
-		$str_end = ($in_string?'}':'."")');
+		$str_start = ($in_string?'{':' ');
+		$str_end = ($in_string?'}':' ');
 		if($do_value_repl) $s = preg_replace('~\{((?:RAW)?VALUE)\\\\?\$(\d+)\}~', $str_start.'$vars[\'$1$\'][$2]'.$str_end, $s);
 		if(!empty($tr))  $s = strtr($s, $tr);
 		if(!empty($ptr)) {
@@ -298,7 +301,7 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 				if($in_string)
 					return '{$vars[\''.$match[1].'\']'._xthreads_phptpl_expr_parse2($match[2]).'}';
 				else
-					return '("".$vars[\''.$match[1].'\']'._xthreads_phptpl_expr_parse2($match[2]).'."")';
+					return ' $vars[\''.$match[1].'\']'._xthreads_phptpl_expr_parse2($match[2]).' ';
 			}, $s);
 		}
 		// careful with _xthreads_phptpl_expr_parse() call above - we avoid infinite looping by not supplying $fields
