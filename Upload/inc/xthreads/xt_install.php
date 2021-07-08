@@ -13,7 +13,8 @@ if(isset($plugins) && is_object($plugins)) {
 }
 // if you don't wish to have XThreads modify any templates, set this value to true (the Quick Thread mod will still be done regardless)
 // note that once you have XThreads installed, this will be stored in cache/xthreads.php instead
-@define('XTHREADS_MODIFY_TEMPLATES', true);
+if(!defined('XTHREADS_MODIFY_TEMPLATES'))
+	define('XTHREADS_MODIFY_TEMPLATES', true);
 
 function xthreads_install() {
 	global $db, $cache, $plugins;
@@ -241,16 +242,16 @@ function xthreads_undo_template_edits() {
 	find_replace_templatesets('showthread', '#\\{\\$first_post\\}#', '', 0);
 	find_replace_templatesets('showthread', '#\\{\\$threadfields_display\\}#', '', 0);
 	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$nullthreads\\}#', '', 0);
-	find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$sort_by_prefix\\}#', '', 0);
-	find_replace_templatesets('forumdisplay_threadlist', "#\n?".preg_replace("#[\t\r\n]+#", '\\s*', preg_quote(XTHREADS_INSTALL_TPLADD_EXTRASORT))."#", '', 0);
+	$forumd_sorttpl = ($GLOBALS['mybb']->version_code >= 1827) ? 'forumdisplay_forumsort' : 'forumdisplay_threadlist';
+	find_replace_templatesets($forumd_sorttpl, '#\\{\\$sort_by_prefix\\}#', '', 0);
+	find_replace_templatesets($forumd_sorttpl, "#\n?".preg_replace("#[\t\r\n]+#", '\\s*', preg_quote(XTHREADS_INSTALL_TPLADD_EXTRASORT))."\\s*\{\$xthreads_extra_sorting\}#", '', 0);
 	find_replace_templatesets('forumdisplay_threadlist_sortrating', '#\\<option value="numratings" \\{\\$sortsel\\[\'numratings\'\\]\\}\\>\\{\\$lang-\\>sort_by_numratings\\}\\</option\\>#', '', 0);
 }
 
 define('XTHREADS_INSTALL_TPLADD_EXTRASORT', str_replace("\r", '',
 '					<option value="icon" {$sortsel[\'icon\']}>{$lang->sort_by_icon}</option>
 					<option value="lastposter" {$sortsel[\'lastposter\']}>{$lang->sort_by_lastposter}</option>
-					<option value="attachmentcount" {$sortsel[\'attachmentcount\']}>{$lang->sort_by_attachmentcount}</option>
-					{$xthreads_extra_sorting}'
+					<option value="attachmentcount" {$sortsel[\'attachmentcount\']}>{$lang->sort_by_attachmentcount}</option>'
 ));
 function xthreads_activate() {
 	global $db, $cache, $lang, $plugins;
@@ -286,8 +287,9 @@ function xthreads_activate() {
 		else
 			find_replace_templatesets('showthread', '#\\{\\$classic_header\\}#', '{$threadfields_display}{$classic_header}');
 		find_replace_templatesets('forumdisplay_threadlist', '#\\{\\$threads\\}#', '{$threads}{$nullthreads}');
-		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
-		find_replace_templatesets('forumdisplay_threadlist', '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
+		$forumd_sorttpl = ($GLOBALS['mybb']->version_code >= 1827) ? 'forumdisplay_forumsort' : 'forumdisplay_threadlist';
+		find_replace_templatesets($forumd_sorttpl, '#\\<option value="subject" \\{\\$sortsel\\[\'subject\'\\]\\}\\>\\{\\$lang-\\>sort_by_subject\\}\\</option\\>#', '{$sort_by_prefix}<option value="subject" {$sortsel[\'subject\']}>{$lang->sort_by_subject}</option>');
+		find_replace_templatesets($forumd_sorttpl, '#\\<option value="views" \\{\\$sortsel\\[\'views\'\\]\\}\\>\\{\\$lang-\\>sort_by_views\\}\\</option\\>#', '<option value="views" {$sortsel[\'views\']}>{$lang->sort_by_views}</option>'."\n".XTHREADS_INSTALL_TPLADD_EXTRASORT);
 		find_replace_templatesets('forumdisplay_threadlist_sortrating', '#$#', '<option value="numratings" {$sortsel[\'numratings\']}>{$lang->sort_by_numratings}</option>');
 	}
 	$plugins->run_hooks('xthreads_activate_end');
@@ -306,11 +308,11 @@ function xthreads_deactivate() {
 function xthreads_uninstall() {
 	global $db, $cache, $mybb, $plugins;
 	
-	if($mybb->input['no']) {
+	if(!empty($mybb->input['no'])) {
 		admin_redirect(xthreads_admin_url('config', 'plugins'));
 		exit;
 	}
-	if(!$mybb->input['confirm_uninstall']) {
+	if(empty($mybb->input['confirm_uninstall'])) {
 		$link = 'index.php?confirm_uninstall=1&amp;'.htmlspecialchars($_SERVER['QUERY_STRING']);
 		
 		$GLOBALS['page']->output_confirm_action($link, $GLOBALS['lang']->xthreads_confirm_uninstall);
@@ -404,8 +406,10 @@ function xthreads_uninstall() {
 	
 	xthreads_delete_datacache('threadfields');
 	
-	@unlink(MYBB_ROOT.'cache/xthreads.php');
-	@unlink(MYBB_ROOT.'cache/xthreads_evalcache.php');
+	if(file_exists(MYBB_ROOT.'cache/xthreads.php'))
+		@unlink(MYBB_ROOT.'cache/xthreads.php');
+	if(file_exists(MYBB_ROOT.'cache/xthreads_evalcache.php'))
+		@unlink(MYBB_ROOT.'cache/xthreads_evalcache.php');
 	
 	$db->delete_query('templates', 'title IN ("'.implode('","', array_keys(xthreads_new_templates())).'") AND sid=-2');
 	

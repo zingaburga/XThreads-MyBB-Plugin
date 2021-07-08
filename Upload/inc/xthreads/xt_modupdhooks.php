@@ -12,7 +12,7 @@ require_once MYBB_ROOT.'inc/xthreads/xt_updatehooks.php';
 
 function xthreads_purge_draft() {
 	global $mybb, $db;
-	if(!$mybb->input['deletedraft']) return;
+	if(empty($mybb->input['deletedraft']) || !is_array($mybb->input['deletedraft'])) return;
 	// unfortunately, we need to grab a list of all the valid tids
 	$tidin = '';
 	foreach($mybb->input['deletedraft'] as $id => &$val) {
@@ -215,7 +215,7 @@ function xthreads_moderation() {
 
 function xthreads_moderation_custom() {
 	//if($tool['type'] != 't') return;
-	if(!is_object($GLOBALS['custommod'])) return;
+	if(!isset($GLOBALS['custommod']) || !is_object($GLOBALS['custommod'])) return;
 	
 	control_object($GLOBALS['custommod'], '
 		function execute_thread_moderation($thread_options=array(), $tids=array()) {
@@ -238,20 +238,20 @@ function xthreads_moderation_custom() {
 		require_once MYBB_ROOT.'inc/xthreads/xt_phptpl_lib.php';
 		foreach(explode("\n", str_replace("{\n}", "\r", str_replace("\r",'',$editstr))) as $editline) {
 			$editline = trim(str_replace("\r", "\n", $editline));
-			list($n, $v) = explode('=', $editline, 2);
-			if(!isset($v)) continue;
+			$kv = explode('=', $editline, 2);
+			if(!isset($kv[1])) continue;
 			
 			// don't allow editing of file fields
-			if(!isset($threadfields[$n]) || $threadfields[$n]['inputtype'] == XTHREADS_INPUT_FILE) continue;
+			if(!isset($threadfields[$kv[0]]) || $threadfields[$kv[0]]['inputtype'] == XTHREADS_INPUT_FILE) continue;
 			// we don't do much validation here as we trust admins, right?
 			
 			// this is just a prelim check (speed optimisation) - we'll need to check this again after evaluating conditionals
-			$upperv = strtoupper($v);
-			if(($upperv === '' || $upperv == 'NULL' || $upperv == 'NUL') && $threadfields[$n]['datatype'] != XTHREADS_DATATYPE_TEXT)
-				$edits[$n] = null;
+			$upperv = strtoupper($kv[1]);
+			if(($upperv === '' || $upperv == 'NULL' || $upperv == 'NUL') && $threadfields[$kv[0]]['datatype'] != XTHREADS_DATATYPE_TEXT)
+				$edits[$kv[0]] = null;
 			else {
-				$edits[$n] = $v;
-				xthreads_sanitize_eval($edits[$n], array('VALUE'=>null, 'TID'=>null));
+				$edits[$kv[0]] = $kv[1];
+				xthreads_sanitize_eval($edits[$kv[0]], array('VALUE'=>null, 'TID'=>null));
 			}
 		}
 		if(empty($edits)) return;

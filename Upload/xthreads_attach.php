@@ -69,6 +69,8 @@ else {
 		date_default_timezone_set('GMT'); // what MyBB does
 	
 	define('MYBB_ROOT', dirname(__FILE__).'/');
+	if(!file_exists(MYBB_ROOT.'cache/xthreads.php'))
+		fatal_error('500 Internal Server Error', 'XThreads is not installed.');
 	@include_once(MYBB_ROOT.'cache/xthreads.php'); // include defines
 }
 
@@ -76,7 +78,7 @@ else {
 // put everything in function to limit scope (and memory usage by relying on PHP to garbage collect all the unreferenced variables)
 function do_processing() {
 	
-	if(is_object(@$GLOBALS['mybb'])) {
+	if(isset($GLOBALS['mybb']) && is_object($GLOBALS['mybb'])) {
 		$basedir = $GLOBALS['mybb']->settings['uploadspath'].'/xthreads_ul/';
 		$bburl = $GLOBALS['mybb']->settings['bburl'];
 	} else {
@@ -127,7 +129,7 @@ function do_processing() {
 		fatal_error('400 Bad Request', 'Received malformed request string.');
 
 	$thumb = null;
-	if($match[6]) $thumb =& $match[7];
+	if(isset($match[6])) $thumb =& $match[7];
 	//if(isset($_REQUEST['thumb']) && preg_match('~^[0-9]+x[0-9]+$~', $_REQUEST['thumb']))
 	if($thumb)
 		$fext = $thumb.'.thumb';
@@ -295,12 +297,12 @@ function do_processing() {
 		);
 		if(XTHREADS_MIME_OVERRIDE) {
 			foreach(explode(',', strtolower(XTHREADS_MIME_OVERRIDE)) as $mime_entry) {
-				@list($mime_type, $mime_exts) = explode(' ', trim($mime_entry), 2);
-				if(isset($mime_exts) && $mime_exts !== '') {
-					$mime_type = trim($mime_type);
-					foreach(explode(' ', $mime_exts) as $mime_ext) {
+				$mime_info = explode(' ', trim($mime_entry), 2);
+				if(isset($mime_info[1]) && $mime_info[1] !== '') {
+					$mime_info[0] = trim($mime_info[0]);
+					foreach(explode(' ', $mime_info[1]) as $mime_ext) {
 						if(($mime_ext = trim($mime_ext)) !== '')
-							$exts[$mime_ext] = $mime_type;
+							$exts[$mime_ext] = $mime_info[0];
 					}
 				}
 			}
@@ -444,7 +446,7 @@ fclose($fout);
 
 function increment_downloads($aid) {
 	// if DB is loaded, use it
-	if(is_object(@$GLOBALS['db'])) {
+	if(isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
 		$GLOBALS['db']->write_query('UPDATE '.$db->table_prefix.'xtattachments SET downloads=downloads+1 WHERE aid='.(int)$aid, 1);
 		return;
 	}
@@ -483,7 +485,13 @@ function increment_downloads($aid) {
 		}
 	}
 	
-	@include_once MYBB_ROOT.'inc/db_base.php'; // MyBB >= 1.8.4
+	// for some reason, MyBB doesn't load these from the DB classes themselves, so we have to manually load them ourselves
+	if(file_exists(MYBB_ROOT.'inc/db_base.php')) { // MyBB >= 1.8.4
+		include_once MYBB_ROOT.'inc/db_base.php';
+	}
+	if(file_exists(MYBB_ROOT.'inc/AbstractPdoDbDriver.php')) { // MyBB >= 1.8.27
+		include_once MYBB_ROOT.'inc/AbstractPdoDbDriver.php';
+	}
 	$dbclass = 'db_'.$config['database']['type'];
 	require_once MYBB_ROOT.'inc/'.$dbclass.'.php';
 	if(!class_exists($dbclass)) return;
@@ -503,7 +511,7 @@ function increment_downloads($aid) {
 	$db->set_table_prefix(TABLE_PREFIX);
 	$db->type = $config['database']['type'];
 	
-	if(is_object($GLOBALS['plugins'])) {
+	if(isset($GLOBALS['plugins']) && is_object($GLOBALS['plugins'])) {
 		$GLOBALS['plugins']->run_hooks('xthreads_attachment_increment_dlcount', $aid);
 	}
 	

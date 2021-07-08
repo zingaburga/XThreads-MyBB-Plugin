@@ -159,7 +159,7 @@ if(!defined('IN_MYBB'))
 					if(strtolower(substr($disp, 0, 9)) == 'filename=') {
 						$tmp = substr($disp, 9);
 						if(!xthreads_empty($tmp)) {
-							if($tmp{0} == '"' && $tmp{strlen($tmp)-1} == '"')
+							if($tmp[0] == '"' && $tmp[strlen($tmp)-1] == '"')
 								$tmp = substr($tmp, 1, -1);
 							return array('name' => trim(str_replace("\x0", '', $tmp)));
 						}
@@ -347,8 +347,8 @@ class XTUrlFetcher_Socket extends XTUrlFetcher {
 			}
 			if(!isset($purl['path']) || $purl['path'] === '')
 				$purl['path'] = '/';
-			if(@$purl['query'])
-				$purl['path'] .= '?'.@$purl['query'];
+			if(!empty($purl['query']))
+				$purl['path'] .= '?'.$purl['query'];
 			if(!$purl['port']) $purl['port'] = ($purl['scheme']=='https' ? 443:80);
 			if(!($fr = @fsockopen(($purl['scheme']=='https'?'ssl://':'').$purl['host'], $purl['port'], $errno, $errstr, $this->timeout))) {
 				$this->errno = $errno;

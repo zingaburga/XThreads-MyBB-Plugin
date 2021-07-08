@@ -10,7 +10,7 @@ function task_xtaorphan_cleanup(&$task) {
 	$count = xthreads_rm_attach_query('tid=0 AND uploadtime<'.(TIME_NOW-86400));
 	
 	// setting "isdatahandler" to true is destructive!!!
-	if(!$lang->task_xtaorphan_run_done) $lang->load('xthreads', true);
+	if(!isset($lang->task_xtaorphan_run_done)) $lang->load('xthreads', true);
 	if($count)
 		add_task_log($task, $lang->sprintf($lang->task_xtaorphan_run_cleaned, $count));
 	else

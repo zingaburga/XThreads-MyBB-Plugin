@@ -5,6 +5,7 @@ if(!defined('IN_MYBB'))
 function xthreads_forumdisplay() {
 	global $db, $threadfield_cache, $fid, $mybb, $tf_filters, $xt_filters, $filters_set, $xthreads_forum_filter_form, $xthreads_forum_filter_args;
 	// the position of the "forumdisplay_start" hook is kinda REALLY annoying...
+	if(!isset($mybb->input['fid'])) return;
 	$fid = (int)$mybb->input['fid'];
 	if($fid < 1 || !($forum = get_forum($fid))) return;
 	
@@ -13,6 +14,16 @@ function xthreads_forumdisplay() {
 		$mybb->input['sortby'] = $forum['defaultsortby'];
 	
 	$threadfield_cache = xthreads_gettfcache($fid);
+	
+	// prevent Template errors on newer MyBB
+	if(isset($GLOBALS['sortsel'])) {
+		$GLOBALS['sortsel']['numratings'] = '';
+		$GLOBALS['sortsel']['prefix'] = '';
+		$GLOBALS['sortsel']['icon'] = '';
+		$GLOBALS['sortsel']['lastposter'] = '';
+		$GLOBALS['sortsel']['attachmentcount'] = '';
+	}
+	$GLOBALS['nullthreads'] = '';
 	
 	// Quick Thread integration
 	if(!empty($threadfield_cache) && function_exists('quickthread_run'))
@@ -66,18 +77,18 @@ function xthreads_forumdisplay() {
 		// and generate form HTML
 		foreach($threadfield_cache as $n => &$tf) {
 			$filters_set[$n] = array('hiddencss' => '', 'visiblecss' => 'display: none;', 'nullselected' => ' selected="selected"', 'nullchecked' => ' checked="checked"', 'nullactive' => 'filtertf_active');
-			if($tf['ignoreblankfilter']) {
+			if(!empty($tf['ignoreblankfilter'])) {
 				// will be overwritten if not blank
 				$filters_set[$n]['selected'] = array('' => ' selected="selected"');
 				$filters_set[$n]['checked'] = array('' => ' checked="checked"');
 				$filters_set[$n]['active'] = array('' => 'filtertf_active');
 			}
 			
-			if($tf['allowfilter'] && isset($mybb->input['filtertf_'.$n]) && xthreads_user_in_groups($tf['viewable_gids'])) {
+			if(!empty($tf['allowfilter']) && isset($mybb->input['filtertf_'.$n]) && xthreads_user_in_groups($tf['viewable_gids'])) {
 				$tf_filters[$n] = $mybb->input['filtertf_'.$n];
 				$use_default_filter = false;
 				// ignore blank inputs
-				if($tf['ignoreblankfilter'] && (
+				if(!empty($tf['ignoreblankfilter']) && (
 					(is_array($tf_filters[$n]) && (empty($tf_filters[$n]) || array_unique($tf_filters[$n]) == array(''))) ||
 					($tf_filters[$n] === '')
 				)) {
@@ -87,12 +98,13 @@ function xthreads_forumdisplay() {
 		}
 		
 		// sorting by thread fields
-		if($mybb->input['sortby'] && substr($mybb->input['sortby'], 0, 2) == 'tf') {
+		if(!empty($mybb->input['sortby']) && substr($mybb->input['sortby'], 0, 2) == 'tf') {
 			global $xthreads_forum_sort;
 			if(substr($mybb->input['sortby'], 0, 3) == 'tf_') {
 				$n = substr($mybb->input['sortby'], 3);
-				if(isset($threadfield_cache[$n]) && xthreads_empty($threadfield_cache[$n]['multival']) && $threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_FILE && xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
-					if($threadfield_cache[$n]['inputtype'] != XTHREADS_INPUT_TEXTAREA) { // also disallow sorting by textarea inputs
+				$tf =& $threadfield_cache[$n];
+				if(isset($tf) && xthreads_empty($tf['multival']) && $tf['inputtype'] != XTHREADS_INPUT_FILE && xthreads_user_in_groups($tf['viewable_gids'])) {
+					if($tf['inputtype'] != XTHREADS_INPUT_TEXTAREA) { // also disallow sorting by textarea inputs
 						$xthreads_forum_sort = array(
 							't' => 'tfd.',
 							'sortby' => $mybb->input['sortby'],
@@ -100,6 +112,7 @@ function xthreads_forumdisplay() {
 						);
 					}
 				}
+				unset($tf);
 			}
 			// xtattachment sorting
 			elseif(substr($mybb->input['sortby'], 0, 4) == 'tfa_') {
@@ -107,7 +120,8 @@ function xthreads_forumdisplay() {
 				if($p) {
 					$field = strtolower(substr($mybb->input['sortby'], 4, $p-4));
 					$n = substr($mybb->input['sortby'], $p+1);
-					if(isset($threadfield_cache[$n]) && xthreads_empty($threadfield_cache[$n]['multival']) && $threadfield_cache[$n]['inputtype'] == XTHREADS_INPUT_FILE && xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids']) && in_array($field, array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads'))) {
+					$tf =& $threadfield_cache[$n];
+					if(isset($tf) && xthreads_empty($tf['multival']) && $tf['inputtype'] == XTHREADS_INPUT_FILE && xthreads_user_in_groups($tf['viewable_gids']) && in_array($field, array('filename', 'filesize', 'uploadtime', 'updatetime', 'downloads'))) {
 						$xthreads_forum_sort = array(
 							't' => 'xta.',
 							'sortby' => $mybb->input['sortby'],
@@ -115,11 +129,12 @@ function xthreads_forumdisplay() {
 							'sortjoin' => 'xtattachments xta ON tfd.`'.$n.'`=xta.aid'
 						);
 					}
+					unset($tf);
 				}
 			}
 		}
 	}
-	if(!isset($xthreads_forum_sort) && $mybb->input['sortby'] && in_array($mybb->input['sortby'], array('prefix', 'icon', 'lastposter', 'numratings', 'attachmentcount'))) {
+	if(!isset($xthreads_forum_sort) && isset($mybb->input['sortby']) && in_array($mybb->input['sortby'], array('prefix', 'icon', 'lastposter', 'numratings', 'attachmentcount'))) {
 		global $xthreads_forum_sort;
 		switch($mybb->input['sortby']) {
 			case 'prefix': if($mybb->version_code >= 1500) {
@@ -168,7 +183,7 @@ function xthreads_forumdisplay() {
 	
 	if(function_exists('xthreads_evalcacheForumFilters')) {
 		$xtforum = xthreads_evalcacheForumFilters($fid);
-		if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && !$mybb->input['filterdisable']) {
+		if($use_default_filter && (!empty($xtforum['defaultfilter_tf']) || !empty($xtforum['defaultfilter_xt'])) && empty($mybb->input['filterdisable'])) {
 			$tf_filters = $xtforum['defaultfilter_tf'];
 			foreach($tf_filters as $n => &$filter) {
 				if(!xthreads_user_in_groups($threadfield_cache[$n]['viewable_gids'])) {
@@ -210,7 +225,7 @@ function xthreads_forumdisplay() {
 				break;
 			case 'prefix':
 				// displaystyles?
-				if(!$lang->xthreads_no_prefix) $lang->load('xthreads');
+				if(!isset($lang->xthreads_no_prefix)) $lang->load('xthreads');
 				$info = xthreads_forumdisplay_xtfilter_extrainfo('threadprefixes', array('prefix', 'displaystyle'), 'pid', $ids, 'xthreads_no_prefix');
 				$filters_set['__xt_'.$n]['name'] = $info['prefix'];
 				$filters_set['__xt_'.$n]['displayname'] = $info['displaystyle'];
@@ -229,7 +244,7 @@ function xthreads_forumdisplay() {
 					if($id && $icons[$id])
 						$iconstr .= ($iconstr?', ':'') . htmlspecialchars_uni($icons[$id]['name']);
 					elseif(!$id) {
-						if(!$lang->xthreads_no_icon) $lang->load('xthreads');
+						if(!isset($lang->xthreads_no_icon)) $lang->load('xthreads');
 						$iconstr .= ($iconstr?', ':'') . '<em>'.$lang->xthreads_no_icon.'</em>';
 					}
 				}
@@ -341,7 +356,8 @@ function xthreads_forumdisplay_sorter() {
 	$GLOBALS['sortby'] = $xthreads_forum_sort['sortby'];
 	$GLOBALS['sortfield'] = $xthreads_forum_sort['sortfield'];
 	$mybb->input['sortby'] = htmlspecialchars($xthreads_forum_sort['sortby']);
-	$GLOBALS['sortsel'] = array($xthreads_forum_sort['sortby'] => 'selected="selected"');
+	if(!isset($GLOBALS['sortsel'])) $GLOBALS['sortsel'] = array();
+	$GLOBALS['sortsel'][$xthreads_forum_sort['sortby']] = 'selected="selected"';
 	// apply paranoia filtering...
 	return '"; $orderarrow[\''.strtr($xthreads_forum_sort['sortby'], array('\\' => '', '\'' => '', '"' => '')).'\'] = "';
 }
@@ -404,13 +420,13 @@ function &xthreads_forumdisplay_xtfilter_extrainfo($table, $fields, $idfield, &$
 	$query = $db->simple_select($table, implode(',',$fields), $idfield.' IN ('.$ids.')');
 	while($thing = $db->fetch_array($query)) {
 		foreach($fields as $f) {
-			$ret[$f] .= ($ret[$f]?', ':'') . htmlspecialchars_uni($thing[$f]);
+			$ret[$f] .= (empty($ret[$f])?'':', ') . htmlspecialchars_uni($thing[$f]);
 		}
 	}
 	$db->free_result($query);
 	if(strpos(','.$ids.',', ',0,') !== false)
 		foreach($fields as &$f)
-			$ret[$f] .= ($ret[$f]?', ':'') . '<em>'.$lang->$blanklang.'</em>';
+			$ret[$f] .= (empty($ret[$f])?'':', ') . '<em>'.$lang->$blanklang.'</em>';
 	return $ret;
 }
 
@@ -504,7 +520,7 @@ function xthreads_forumdisplay_filter() {
 		// and now we have to patch the DB to get proper thread counts...
 		$dbf = $dbt = $dbu = '';
 		// TODO: the following conditional may change depending on the outcome of this bug: https://github.com/mybb/mybb/issues/1890
-		if(($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999) && !@$GLOBALS['fpermissions']['canonlyviewownthreads']) {
+		if(($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999) && empty($GLOBALS['fpermissions']['canonlyviewownthreads'])) {
 			if(!empty($tf_filters))
 				$dbf_code = '
 					$table = "threads t LEFT JOIN {$this->table_prefix}threadfields_data tfd ON t.tid=tfd.tid";
@@ -604,10 +620,11 @@ function xthreads_forumdisplay_filter() {
 			$GLOBALS['sorturl'] .= $page_url_xt;
 			
 			// may need to replace first &amp; with a ?
-			if(($mybb->settings['seourls'] == 'yes' || ($mybb->settings['seourls'] == 'auto' && $_SERVER['SEO_SUPPORT'] == 1)) && $GLOBALS['sortby'] == 'lastpost' && $GLOBALS['sortordernow'] == 'desc' && ($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999) && !@$GLOBALS['tprefix']) //  && (strpos(FORUM_URL_PAGED, '{page}') === false) - somewhat unsupported, since MyBB hard codes the page 1 elimination behaviour
+			if(($mybb->settings['seourls'] == 'yes' || ($mybb->settings['seourls'] == 'auto' && $_SERVER['SEO_SUPPORT'] == 1)) && $GLOBALS['sortby'] == 'lastpost' && $GLOBALS['sortordernow'] == 'desc' && ($GLOBALS['datecut'] <= 0 || $GLOBALS['datecut'] == 9999) && empty($GLOBALS['tprefix'])) //  && (strpos(FORUM_URL_PAGED, '{page}') === false) - somewhat unsupported, since MyBB hard codes the page 1 elimination behaviour
 				$page_url_xt = '?'.substr($page_url_xt, 5);
 		}
-		$templates->cache['forumdisplay_threadlist'] = str_replace('<select name="sortby">', '{$xthreads_forum_filter_form}{$xthreads_forum_search_form}<select name="sortby">', $templates->cache['forumdisplay_threadlist']);
+		$tplSort =& $templates->cache[$mybb->version_code >= 1827 ? 'forumdisplay_forumsort' : 'forumdisplay_threadlist'];
+		$tplSort = str_replace('<select name="sortby">', '{$xthreads_forum_filter_form}{$xthreads_forum_search_form}<select name="sortby">', $tplSort);
 	}
 }
 function xthreads_forumdisplay_filter_parselike($s, $mode) {

@@ -7,7 +7,8 @@ if(!defined('XTHREADS_INSTALLED_VERSION')) return false;
 
 // if you don't wish to have XThreads modify any templates, set this value to true
 // note that once you have XThreads installed (v1.41 or later), this will be stored in cache/xthreads.php instead
-@define('XTHREADS_MODIFY_TEMPLATES', true);
+if(!defined('XTHREADS_MODIFY_TEMPLATES'))
+	define('XTHREADS_MODIFY_TEMPLATES', true);
 
 // even if there are no upgrade actions to be run for a particular upgrade, we'll get the user into the habbit of running the upgrader
 

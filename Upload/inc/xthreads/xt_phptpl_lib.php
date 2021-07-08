@@ -13,7 +13,7 @@ if(function_exists('preg_replace_callback_array')) {
 		$GLOBALS['__phptpl_if'] = array();
 		$repl = array(
 			'#\<((?:else)?if\s+(.*?)\s+then|else\s*/?|/if)\>#si' => function($m) use($fields) {
-				return xthreads_phptpl_if($m[1], _xthreads_phptpl_expr_parse2($m[2], $fields));
+				return xthreads_phptpl_if($m[1], isset($m[2]) ? _xthreads_phptpl_expr_parse2($m[2], $fields) : '');
 			},
 			'#\<func (htmlspecialchars|htmlspecialchars_uni|intval|floatval|urlencode|rawurlencode|addslashes|stripslashes|trim|crc32|ltrim|rtrim|chop|md5|nl2br|sha1|strrev|strtoupper|strtolower|my_strtoupper|my_strtolower|alt_trow|get_friendly_size|filesize|strlen|my_strlen|my_wordwrap|random_str|unicode_chr|bin2hex|str_rot13|str_shuffle|strip_tags|ucfirst|ucwords|basename|dirname|unhtmlentities)\>#i' => function($m) {
 				return '".'.$m[1].'("';
@@ -155,7 +155,8 @@ function xthreads_phptpl_expr_parse($str, $fields=array())
 		$token = '\'__PHPTPL_PLACEHOLDER_'.md5(mt_rand()).'__\'';
 		$str = preg_replace($strpreg, $token, $str);
 		$squotstr = $squotstr[0];
-	}
+	} else
+		$squotstr = null;
 	
 	// globalise all variables; conveniently will filter out stuff like {VALUE$1}
 	$str = preg_replace('~\$([a-zA-Z_][a-zA-Z_0-9]*)~', '$GLOBALS[\'$1\']', $str);
@@ -293,6 +294,7 @@ function xthreads_phptpl_parse_fields($s, $fields, $in_string) {
 		if(!empty($tr))  $s = strtr($s, $tr);
 		if(!empty($ptr)) {
 			$s = preg_replace_callback($ptr, function($match) use($in_string) {
+				if(!isset($match[2])) $match[2] = '';
 				if($in_string)
 					return '{$vars[\''.$match[1].'\']'._xthreads_phptpl_expr_parse2($match[2]).'}';
 				else
@@ -315,7 +317,7 @@ function xthreads_sanitize_eval(&$s, $fields=array(), $evalvarname=null) {
 	}
 	// the following won't work properly with array indexes which have non-alphanumeric and underscore chars; also, it won't do ${var} syntax
 	// also, damn PHP's magic quotes for preg_replace - but it does assist with backslash fun!!!
-	$s = preg_replace_callback('~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)((?:-\>|\[)[^}]+?)?\\}~', function($m) {
+	$s = preg_replace_callback('~\\{\\\\\\$([a-zA-Z_][a-zA-Z_0-9]*)(|(?:-\>|\[)[^}]+?)\\}~', function($m) {
 		return '{$GLOBALS[\''.$m[1].'\']'._xthreads_phptpl_expr_parse2($m[2]).'}';
 	}, preg_replace(
 		array(

@@ -268,7 +268,7 @@ class XTImageTransform {
 	
 	/*private static*/ function _color($v) {
 		if(is_string($v)) {
-			if($v[0] == '#') $v=substr($v,1);
+			if(isset($v[0]) && $v[0] == '#') $v=substr($v,1);
 			// split into halves to avoid precision/overflow problems
 			$colA = (int)base_convert(str_pad(substr($v, 0, 4), 4, '0'), 16, 10);
 			$colB = (int)base_convert(str_pad(substr($v, 4, 4), 4, '0'), 16, 10);

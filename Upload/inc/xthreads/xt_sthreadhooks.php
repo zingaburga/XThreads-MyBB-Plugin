@@ -13,7 +13,7 @@ function xthreads_showthread() {
 	$threadfields_display = $threadfields_display_rows = '';
 	if(!empty($threadfields)) foreach($threadfields as $k => &$val) {
 		$tf =& $threadfield_cache[$k];
-		if($tf['hidefield'] & XTHREADS_HIDE_THREAD) continue;
+		if(isset($tf['hidefield']) && ($tf['hidefield'] & XTHREADS_HIDE_THREAD)) continue;
 		if($tf['inputtype'] == XTHREADS_INPUT_FILE)
 			$value =& $val['value'];
 		else
@@ -129,6 +129,7 @@ function xthreads_showthread_firstpost() {
 	global $db;
 	xthreads_firstpost_tpl_preload();
 	$templatelist .= ',showthread_noreplies';
+	$GLOBALS['first_post'] = '';
 	
 	function xthreads_tpl_firstpost_moveout() {
 		global $posts;
@@ -209,10 +210,10 @@ function xthreads_showthread_firstpost() {
 				return parent::fetch_array($query, $resulttype);
 			}
 		';
-		$firstpost_hack_code = 'if($options[\'limit_start\']) $this->xthreads_firstpost_hack = true;';
+		$firstpost_hack_code = 'if(!empty($options[\'limit_start\'])) $this->xthreads_firstpost_hack = true;';
 	} else {
 		$extra_code = '';
-		$firstpost_hack_code = 'if(!$options[\'limit_start\'])';
+		$firstpost_hack_code = 'if(empty($options[\'limit_start\']))';
 	}
 	control_db('
 		function simple_select($table, $fields=\'*\', $conditions=\'\', $options=array()) {

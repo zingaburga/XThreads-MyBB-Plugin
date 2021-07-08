@@ -57,12 +57,12 @@ function xthreads_search_result(&$data, $tplname) {
 		// make threadfields array
 		$threadfields = array(); // clear previous threadfields
 		
-		if($GLOBALS['thread_ids']) $tidlist =& $GLOBALS['thread_ids'];
-		elseif($GLOBALS['tids']) $tidlist =& $GLOBALS['tids'];
+		if(isset($GLOBALS['thread_ids'])) $tidlist =& $GLOBALS['thread_ids'];
+		elseif(isset($GLOBALS['tids'])) $tidlist =& $GLOBALS['tids'];
 		else $tidlist = '';
 		
 		foreach($threadfield_cache as $k => &$v) {
-			if($v['forums'] && strpos(','.$v['forums'].',', ','.$data['fid'].',') === false)
+			if(!empty($v['forums']) && strpos(','.$v['forums'].',', ','.$data['fid'].',') === false)
 				continue;
 			
 			xthreads_get_xta_cache($v, $tidlist);
@@ -117,7 +117,7 @@ function xthreads_portal() {
 	$all_fids = ($mybb->settings['portal_announcementsfid'] == '-1');
 	$fields = '';
 	foreach($threadfield_cache as $k => &$v) {
-		$available = (!$v['forums']) || $all_fids;
+		$available = empty($v['forums']) || $all_fids;
 		if(!$available)
 			foreach(explode(',', $v['forums']) as $fid) {
 				if(isset($fids[$fid])) {
@@ -180,7 +180,7 @@ function xthreads_portal_announcement() {
 		$threadfields = array(); // clear previous threadfields
 		
 		foreach($threadfield_cache as $k => &$v) {
-			if($v['forums'] && strpos(','.$v['forums'].',', ','.$announcement['fid'].',') === false)
+			if(!empty($v['forums']) && strpos(','.$v['forums'].',', ','.$announcement['fid'].',') === false)
 				continue;
 			
 			$tids = '0'.$GLOBALS['tids'];
@@ -236,7 +236,7 @@ function xthreads_wol_patch(&$a) {
 		case 'showpost':
 			$activity = 'showthread';
 		case 'newreply':
-			if($user_activity['pid'])
+			if(!empty($user_activity['pid']))
 				$user_activity['tid'] = $posts[$user_activity['pid']];
 			// fall through
 		case 'showthread':
@@ -396,7 +396,7 @@ function xthreads_fix_stats_stats() {
 	$GLOBALS['stats'] = $GLOBALS['cache']->read('stats');
 }
 function xthreads_fix_stats_usercp() {
-	if(!$GLOBALS['mybb']->input['action'])
+	if(empty($GLOBALS['mybb']->input['action']))
 		xthreads_fix_stats();
 }
 
@@ -420,7 +420,7 @@ function xthreads_breadcrumb_hack_printthread() {
 	
 	// do the same as xthreads_breadcrumb_hack() but in reverse
 	foreach($pforumcache[0] as &$pforum) { // will only ever loop once
-		if($pforum['pid']) continue; // paranoia
+		if(!empty($pforum['pid'])) continue; // paranoia
 		
 		// firstly, skip any hidden top-level parents
 		$prevforum =& $pforum;
@@ -428,13 +428,13 @@ function xthreads_breadcrumb_hack_printthread() {
 			$prevforum =& xthreads_get_array_first($pforumcache[$prevforum['fid']]);
 		
 		if($prevforum) {
-			if($prevforum['pid']) {
+			if(!empty($prevforum['pid'])) {
 				$prevforum['pid'] = 0;
 				$pforum = $prevforum;
 			}
 			
 			$forum = null;
-			if($pforumcache[$prevforum['fid']])
+			if(!empty($pforumcache[$prevforum['fid']]))
 				$forum =& xthreads_get_array_first($pforumcache[$prevforum['fid']]);
 			while($forum) {
 				if(!$forum['xthreads_hidebreadcrumb']) {

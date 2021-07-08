@@ -38,6 +38,7 @@ if($mybb->input['action'] == 'edit')
 {
 	$plugins->run_hooks('admin_config_threadfields_edit');
 	
+	if(!isset($mybb->input['field'])) $mybb->input['field'] = '';
 	$mybb->input['field'] = trim($mybb->input['field']);
 	
 	$tf = $db->fetch_array($db->simple_select('threadfields', '*', 'field="'.$db->escape_string($mybb->input['field']).'"'));
@@ -57,7 +58,7 @@ if($mybb->input['action'] == 'inline')
 	$query = $db->simple_select('threadfields', 'field,allowfilter,inputtype,disporder');
 	while($field = $db->fetch_array($query)) {
 		$efn = $db->escape_string($field['field']); //paranoia
-		if($mybb->input['threadfields_mark_'.$field['field']]) {
+		if(isset($mybb->input['threadfields_mark_'.$field['field']]) && $mybb->input['threadfields_mark_'.$field['field']]) {
 			$del[] = $efn;
 			if($field['allowfilter'])
 				$alterkeys .= ', DROP KEY `'.$efn.'`';
@@ -253,6 +254,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	if($update) $title = $lang->edit_threadfield;
 		else $title = $lang->add_threadfield;
 	
+	$errors = array();
 	$props = xthreads_threadfields_props();
 	if($mybb->request_method == 'post')
 	{
@@ -261,14 +263,15 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			// cause you can't "continue" in a switch statement, lol...
 			if($field == 'forums' || $field == 'editable_gids' || $field == 'viewable_gids' || $field == 'filemaxsize' || $field == 'multival') continue;
 			if($prop['datatype'] == 'string')
-				$mybb->input[$field] = trim($mybb->input[$field]);
+				$mybb->input[$field] = isset($mybb->input[$field]) ? trim($mybb->input[$field]) : '';
 			else
-				$mybb->input[$field] = (int)$mybb->input[$field];
+				$mybb->input[$field] = isset($mybb->input[$field]) ? (int)$mybb->input[$field] : 0;
 		}
-		$mybb->input['textmask'] = str_replace("\x0", '', $mybb->input['textmask']);
-		$mybb->input['filemaxsize'] = xthreads_size_to_bytes($mybb->input['filemaxsize']);
-		$mybb->input['fileimage_mindim'] = strtolower(trim($mybb->input['fileimage_mindim']));
-		$mybb->input['fileimage_maxdim'] = strtolower(trim($mybb->input['fileimage_maxdim']));
+		if(!isset($mybb->input['field'])) $mybb->input['field'] = '';
+		$mybb->input['textmask'] = isset($mybb->input['textmask']) ? str_replace("\x0", '', $mybb->input['textmask']) : '';
+		$mybb->input['filemaxsize'] = isset($mybb->input['filemaxsize']) ? xthreads_size_to_bytes($mybb->input['filemaxsize']) : 0;
+		$mybb->input['fileimage_mindim'] = isset($mybb->input['fileimage_mindim']) ? strtolower(trim($mybb->input['fileimage_mindim'])) : '';
+		$mybb->input['fileimage_maxdim'] = isset($mybb->input['fileimage_maxdim']) ? strtolower(trim($mybb->input['fileimage_maxdim'])) : '';
 		if(!xthreads_empty($mybb->input['formatmap'])) {
 			$fm = array();
 			$fms = str_replace("{\n}", "\r", str_replace("\r", '', $mybb->input['formatmap']));
@@ -288,18 +291,22 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$mybb->input['formatmap'] = serialize($fm);
 		}
 		
-		if(is_array($mybb->input['forums'])) {
-			$mybb->input['forums'] = implode(',', array_unique(array_map('intval', array_map('trim', $mybb->input['forums']))));
-			if(empty($mybb->input['forums']))
-				$mybb->input['forums'] = '';
-		} else {
-			$mybb->input['forums'] = trim($mybb->input['forums']);
-			if($mybb->input['forums'])
-				$mybb->input['forums'] = implode(',', array_unique(array_map('intval', array_map('trim', explode(',',$mybb->input['forums'])))));
-			if(!$mybb->input['forums']) $mybb->input['forums'] = '';
+		if(isset($mybb->input['forums'])) {
+			if(is_array($mybb->input['forums'])) {
+				$mybb->input['forums'] = implode(',', array_unique(array_map('intval', array_map('trim', $mybb->input['forums']))));
+				if(empty($mybb->input['forums']))
+					$mybb->input['forums'] = '';
+			} else {
+				$mybb->input['forums'] = trim($mybb->input['forums']);
+				if($mybb->input['forums'])
+					$mybb->input['forums'] = implode(',', array_unique(array_map('intval', array_map('trim', explode(',',$mybb->input['forums'])))));
+			}
 		}
+		if(empty($mybb->input['forums'])) $mybb->input['forums'] = '';
 		
+		if(!isset($mybb->input['editable'])) $mybb->input['editable'] = XTHREADS_EDITABLE_ALL;
 		if($mybb->input['editable'] == '99') {
+			if(!isset($mybb->input['editable_gids'])) $mybb->input['editable_gids'] = '';
 			if(is_array($mybb->input['editable_gids'])) {
 				$mybb->input['editable_gids'] = implode(',', array_unique(array_map('intval', array_map('trim', $mybb->input['editable_gids']))));
 				if(empty($mybb->input['editable_gids']))
@@ -325,7 +332,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			'thread' => XTHREADS_HIDE_THREAD,
 			//'forum_sort' => XTHREADS_HIDE_FORUM_SORT,
 		) as $k => $v) {
-			if($mybb->input['hidefield_'.$k])
+			if(!empty($mybb->input['hidefield_'.$k]))
 				$mybb->input['hidefield'] |= $v;
 		}
 		
@@ -351,17 +358,18 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$mybb->input['editable_values'] = serialize($ev);
 		}
 		
-		if(is_array($mybb->input['viewable_gids'])) {
-			$mybb->input['viewable_gids'] = implode(',', array_unique(array_map('intval', array_map('trim', $mybb->input['viewable_gids']))));
-			if(empty($mybb->input['viewable_gids']))
-				$mybb->input['viewable_gids'] = '';
-		} else {
-			$mybb->input['viewable_gids'] = trim($mybb->input['viewable_gids']);
-			if($mybb->input['viewable_gids'])
-				$mybb->input['viewable_gids'] = implode(',', array_unique(array_map('intval', array_map('trim', explode(',',$mybb->input['viewable_gids'])))));
-			if(!$mybb->input['viewable_gids']) $mybb->input['viewable_gids'] = '';
+		if(isset($mybb->input['viewable_gids'])) {
+			if(is_array($mybb->input['viewable_gids'])) {
+				$mybb->input['viewable_gids'] = implode(',', array_unique(array_map('intval', array_map('trim', $mybb->input['viewable_gids']))));
+			} else {
+				$mybb->input['viewable_gids'] = trim($mybb->input['viewable_gids']);
+				if($mybb->input['viewable_gids'])
+					$mybb->input['viewable_gids'] = implode(',', array_unique(array_map('intval', array_map('trim', explode(',',$mybb->input['viewable_gids'])))));
+			}
 		}
+		if(empty($mybb->input['viewable_gids'])) $mybb->input['viewable_gids'] = '';
 		
+		if(!isset($mybb->input['sanitize'])) $mybb->input['sanitize'] = XTHREADS_SANITIZE_HTML;
 		$mybb->input['sanitize'] = min_max((int)$mybb->input['sanitize'], XTHREADS_SANITIZE_HTML, XTHREADS_SANITIZE_NONE);
 		//if($mybb->input['sanitize'] == XTHREADS_SANITIZE_PARSER) {
 			$parser_opts = array(
@@ -374,9 +382,10 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				'parser_smilies' => XTHREADS_SANITIZE_PARSER_SMILIES,
 			);
 			foreach($parser_opts as $opt => $n)
-				if($mybb->input[$opt])
+				if(!empty($mybb->input[$opt]))
 					$mybb->input['sanitize'] |= $n;
 		//}
+		if(!isset($mybb->input['inputtype'])) $mybb->input['inputtype'] = XTHREADS_INPUT_TEXT;
 		$mybb->input['inputtype'] = min_max((int)$mybb->input['inputtype'], XTHREADS_INPUT_TEXT, XTHREADS_INPUT_FILE_URL);
 		
 		if(xthreads_empty($mybb->input['title']))		$errors[] = $lang->error_missing_title;
@@ -422,7 +431,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 				$mybb->input['vallist'] = '';
 		}
 		
-		if($mybb->input['multival_enable'] || $mybb->input['inputtype'] == XTHREADS_INPUT_CHECKBOX) {
+		if(!empty($mybb->input['multival_enable']) || $mybb->input['inputtype'] == XTHREADS_INPUT_CHECKBOX) {
 			if(xthreads_empty($mybb->input['multival']))
 				$errors[] = $lang->error_require_multival_delimiter;
 			// force textual datatype
@@ -431,7 +440,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		} else
 			$mybb->input['multival'] = '';
 		
-		if($mybb->input['use_formhtml']) {
+		if(!empty($mybb->input['use_formhtml'])) {
 			if(xthreads_empty($mybb->input['formhtml']))
 				$errors[] = $lang->error_require_formhtml;
 		} else
@@ -446,20 +455,20 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		}
 		
 		$mybb->input['fileimage'] = '';
-		if($mybb->input['filereqimg']) {
-			if($mybb->input['fileimage_mindim'] && !preg_match('~^[0-9]+x[0-9]+$~', $mybb->input['fileimage_mindim']))
+		if(!empty($mybb->input['filereqimg'])) {
+			if(!empty($mybb->input['fileimage_mindim']) && !preg_match('~^[0-9]+x[0-9]+$~', $mybb->input['fileimage_mindim']))
 				$errors[] = $lang->error_invalid_min_dims;
-			if($mybb->input['fileimage_maxdim'] && !preg_match('~^[0-9]+x[0-9]+$~', $mybb->input['fileimage_maxdim']))
+			if(!empty($mybb->input['fileimage_maxdim']) && !preg_match('~^[0-9]+x[0-9]+$~', $mybb->input['fileimage_maxdim']))
 				$errors[] = $lang->error_invalid_max_dims;
 			
-			if($mybb->input['fileimage_mindim'])
+			if(!empty($mybb->input['fileimage_mindim']))
 				$mybb->input['fileimage'] = $mybb->input['fileimage_mindim'];
 			else
 				$mybb->input['fileimage'] = '0x0';
-			if($mybb->input['fileimage_maxdim'])
+			if(!empty($mybb->input['fileimage_maxdim']))
 				$mybb->input['fileimage'] .= '|'.$mybb->input['fileimage_maxdim'];
 		}
-		//if($mybb->input['fileimgthumbs']) {
+		//if(!empty($mybb->input['fileimgthumbs'])) {
 			// TODO: verify format
 			//if(!preg_match('~^[0-9]+x[0-9]+(\\|[0-9]+x[0-9]+)*$~', $mybb->input['fileimgthumbs']))
 			//	$errors[] = $lang->error_invalid_thumb_dims;
@@ -495,7 +504,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			elseif(!preg_match('~^[a-zA-Z0-9_]+$~', $mybb->input['newfield'])) {
 				$errors[] = $lang->error_field_name_invalid;
 			}
-			elseif(isset($mybb->input['newfield']{2}) && $mybb->input['newfield']{0} == '_' && $mybb->input['newfield']{1} == '_') {
+			elseif(isset($mybb->input['newfield'][2]) && $mybb->input['newfield'][0] == '_' && $mybb->input['newfield'][1] == '_') {
 				// don't allow fields starting with "__" (reserved for special use)
 				// in hindsight, special uses (eg filters) really should've used something like '~' so we don't need to do this, but it's too late now
 				$errors[] = $lang->error_field_name_reserved;
@@ -521,7 +530,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 			'dispformat', 'dispitemformat',
 			'unviewableval', 'formhtml', 'formhtml_item',
 		) as $condcheck) {
-			if($test_tf[$condcheck] && !xthreads_check_evalstr($test_tf[$condcheck])) {
+			if(!empty($test_tf[$condcheck]) && !xthreads_check_evalstr($test_tf[$condcheck])) {
 				if($condcheck == 'formhtml_item') $condcheck = 'formhtml';
 				$tflangkey = 'threadfields_'.$condcheck;
 				$errors[] = $lang->sprintf($lang->error_bad_conditional, $lang->$tflangkey);
@@ -679,7 +688,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 	else
 		$form = new Form(xthreads_admin_url('config', 'threadfields&amp;action=add'), 'post');
 
-	if($errors) {
+	if(!empty($errors)) {
 		$page->output_inline_error($errors);
 		$GLOBALS['data'] =& $mybb->input;
 	}
@@ -781,7 +790,7 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		// TODO: maybe also pull in [ file_uploads, max_file_uploads, max_input_time ] ?
 		if($upload_max_filesize || $post_max_size) {
 			$lang->threadfields_filemaxsize_desc .= '<br /><br />'.$lang->threadfields_filemaxsize_desc_phplimit;
-			if(!$lang->limit_upload_max_filesize)
+			if(!isset($lang->limit_upload_max_filesize))
 				$lang->load('config_attachment_types');
 			if($upload_max_filesize)
 				$lang->threadfields_filemaxsize_desc .= '<br />'.$lang->sprintf($lang->limit_upload_max_filesize, $upload_max_filesize);
@@ -791,17 +800,17 @@ function threadfields_add_edit_handler(&$tf, $update) {
 		make_form_row('filemaxsize', 'text_box');
 		
 		make_form_row('filemagic', 'text_box');
-		$data['filereqimg'] = ($data['fileimage'] ? 1:0);
+		$data['filereqimg'] = (empty($data['fileimage']) ? 0:1);
 		if(!function_exists('imagecreate'))
 			$lang->threadfields_filereqimg_desc .= $lang->threadfields_filereqimg_desc_nogd;
 		make_form_row('filereqimg', 'yes_no_radio');
 		unset($data['filereqimg']);
 		$data['fileimage_mindim'] = $data['fileimage_maxdim'] = '';
-		if($data['fileimage']) {
-			list($min, $max) = explode('|', $data['fileimage']);
-			if($min === '0x0') $min = '';
-			$data['fileimage_mindim'] = $min;
-			$data['fileimage_maxdim'] = $max;
+		if(!empty($data['fileimage'])) {
+			$minmax = explode('|', $data['fileimage']);
+			if($minmax[0] === '0x0') $minmax[0] = '';
+			$data['fileimage_mindim'] = $minmax[0];
+			$data['fileimage_maxdim'] = isset($minmax[1]) ? $minmax[1] : '';
 		}
 		make_form_row('fileimage_mindim', 'text_box');
 		make_form_row('fileimage_maxdim', 'text_box');
