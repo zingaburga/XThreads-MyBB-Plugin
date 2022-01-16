@@ -592,8 +592,9 @@ function xthreads_forumdisplay_filter() {
 	}
 	
 	// if we have custom filters/inline search, patch the forumdisplay paged URLs + sorter links
-	global $xthreads_forum_filter_args, $page_url_xt;
+	global $xthreads_forum_filter_args;
 	if($xthreads_forum_filter_args) {
+		global $templates, $page_url_xt;
 		// if Google SEO multipage is active, force our URL into that
 		if(function_exists('google_seo_url_cache') && $mybb->settings['google_seo_url_multipage'] && $mybb->settings['google_seo_url_forums']) {
 			// force cache load
@@ -606,7 +607,6 @@ function xthreads_forumdisplay_filter() {
 			$GLOBALS['sorturl'] .= htmlspecialchars_uni($xthreads_forum_filter_args);
 		} else {
 			// inject URL into multipage using template cache hack
-			global $templates;
 			$tpls = array('multipage_end', 'multipage_nextpage', 'multipage_page', 'multipage_prevpage', 'multipage_start');
 			foreach($tpls as &$t) {
 				if(!isset($templates->cache[$t])) {
