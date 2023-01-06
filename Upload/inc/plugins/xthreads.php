@@ -184,6 +184,7 @@ function xthreads_global() {
 		xthreads_global_forumbits_tpl();
 	}
 	
+	$fid = null;
 	switch($current_page) {
 		case 'misc.php':
 			if(!isset($mybb->input['action']) || $mybb->input['action'] != 'rules') break;
